@@ -735,8 +735,8 @@ points.forEach(p=>{
 });
 
 // Spiral layout params (keeps dots/labels readable inside the cell)
-const maxR = Math.min(stepX, stepY) * 0.45;  // max offset ~45% of cell size
-const stepR = 12;                              // radial increment in px
+const maxR = Math.min(stepX, stepY) * 0.55;  // max offset ~45% of cell size
+const stepR = 15;                              // radial increment in px
 const toRad = deg => deg * Math.PI / 180;
 
 groups.forEach(list=>{
