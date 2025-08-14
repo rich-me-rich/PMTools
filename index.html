@@ -756,52 +756,76 @@ function renderMatrix(){
     svg.appendChild(ty);
   });
 
-  // Dots (rating-colored) + labels with de-overlap spiral per cell
-  const groups = new Map();
-  points.forEach(p=>{
-    const key = `${p.x}-${p.y}`;
-    if(!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(p);
+// Dots (rating-colored) + labels with improved de-overlap per cell
+// Group points by cell (Likelihood x Impact)
+const groups = new Map(); // key "x-y" -> array of points
+points.forEach(p=>{
+  const key = `${p.x}-${p.y}`;
+  if(!groups.has(key)) groups.set(key, []);
+  groups.get(key).push(p);
+});
+
+const cellSpan = Math.min(stepX, stepY);
+const baseR   = cellSpan * 0.33;  // base radius for small clusters
+const maxR    = cellSpan * 0.46;  // clamp within cell
+const stepR   = 16;               // spiral radial step (px)
+const toRad   = deg => deg * Math.PI / 180;
+const hashStr = s => { let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; };
+
+groups.forEach(list=>{
+  // deterministic order (stable across re-renders)
+  list.sort((a,b)=> (a.id||'').localeCompare(b.id||''));
+
+  list.forEach((p, idx)=>{
+    const cx0 = xFor(p.x);
+    const cy0 = yFor(p.y);
+
+    let r = 0, ang = 0;
+
+    // Special layouts for tiny clusters (keeps dots clearly apart)
+    if (list.length === 2){
+      r   = baseR * 0.6;
+      ang = [0, 180][idx];
+    } else if (list.length === 3){
+      r   = baseR * 0.7;
+      ang = [90, 210, 330][idx];
+    } else if (list.length === 4){
+      r   = baseR;                  // four corners of a small square
+      ang = [45, 135, 225, 315][idx];
+    } else {
+      // Golden-angle spiral for 5+ with deterministic start per cell
+      const start = (hashStr(`${p.x}-${p.y}`) % 360);
+      const ring  = Math.floor(idx / 10) + 1;       // ~10 dots per ring
+      r   = Math.min(maxR, ring * stepR);
+      ang = (start + idx * 137.508) % 360;
+    }
+
+    const ox = r * Math.cos(toRad(ang));
+    const oy = r * Math.sin(toRad(ang));
+    const cx = cx0 + ox;
+    const cy = cy0 + oy;
+
+    const cls = (p.rating && {
+      'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
+    }[p.rating]) || 'med';
+
+    const dot = document.createElementNS(svgNS,'circle');
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', cy);
+    dot.setAttribute('r', 7);
+    dot.setAttribute('class','dot ' + cls);
+    svg.appendChild(dot);
+
+    // Nudge the label roughly in the same direction as the dot offset
+    const lbl = document.createElementNS(svgNS,'text');
+    lbl.setAttribute('x', cx + (ox*0.35) + 8);
+    lbl.setAttribute('y', cy + (oy*0.35) - 8);
+    lbl.setAttribute('class','dotLabel');
+    lbl.textContent = p.id || '';
+    svg.appendChild(lbl);
   });
-  const cellSpan = Math.min(stepX, stepY);
-  const maxR = cellSpan * 0.42;
-  const stepR = 14;
-  const toRad = deg => deg * Math.PI / 180;
+});
 
-  groups.forEach(list=>{
-    list.forEach((p, idx)=>{
-      const cx0 = xFor(p.x);
-      const cy0 = yFor(p.y);
-      let ox = 0, oy = 0;
-      if(list.length > 1){
-        const ring = Math.floor(idx / 10) + 1;
-        const angle = (idx * 137.508) % 360;
-        const r = Math.min(maxR, ring * stepR);
-        ox = r * Math.cos(toRad(angle));
-        oy = r * Math.sin(toRad(angle));
-      }
-      const cx = cx0 + ox;
-      const cy = cy0 + oy;
-
-      const cls = (p.rating && {
-        'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
-      }[p.rating]) || 'med';
-
-      const dot = document.createElementNS(svgNS,'circle');
-      dot.setAttribute('cx', cx);
-      dot.setAttribute('cy', cy);
-      dot.setAttribute('r', 7);
-      dot.setAttribute('class','dot ' + cls);
-      svg.appendChild(dot);
-
-      const label = document.createElementNS(svgNS,'text');
-      label.setAttribute('x', cx + 10);
-      label.setAttribute('y', cy - 10);
-      label.setAttribute('class','dotLabel');
-      label.textContent = p.id || '';
-      svg.appendChild(label);
-    });
-  });
 
   // Legend (top-right, inside plot)
   const legendItems = [
