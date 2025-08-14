@@ -756,7 +756,7 @@ function renderMatrix(){
     svg.appendChild(ty);
   });
 
-// Dots (rating-colored) + labels with improved de-overlap per cell
+// Dots (rating-colored) + labels in a centered grid per cell
 // Group points by cell (Likelihood x Impact)
 const groups = new Map(); // key "x-y" -> array of points
 points.forEach(p=>{
@@ -765,43 +765,49 @@ points.forEach(p=>{
   groups.get(key).push(p);
 });
 
-const cellSpan = Math.min(stepX, stepY);
-const baseR   = cellSpan * 0.33;  // base radius for small clusters
-const maxR    = cellSpan * 0.46;  // clamp within cell
-const stepR   = 16;               // spiral radial step (px)
-const toRad   = deg => deg * Math.PI / 180;
-const hashStr = s => { let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; };
+// Grid layout helper
+function gridLayout(count, cellW, cellH){
+  // choose columns/rows close to a square (2x2, 3x3, ...)
+  const cols = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+
+  // usable area inside the cell (leave margins to avoid edges)
+  const usableW = cellW * 0.70;
+  const usableH = cellH * 0.70;
+
+  // spacing; if 1 col/row, keep spacing = 0 so we place center
+  const dx = cols > 1 ? (usableW / (cols - 1)) : 0;
+  const dy = rows > 1 ? (usableH / (rows - 1)) : 0;
+
+  // top-left of the grid relative to cell center
+  const x0 = -usableW / 2;
+  const y0 = -usableH / 2;
+
+  const coords = [];
+  for (let i = 0; i < count; i++){
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+    const ox = x0 + c * dx;
+    const oy = y0 + r * dy;
+    coords.push([ox, oy]);
+  }
+  return coords;
+}
+
+const cellW = stepX;
+const cellH = stepY;
 
 groups.forEach(list=>{
   // deterministic order (stable across re-renders)
   list.sort((a,b)=> (a.id||'').localeCompare(b.id||''));
 
+  const offsets = gridLayout(list.length, cellW, cellH);
+
   list.forEach((p, idx)=>{
     const cx0 = xFor(p.x);
     const cy0 = yFor(p.y);
 
-    let r = 0, ang = 0;
-
-    // Special layouts for tiny clusters (keeps dots clearly apart)
-    if (list.length === 2){
-      r   = baseR * 0.6;
-      ang = [0, 180][idx];
-    } else if (list.length === 3){
-      r   = baseR * 0.7;
-      ang = [90, 210, 330][idx];
-    } else if (list.length === 4){
-      r   = baseR;                  // four corners of a small square
-      ang = [45, 135, 225, 315][idx];
-    } else {
-      // Golden-angle spiral for 5+ with deterministic start per cell
-      const start = (hashStr(`${p.x}-${p.y}`) % 360);
-      const ring  = Math.floor(idx / 10) + 1;       // ~10 dots per ring
-      r   = Math.min(maxR, ring * stepR);
-      ang = (start + idx * 137.508) % 360;
-    }
-
-    const ox = r * Math.cos(toRad(ang));
-    const oy = r * Math.sin(toRad(ang));
+    const [ox, oy] = offsets[idx];
     const cx = cx0 + ox;
     const cy = cy0 + oy;
 
@@ -816,16 +822,15 @@ groups.forEach(list=>{
     dot.setAttribute('class','dot ' + cls);
     svg.appendChild(dot);
 
-    // Nudge the label roughly in the same direction as the dot offset
+    // Label follows the offset direction slightly, so labels don't stack
     const lbl = document.createElementNS(svgNS,'text');
-    lbl.setAttribute('x', cx + (ox*0.35) + 8);
-    lbl.setAttribute('y', cy + (oy*0.35) - 8);
+    lbl.setAttribute('x', cx + Math.sign(ox || 1) * 8);
+    lbl.setAttribute('y', cy - Math.sign(oy || -1) * 8);
     lbl.setAttribute('class','dotLabel');
     lbl.textContent = p.id || '';
     svg.appendChild(lbl);
   });
 });
-
 
   // Legend (top-right, inside plot)
   const legendItems = [
