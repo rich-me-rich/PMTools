@@ -69,7 +69,7 @@
   stroke-width:1.5px;
 }
 .matrix .dotLabel{
-  font-size:11px;
+  font-size:12px;
   fill:#111;
   paint-order:stroke;
   stroke:#fff;
@@ -88,7 +88,7 @@
   font-weight: 700;
 }
 .matrix .legendLabel{
-  font-size: 12px;       /* matches .matrix .axisLabel font size */
+  font-size: 11px;       /* matches .matrix .axisLabel font size */
   fill: #345;
 }
 
@@ -275,20 +275,22 @@
 </div>
 
       <!-- Risk Matrix Reference -->
-     <div class="matrix">
+<h3 style="margin:16px 0 6px">Risk Matrix</h3>
+<div class="matrix">
   <div id="matrixHost" class="plot"><!-- SVG populated by JS --></div>
   <div class="legend" style="margin-top:6px">
-    Plot: Likelihood (left → right) × Impact (bottom → top). Each red dot is a matched risk labelled with its Risk ID.
+    Likelihood (left → right) × Impact (bottom → top). Dots are colored by rating; labels show Risk ID.
   </div>
 </div>
 
-      <!-- Category Heatmap -->
-      <div class="heat">
-        <div class="legend"><b>Category Heatmap:</b> count of matched risks by rating per category (for reference/triage).</div>
-        <div class="tableWrap" style="max-height:none">
-          <table id="heatTable" aria-label="Category heatmap"></table>
-        </div>
-      </div>
+<!-- Category Heatmap -->
+<h3 style="margin:18px 0 6px">Category Heatmap</h3>
+<div class="heat">
+  <div class="legend">Count of matched risks by rating and category (for triage and focus).</div>
+  <div class="tableWrap" style="max-height:none">
+    <table id="heatTable" aria-label="Category heatmap"></table>
+  </div>
+</div>
 
       <div class="printOnly note" style="margin-top:8px">Printed from Risk Identification Assistant v2.2</div>
     </div>
@@ -578,21 +580,29 @@ function prioritySelectHtml(current){
 
 /* ===== Category Heatmap (by rating bands) ===== */
 function buildHeatmap(matched){
-  // Build counts by category and rating
-  const cats = [...new Set(matched.map(r=>r.category))].sort();
-  const bands = ["Very Low","Low","Medium","High","Critical"];
-  const counts = new Map(); // key: cat -> {band: count}
-  cats.forEach(c=>counts.set(c, Object.fromEntries(bands.map(b=>[b,0]))));
-
-  matched.forEach(rec=>{
-    const band = rec._rating || ""; // set during render
-    if(band && counts.has(rec.category)){
-      counts.get(rec.category)[band] = (counts.get(rec.category)[band]||0)+1;
-    }
-  });
-
   const heat = $('#heatTable');
   if(!matched.length){ heat.innerHTML = '<tr><td class="note">No matched risks yet.</td></tr>'; return; }
+
+  // Read ratings directly from the visible results table (not from r._rating)
+  const bands = ["Very Low","Low","Medium","High","Critical"];
+  const bandSet = new Set(bands);
+  const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
+
+  // Build counts by category and rating
+  const cats = [...new Set(matched.map(r=>r.category))].sort();
+  const counts = new Map(); // cat -> {band:count}
+  cats.forEach(c=>counts.set(c, Object.fromEntries(bands.map(b=>[b,0]))));
+
+  rows.forEach(tr=>{
+    const tds = tr.children;
+    const cat = (tds[2]?.textContent || '').trim();
+    const likeVal = tds[7]?.querySelector('select')?.value || '';
+    const impVal  = tds[8]?.querySelector('select')?.value || '';
+    const {label} = scoreRating(likeVal, impVal);
+    if(cat && label && bandSet.has(label) && counts.has(cat)){
+      counts.get(cat)[label] = (counts.get(cat)[label]||0) + 1;
+    }
+  });
 
   // Determine max for intensity scale (kept as-is for your .h0..h5 CSS)
   let max = 0;
@@ -616,6 +626,7 @@ function buildHeatmap(matched){
   heat.innerHTML = html;
 }
 
+
 /* ===== Matrix plot (colored 5×5 background + rating-colored dots) ===== */
 function renderMatrix(){
   const host = document.getElementById('matrixHost');
@@ -638,10 +649,10 @@ function renderMatrix(){
     return (x && y && allowed.has(rating)) ? { id:riskNum, x, y, rating } : null;
   }).filter(Boolean);
 
-  // SVG layout
+  // SVG layout (extra bottom padding for labels)
   const W = host.clientWidth || 900;
-  const H = 420;
-  const padL = 60, padR = 20, padT = 20, padB = 50;
+  const H = 440;
+  const padL = 64, padR = 20, padT = 28, padB = 64;
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
   const stepX = innerW / 5;
@@ -656,9 +667,9 @@ function renderMatrix(){
 
   // Title
   const title = document.createElementNS(svgNS,'text');
-  title.setAttribute('x', W/2);
-  title.setAttribute('y', 18);
-  title.setAttribute('text-anchor','middle');
+  title.setAttribute('x', padL + 4);
+  title.setAttribute('y', padT - 10);
+  title.setAttribute('text-anchor','start');
   title.setAttribute('class','matrixTitle');
   title.textContent = 'Risk Matrix Plot';
   svg.appendChild(title);
@@ -679,8 +690,8 @@ function renderMatrix(){
     'High':      '#ffe0b2',
     'Critical':  '#ffebee'
   };
-  for (let i=1;i<=5;i++){          // Impact rows (bottom→top)
-    for (let l=1;l<=5;l++){        // Likelihood cols (left→right)
+  for (let i=1;i<=5;i++){
+    for (let l=1;l<=5;l++){
       const rect = document.createElementNS(svgNS,'rect');
       rect.setAttribute('x', padL + (l-1)*stepX);
       rect.setAttribute('y', padT + innerH - i*stepY);
@@ -708,19 +719,19 @@ function renderMatrix(){
     hline.setAttribute('class','tick'); svg.appendChild(hline);
   }
 
-  // Axis labels + tick labels
+  // Axis labels + tick labels (smaller + nudged up)
   const xLbl = document.createElementNS(svgNS,'text');
   xLbl.setAttribute('x', padL + innerW/2);
-  xLbl.setAttribute('y', H - 12);
+  xLbl.setAttribute('y', H - 14);
   xLbl.setAttribute('text-anchor','middle');
   xLbl.setAttribute('class','axisLabel');
   xLbl.textContent = 'Likelihood →';
   svg.appendChild(xLbl);
 
   const yLbl = document.createElementNS(svgNS,'text');
-  yLbl.setAttribute('x', 14);
+  yLbl.setAttribute('x', 16);
   yLbl.setAttribute('y', padT + innerH/2);
-  yLbl.setAttribute('transform', `rotate(-90 14 ${padT + innerH/2})`);
+  yLbl.setAttribute('transform', `rotate(-90 16 ${padT + innerH/2})`);
   yLbl.setAttribute('text-anchor','middle');
   yLbl.setAttribute('class','axisLabel');
   yLbl.textContent = 'Impact ↑';
@@ -730,14 +741,14 @@ function renderMatrix(){
     const ix = i+1;
     const tx = document.createElementNS(svgNS,'text');
     tx.setAttribute('x', padL + (ix-0.5)*stepX);
-    tx.setAttribute('y', H - 28);
+    tx.setAttribute('y', H - 34);
     tx.setAttribute('text-anchor','middle');
     tx.setAttribute('class','axisLabel');
     tx.textContent = name;
     svg.appendChild(tx);
 
     const ty = document.createElementNS(svgNS,'text');
-    ty.setAttribute('x', 6);
+    ty.setAttribute('x', 8);
     ty.setAttribute('y', padT + innerH - (ix-0.5)*stepY + 4);
     ty.setAttribute('text-anchor','start');
     ty.setAttribute('class','axisLabel');
@@ -746,33 +757,29 @@ function renderMatrix(){
   });
 
   // Dots (rating-colored) + labels with de-overlap spiral per cell
-  const groups = new Map(); // key "x-y" -> array of points
+  const groups = new Map();
   points.forEach(p=>{
     const key = `${p.x}-${p.y}`;
     if(!groups.has(key)) groups.set(key, []);
     groups.get(key).push(p);
   });
-
   const cellSpan = Math.min(stepX, stepY);
-  const maxR = cellSpan * 0.40;   // up to 40% of cell radius
-  const stepR = 12;               // radial increment (px)
+  const maxR = cellSpan * 0.42;
+  const stepR = 14;
   const toRad = deg => deg * Math.PI / 180;
 
   groups.forEach(list=>{
     list.forEach((p, idx)=>{
       const cx0 = xFor(p.x);
       const cy0 = yFor(p.y);
-
-      // Golden-angle spiral offset if multiple points share the same cell
       let ox = 0, oy = 0;
       if(list.length > 1){
-        const ring = Math.floor(idx / 10) + 1;  // ~10 dots per ring
-        const angle = (idx * 137.508) % 360;    // golden-angle degrees
+        const ring = Math.floor(idx / 10) + 1;
+        const angle = (idx * 137.508) % 360;
         const r = Math.min(maxR, ring * stepR);
         ox = r * Math.cos(toRad(angle));
         oy = r * Math.sin(toRad(angle));
       }
-
       const cx = cx0 + ox;
       const cy = cy0 + oy;
 
@@ -796,7 +803,7 @@ function renderMatrix(){
     });
   });
 
-  // Legend (rating colors)
+  // Legend (top-right, inside plot)
   const legendItems = [
     {label:'Very Low', cls:'vlow'},
     {label:'Low', cls:'low'},
@@ -804,9 +811,11 @@ function renderMatrix(){
     {label:'High', cls:'high'},
     {label:'Critical', cls:'crit'}
   ];
+  const legendX = padL + innerW - 5*96;   // roughly 5 items
+  const legendY = padT + 8;
   legendItems.forEach((item, i)=>{
-    const lx = padL + i * 120;
-    const ly = H - padB + 30;
+    const lx = legendX + i * 96;
+    const ly = legendY;
     const swatch = document.createElementNS(svgNS,'rect');
     swatch.setAttribute('x', lx);
     swatch.setAttribute('y', ly);
