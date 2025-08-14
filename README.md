@@ -2,34 +2,19 @@
 
 A single-file HTML tool to assess project delivery and governance risks and export matched items to XLS.
 
-## Quick start (local)
+## Quick start
 
 Open `index.html` in any modern browser.
 
-todo
-move summary table above risk plotter
-add back standard risk matrix for referance
+## todo
+1. Move plotted risks to prevent overlay of risks on plot
+2. add back standard risks matrix
 
 Changes
 ## Print fix
 This version includes a print fix so **Print Matched** shows the results. If you haven't generated results yet, the tool will auto-populate before calling `window.print()`.
 
-## GitHub setup
-
-```bash
-# 1) Create a new, empty repo on GitHub (no README or .gitignore)
-# 2) Then run locally:
-git clone <YOUR_REPO_SSH_OR_HTTPS_URL>
-cd <your-repo-folder>
-
-# If cloning an empty repo, create a main branch
-git checkout -b main
-
-# Copy the files from this bundle into the repo folder, then:
-git add .
-git commit -m "Add Project Risk Identification Assistant v2.2 (single-file HTML)"
-git push -u origin main
-```
+## add ploter for risk table
 
 ## File layout
 
