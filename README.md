@@ -6,6 +6,11 @@ A single-file HTML tool to assess project delivery and governance risks and expo
 
 Open `index.html` in any modern browser.
 
+todo
+move summary table above risk plotter
+add back standard risk matrix for referance
+
+Changes
 ## Print fix
 This version includes a print fix so **Print Matched** shows the results. If you haven't generated results yet, the tool will auto-populate before calling `window.print()`.
 
