@@ -40,9 +40,41 @@
   .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
   .chip.unsure{background:var(--chip);color:var(--chipText);border:1px solid #ffe598;margin-left:6px}
   tr.unsure{background:var(--unsureRow)}
-  .matrix{margin-top:12px}
-  .matrix table{width:auto;border:1px solid var(--br);border-radius:8px}
-  .matrix th,.matrix td{text-align:center;padding:6px 10px;border:1px solid var(--br)}
+.matrix{
+  margin-top:12px;
+  width:100%;
+}
+.matrix .plot{
+  border:1px solid var(--br);
+  border-radius:8px;
+  background:#fff;
+  overflow:hidden;
+  padding:10px;
+}
+.matrix svg{
+  width:100%;
+  height:420px;
+  display:block;
+}
+.matrix .axisLabel{
+  font-size:12px;
+  fill:#345;
+}
+.matrix .tick{
+  stroke:#e6eef6;
+}
+.matrix .dot{
+  fill:#d00;
+  stroke:#fff;
+  stroke-width:1.5px;
+}
+.matrix .dotLabel{
+  font-size:11px;
+  fill:#111;
+  paint-order:stroke;
+  stroke:#fff;
+  stroke-width:3px;
+}
   .legend{font-size:12px;color:#345;margin:6px 0}
   .badge{font-weight:600;border-radius:6px;padding:2px 6px;display:inline-block}
   .rate-Very\ Low{background:#eef7ff}
@@ -205,22 +237,12 @@
       </div>
 
       <!-- Risk Matrix Reference -->
-      <div class="matrix">
-        <div class="legend"><b>Risk Matrix (reference only):</b> Likelihood × Impact → Rating bands</div>
-        <table aria-label="Risk matrix reference">
-          <tr>
-            <th rowspan="6" style="writing-mode:vertical-rl;transform:rotate(180deg);padding:0 6px;background:#eef6ff">Impact</th>
-            <th></th>
-            <th>Rare</th><th>Unlikely</th><th>Possible</th><th>Likely</th><th>Almost Certain</th>
-          </tr>
-          <tr><th>Severe</th>        <td class="rate-Medium">M</td><td class="rate-Medium">M</td><td class="rate-High">H</td><td class="rate-Critical">C</td><td class="rate-Critical">C</td></tr>
-          <tr><th>Major</th>         <td class="rate-Low">L</td><td class="rate-Medium">M</td><td class="rate-High">H</td><td class="rate-High">H</td><td class="rate-Critical">C</td></tr>
-          <tr><th>Moderate</th>      <td class="rate-Low">L</td><td class="rate-Low">L</td><td class="rate-Medium">M</td><td class="rate-High">H</td><td class="rate-High">H</td></tr>
-          <tr><th>Minor</th>         <td class="rate-Very Low">VL</td><td class="rate-Low">L</td><td class="rate-Low">L</td><td class="rate-Medium">M</td><td class="rate-Medium">M</td></tr>
-          <tr><th>Insignificant</th> <td class="rate-Very Low">VL</td><td class="rate-Very Low">VL</td><td class="rate-Low">L</td><td class="rate-Low">L</td><td class="rate-Medium">M</td></tr>
-          <tr><th></th><th></th><th colspan="5">Likelihood</th></tr>
-        </table>
-      </div>
+     <div class="matrix">
+  <div id="matrixHost" class="plot"><!-- SVG populated by JS --></div>
+  <div class="legend" style="margin-top:6px">
+    Plot: Likelihood (left → right) × Impact (bottom → top). Each red dot is a matched risk labelled with its Risk ID.
+  </div>
+</div>
 
       <!-- Category Heatmap -->
       <div class="heat">
@@ -262,7 +284,18 @@ const LIKE_OPTS = ["", "Rare", "Unlikely", "Possible", "Likely", "Almost Certain
 const IMPACT_OPTS = ["", "Insignificant", "Minor", "Moderate", "Major", "Severe"];
 const LIKE_SCORE = { "rare":1, "unlikely":2, "possible":3, "likely":4, "almost certain":5 };
 const IMP_SCORE  = { "insignificant":1, "minor":2, "moderate":3, "major":4, "severe":5 };
-function scoreRating(likeLabel, impLabel){
+const SCALE5 = ['Very Low','Low','Medium','High','Critical'];
+function parse5(v){
+  if (!v) return null;
+  const s = String(v).trim();
+  const byName = SCALE5.indexOf(s);
+  if (byName >= 0) return byName + 1;
+  const num = Number(s);
+  if (!Number.isNaN(num) && num >=1 && num <=5) return num;
+  return null;
+}
+
+  function scoreRating(likeLabel, impLabel){
   const l = LIKE_SCORE[(likeLabel||"").toLowerCase()]||0;
   const i = IMP_SCORE[(impLabel||"").toLowerCase()]||0;
   if(!l || !i) return { score:0, label:"" };
@@ -522,6 +555,109 @@ function buildHeatmap(matched){
   heat.innerHTML = html;
 }
 
+ function renderMatrix(){
+  const host = document.getElementById('matrixHost');
+  if (!host) return;
+  host.innerHTML = '';
+
+  // Collect points from the results table
+  const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
+  const points = rows.map(tr=>{
+    const tds = tr.children;
+    const riskNum = (tds[1]?.textContent || '').trim();
+    const likeVal = tds[7]?.querySelector('select')?.value || tds[7]?.textContent;
+    const impVal  = tds[8]?.querySelector('select')?.value || tds[8]?.textContent;
+    const x = parse5(likeVal);
+    const y = parse5(impVal);
+    return (x && y) ? { id:riskNum, x, y } : null;
+  }).filter(Boolean);
+
+  const W = host.clientWidth || 900;
+  const H = 420;
+  const padL = 60, padR = 20, padT = 20, padB = 50;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  const xFor = v => padL + (v-1) * (innerW/4);
+  const yFor = v => padT + innerH - (v-1) * (innerH/4);
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+
+  for (let i=1;i<=5;i++){
+    const vx = xFor(i);
+    const vline = document.createElementNS(svgNS,'line');
+    vline.setAttribute('x1', vx); vline.setAttribute('x2', vx);
+    vline.setAttribute('y1', padT); vline.setAttribute('y2', padT+innerH);
+    vline.setAttribute('class','tick'); svg.appendChild(vline);
+
+    const hy = yFor(i);
+    const hline = document.createElementNS(svgNS,'line');
+    hline.setAttribute('x1', padL); hline.setAttribute('x2', padL+innerW);
+    hline.setAttribute('y1', hy);   hline.setAttribute('y2', hy);
+    hline.setAttribute('class','tick'); svg.appendChild(hline);
+  }
+
+  const xLbl = document.createElementNS(svgNS,'text');
+  xLbl.setAttribute('x', padL + innerW/2);
+  xLbl.setAttribute('y', H - 12);
+  xLbl.setAttribute('text-anchor','middle');
+  xLbl.setAttribute('class','axisLabel');
+  xLbl.textContent = 'Likelihood →';
+  svg.appendChild(xLbl);
+
+  const yLbl = document.createElementNS(svgNS,'text');
+  yLbl.setAttribute('x', 14);
+  yLbl.setAttribute('y', padT + innerH/2);
+  yLbl.setAttribute('transform', `rotate(-90 14 ${padT + innerH/2})`);
+  yLbl.setAttribute('text-anchor','middle');
+  yLbl.setAttribute('class','axisLabel');
+  yLbl.textContent = 'Impact ↑';
+  svg.appendChild(yLbl);
+
+  SCALE5.forEach((name, i)=>{
+    const ix = i+1;
+    const tx = document.createElementNS(svgNS,'text');
+    tx.setAttribute('x', xFor(ix));
+    tx.setAttribute('y', H - 28);
+    tx.setAttribute('text-anchor','middle');
+    tx.setAttribute('class','axisLabel');
+    tx.textContent = name;
+    svg.appendChild(tx);
+
+    const ty = document.createElementNS(svgNS,'text');
+    ty.setAttribute('x', 6);
+    ty.setAttribute('y', yFor(ix)+4);
+    ty.setAttribute('text-anchor','start');
+    ty.setAttribute('class','axisLabel');
+    ty.textContent = name;
+    svg.appendChild(ty);
+  });
+
+  points.forEach(p=>{
+    const cx = xFor(p.x);
+    const cy = yFor(p.y);
+
+    const dot = document.createElementNS(svgNS,'circle');
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', cy);
+    dot.setAttribute('r', 7);
+    dot.setAttribute('class','dot');
+    svg.appendChild(dot);
+
+    const label = document.createElementNS(svgNS,'text');
+    label.setAttribute('x', cx + 9);
+    label.setAttribute('y', cy - 9);
+    label.setAttribute('class','dotLabel');
+    label.textContent = p.id || '';
+    svg.appendChild(label);
+  });
+
+  host.appendChild(svg);
+ }
+  
 function showResults(){
   const answers = new Map();
   risks.forEach(r=>{
@@ -582,6 +718,7 @@ function showResults(){
   $('#resultsMeta').textContent = `${matched.length} matched risks`;
   // refresh heatmap (in case none selected yet)
   buildHeatmap(matched);
+  renderMatrix();
 
   // Select-all checkbox behavior
   $('#selAll').checked = false;
@@ -619,6 +756,7 @@ function bulkApply(){
 
   // Clear header select-all if we bulked specific rows
   if(targets.length){ $('#selAll').checked = false; targets.forEach(tr=>tr.querySelector('.rowSel').checked=false); }
+renderMatrix();
 }
 
 /* ===== Jump & Print ===== */
@@ -866,6 +1004,14 @@ $('#resultsTable').addEventListener('change', (e)=>{
   }
 });
 
+// Re-plot when Likelihood/Impact selects change
+$('#resultsTable').addEventListener('change', (e)=>{
+  if (e.target && e.target.tagName === 'SELECT') {
+    renderMatrix();
+  }
+});
+
+  
 $('#bulkApply').addEventListener('click', bulkApply);
 
 // Fill bulk selects
