@@ -143,20 +143,63 @@
       <div class="tableWrap">
         <table id="resultsTable">
           <thead>
-            <tr>
-              <th class="selCol"><input type="checkbox" id="selAll"></th>
-              <th>Risk ID</th>
-              <th>Category</th>
-              <th>Trigger Question</th>
-              <th>Risk description</th>
-              <th>Impact <span class="tip" title="If… then… — the primary consequence if this risk materialises.">i</span></th>
-              <th>Suggested Mitigation (Guidance)</th>
-              <th>Inherent Likelihood</th>
-              <th>Inherent Impact</th>
-              <th>Risk rating</th>
-              <th>Risk review priority <span class="tip" title="Default is based on rating; you can override. 'Not sure' answers default to Not sure.">i</span></th>
-            </tr>
-          </thead>
+  <tr>
+    <th class="selCol">
+      <input type="checkbox" id="selAll">
+      <span class="tip" title="Tick to select all rows for bulk edits.">i</span>
+    </th>
+
+    <th>
+      Risk ID
+      <span class="tip" title="Sequential ID for this matched list (not a permanent register ID).">i</span>
+    </th>
+
+    <th>
+      Category
+      <span class="tip" title="The thematic area the trigger question belongs to (e.g., Governance, Delivery, Security).">i</span>
+    </th>
+
+    <th>
+      Trigger Question
+      <span class="tip" title="The Yes/Not sure trigger that matched. Clarify or rewrite in your register if needed.">i</span>
+    </th>
+
+    <th>
+      Risk description
+      <span class="tip" title="‘There is a risk that…’ statement describing the uncertainty or condition. Refine to your project context.">i</span>
+    </th>
+
+    <th>
+      Impact
+      <span class="tip" title="If… then… — the primary consequence if this risk materialises (business, customer, technical, regulatory).">i</span>
+    </th>
+
+    <th>
+      Suggested Mitigation (Guidance)
+      <span class="tip" title="Default treatment ideas to start from. Replace with concrete actions, owners, and timelines.">i</span>
+    </th>
+
+    <th>
+      Inherent Likelihood
+      <span class="tip" title="Before treatments. Scale: Rare, Unlikely, Possible, Likely, Almost Certain.">i</span>
+    </th>
+
+    <th>
+      Inherent Impact
+      <span class="tip" title="Before treatments. Scale: Insignificant, Minor, Moderate, Major, Severe.">i</span>
+    </th>
+
+    <th>
+      Risk rating
+      <span class="tip" title="Auto-calculated from the 5×5 matrix (Likelihood × Impact): Very Low, Low, Medium, High, Critical.">i</span>
+    </th>
+
+    <th>
+      Risk review priority
+      <span class="tip" title="Default suggested from rating; you can override (Not sure / Low / Medium / High).">i</span>
+    </th>
+  </tr>
+</thead>
           <tbody></tbody>
         </table>
       </div>
