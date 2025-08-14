@@ -288,12 +288,24 @@ const SCALE5 = ['Very Low','Low','Medium','High','Critical'];
 function parse5(v){
   if (!v) return null;
   const s = String(v).trim();
-  const byName = SCALE5.indexOf(s);
-  if (byName >= 0) return byName + 1;
+
+  // Accept rating bands (Very Low..Critical)
+  const bandIdx = SCALE5.indexOf(s);
+  if (bandIdx >= 0) return bandIdx + 1;
+
+  // Accept Likelihood / Impact labels (Rare..Almost Certain / Insignificant..Severe)
+  const lk = LIKE_SCORE[s.toLowerCase()];
+  if (lk) return lk;
+  const ip = IMP_SCORE[s.toLowerCase()];
+  if (ip) return ip;
+
+  // Accept numeric 1..5
   const num = Number(s);
-  if (!Number.isNaN(num) && num >=1 && num <=5) return num;
+  if (!Number.isNaN(num) && num >= 1 && num <= 5) return num;
+
   return null;
 }
+
 
   function scoreRating(likeLabel, impLabel){
   const l = LIKE_SCORE[(likeLabel||"").toLowerCase()]||0;
