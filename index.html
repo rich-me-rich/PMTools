@@ -653,11 +653,8 @@ function renderMatrix(){
   const svg = document.createElementNS(svgNS,'svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio','xMidYMid meet');
-  const svg = document.createElementNS(svgNS,'svg');
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
 
-  // Title above the matrix
+  // Title
   const title = document.createElementNS(svgNS,'text');
   title.setAttribute('x', W/2);
   title.setAttribute('y', 18);
@@ -666,14 +663,11 @@ function renderMatrix(){
   title.textContent = 'Risk Matrix Plot';
   svg.appendChild(title);
 
-
-  // Background: standard risk colors by (Likelihood × Impact)
-
   // Background: standard risk colors by (Likelihood × Impact)
   const bandFor = (l,i)=>{
     const s = l*i;
-    if(s <= 4) return 'Very Low';
-    if(s <= 8) return 'Low';
+    if(s <= 4)  return 'Very Low';
+    if(s <= 8)  return 'Low';
     if(s <= 12) return 'Medium';
     if(s <= 16) return 'High';
     return 'Critical';
@@ -699,7 +693,7 @@ function renderMatrix(){
     }
   }
 
-  // Grid lines
+  // Grid lines (styled by .tick CSS)
   for (let i=0;i<=5;i++){
     const x = padL + i*stepX;
     const vline = document.createElementNS(svgNS,'line');
@@ -751,56 +745,56 @@ function renderMatrix(){
     svg.appendChild(ty);
   });
 
-// Dots (rating-colored) + labels
-const groups = new Map(); // key "x-y" -> array of points
-points.forEach(p=>{
-  const key = `${p.x}-${p.y}`;
-  if(!groups.has(key)) groups.set(key, []);
-  groups.get(key).push(p);
-});
-
-// Spiral layout params (keeps dots/labels readable inside the cell)
-const maxR = Math.min(stepX, stepY) * 0.60;  // max offset ~60% of cell size
-const stepR = 18;                              // radial increment in px
-const toRad = deg => deg * Math.PI / 180;
-
-groups.forEach(list=>{
-  list.forEach((p, idx)=>{
-    const cx0 = xFor(p.x);
-    const cy0 = yFor(p.y);
-
-    // Compute a golden-angle spiral offset if there are multiple points in the same cell
-    let ox = 0, oy = 0;
-    if(list.length > 1){
-      const ring = Math.floor(idx / 10) + 1;          // 10 points per ring
-      const angle = (idx * 137.508) % 360;           // golden-angle degrees
-      const r = Math.min(maxR, ring * stepR);        // clamp to cell
-      ox = r * Math.cos(toRad(angle));
-      oy = r * Math.sin(toRad(angle));
-    }
-
-    const cx = cx0 + ox;
-    const cy = cy0 + oy;
-
-    const cls = (p.rating && {
-      'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
-    }[p.rating]) || 'med';
-
-    const dot = document.createElementNS(svgNS,'circle');
-    dot.setAttribute('cx', cx);
-    dot.setAttribute('cy', cy);
-    dot.setAttribute('r', 7);
-    dot.setAttribute('class','dot ' + cls);
-    svg.appendChild(dot);
-
-    const label = document.createElementNS(svgNS,'text');
-    label.setAttribute('x', cx + 10);
-    label.setAttribute('y', cy - 10);
-    label.setAttribute('class','dotLabel');
-    label.textContent = p.id || '';
-    svg.appendChild(label);
+  // Dots (rating-colored) + labels with de-overlap spiral per cell
+  const groups = new Map(); // key "x-y" -> array of points
+  points.forEach(p=>{
+    const key = `${p.x}-${p.y}`;
+    if(!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(p);
   });
-});
+
+  const cellSpan = Math.min(stepX, stepY);
+  const maxR = cellSpan * 0.40;   // up to 40% of cell radius
+  const stepR = 12;               // radial increment (px)
+  const toRad = deg => deg * Math.PI / 180;
+
+  groups.forEach(list=>{
+    list.forEach((p, idx)=>{
+      const cx0 = xFor(p.x);
+      const cy0 = yFor(p.y);
+
+      // Golden-angle spiral offset if multiple points share the same cell
+      let ox = 0, oy = 0;
+      if(list.length > 1){
+        const ring = Math.floor(idx / 10) + 1;  // ~10 dots per ring
+        const angle = (idx * 137.508) % 360;    // golden-angle degrees
+        const r = Math.min(maxR, ring * stepR);
+        ox = r * Math.cos(toRad(angle));
+        oy = r * Math.sin(toRad(angle));
+      }
+
+      const cx = cx0 + ox;
+      const cy = cy0 + oy;
+
+      const cls = (p.rating && {
+        'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
+      }[p.rating]) || 'med';
+
+      const dot = document.createElementNS(svgNS,'circle');
+      dot.setAttribute('cx', cx);
+      dot.setAttribute('cy', cy);
+      dot.setAttribute('r', 7);
+      dot.setAttribute('class','dot ' + cls);
+      svg.appendChild(dot);
+
+      const label = document.createElementNS(svgNS,'text');
+      label.setAttribute('x', cx + 10);
+      label.setAttribute('y', cy - 10);
+      label.setAttribute('class','dotLabel');
+      label.textContent = p.id || '';
+      svg.appendChild(label);
+    });
+  });
 
   // Legend (rating colors)
   const legendItems = [
