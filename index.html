@@ -344,20 +344,7 @@ function getActiveRatings(){
   return new Set(vals.length ? vals : SCALE5);
 }
 
-  const lk = LIKE_SCORE[s.toLowerCase()];
-  if (lk) return lk;
-  const ip = IMP_SCORE[s.toLowerCase()];
-  if (ip) return ip;
-
-  // Accept numeric 1..5
-  const num = Number(s);
-  if (!Number.isNaN(num) && num >= 1 && num <= 5) return num;
-
-  return null;
-}
-
-
-  function scoreRating(likeLabel, impLabel){
+function scoreRating(likeLabel, impLabel){
   const l = LIKE_SCORE[(likeLabel||"").toLowerCase()]||0;
   const i = IMP_SCORE[(impLabel||"").toLowerCase()]||0;
   if(!l || !i) return { score:0, label:"" };
@@ -579,6 +566,7 @@ function prioritySelectHtml(current){
   return `<select class="prio" style="width:140px">${opts}</select>`;
 }
 
+/* ===== Category Heatmap (by rating bands) ===== */
 function buildHeatmap(matched){
   // Build counts by category and rating
   const cats = [...new Set(matched.map(r=>r.category))].sort();
@@ -593,12 +581,12 @@ function buildHeatmap(matched){
     }
   });
 
-  // Determine max for color scale
+  const heat = $('#heatTable');
+  if(!matched.length){ heat.innerHTML = '<tr><td class="note">No matched risks yet.</td></tr>'; return; }
+
+  // Determine max for intensity scale (kept as-is for your .h0..h5 CSS)
   let max = 0;
   counts.forEach(obj=>bands.forEach(b=>{ if(obj[b]>max) max=obj[b]; }));
-  const val = obj[b];
-  const bandClass = 'band-' + b.replace(' ','\\ ');
-  html += `<td class="${bandClass}" title="${val} ${b}">${val||''}</td>`;
 
   let html = '<thead><tr><th>Category</th>';
   bands.forEach(b=> html+= `<th>${b}</th>`);
@@ -613,7 +601,19 @@ function buildHeatmap(matched){
       html += `<td class="h${level}" title="${val} ${b}">${val||''}</td>`;
     });
     html += `<td><b>${total||''}</b></td></tr>`;
-   const allowed = getActiveRatings();
+  });
+  html += '</tbody>';
+  heat.innerHTML = html;
+}
+
+/* ===== Matrix plot (colored 5×5 background + rating-colored dots) ===== */
+function renderMatrix(){
+  const host = document.getElementById('matrixHost');
+  if (!host) return;
+  host.innerHTML = '';
+
+  // Allowed ratings from the checkbox filter (VL/L/M/H/C)
+  const allowed = (typeof getActiveRatings === 'function') ? getActiveRatings() : new Set(SCALE5);
 
   // Collect points from the results table
   const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
@@ -628,47 +628,68 @@ function buildHeatmap(matched){
     return (x && y && allowed.has(rating)) ? { id:riskNum, x, y, rating } : null;
   }).filter(Boolean);
 
-
-  // Collect points from the results table
-  const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
-  const points = rows.map(tr=>{
-    const tds = tr.children;
-    const riskNum = (tds[1]?.textContent || '').trim();
-    const likeVal = tds[7]?.querySelector('select')?.value || tds[7]?.textContent;
-    const impVal  = tds[8]?.querySelector('select')?.value || tds[8]?.textContent;
-    const x = parse5(likeVal);
-    const y = parse5(impVal);
-    return (x && y) ? { id:riskNum, x, y } : null;
-  }).filter(Boolean);
-
+  // SVG layout
   const W = host.clientWidth || 900;
   const H = 420;
   const padL = 60, padR = 20, padT = 20, padB = 50;
   const innerW = W - padL - padR;
   const innerH = H - padT - padB;
-
-  const xFor = v => padL + (v-1) * (innerW/4);
-  const yFor = v => padT + innerH - (v-1) * (innerH/4);
+  const stepX = innerW / 5;
+  const stepY = innerH / 5;
+  const xFor = v => padL + (v-0.5) * stepX; // center of cell
+  const yFor = v => padT + innerH - (v-0.5) * stepY;
 
   const svgNS = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(svgNS,'svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio','xMidYMid meet');
 
-  for (let i=1;i<=5;i++){
-    const vx = xFor(i);
+  // Background: standard risk colors by (Likelihood × Impact)
+  const bandFor = (l,i)=>{
+    const s = l*i;
+    if(s <= 4) return 'Very Low';
+    if(s <= 8) return 'Low';
+    if(s <= 12) return 'Medium';
+    if(s <= 16) return 'High';
+    return 'Critical';
+  };
+  const bandFill = {
+    'Very Low':  '#e6f4ea',
+    'Low':       '#e8f5e9',
+    'Medium':    '#fff3cd',
+    'High':      '#ffe0b2',
+    'Critical':  '#ffebee'
+  };
+  for (let i=1;i<=5;i++){          // Impact rows (bottom→top)
+    for (let l=1;l<=5;l++){        // Likelihood cols (left→right)
+      const rect = document.createElementNS(svgNS,'rect');
+      rect.setAttribute('x', padL + (l-1)*stepX);
+      rect.setAttribute('y', padT + innerH - i*stepY);
+      rect.setAttribute('width', stepX);
+      rect.setAttribute('height', stepY);
+      rect.setAttribute('fill', bandFill[bandFor(l,i)]);
+      rect.setAttribute('stroke', '#ffffff');
+      rect.setAttribute('stroke-width', '0.5');
+      svg.appendChild(rect);
+    }
+  }
+
+  // Grid lines
+  for (let i=0;i<=5;i++){
+    const x = padL + i*stepX;
     const vline = document.createElementNS(svgNS,'line');
-    vline.setAttribute('x1', vx); vline.setAttribute('x2', vx);
+    vline.setAttribute('x1', x); vline.setAttribute('x2', x);
     vline.setAttribute('y1', padT); vline.setAttribute('y2', padT+innerH);
     vline.setAttribute('class','tick'); svg.appendChild(vline);
 
-    const hy = yFor(i);
+    const y = padT + i*stepY;
     const hline = document.createElementNS(svgNS,'line');
     hline.setAttribute('x1', padL); hline.setAttribute('x2', padL+innerW);
-    hline.setAttribute('y1', hy);   hline.setAttribute('y2', hy);
+    hline.setAttribute('y1', y);   hline.setAttribute('y2', y);
     hline.setAttribute('class','tick'); svg.appendChild(hline);
   }
 
+  // Axis labels + tick labels
   const xLbl = document.createElementNS(svgNS,'text');
   xLbl.setAttribute('x', padL + innerW/2);
   xLbl.setAttribute('y', H - 12);
@@ -689,7 +710,7 @@ function buildHeatmap(matched){
   SCALE5.forEach((name, i)=>{
     const ix = i+1;
     const tx = document.createElementNS(svgNS,'text');
-    tx.setAttribute('x', xFor(ix));
+    tx.setAttribute('x', padL + (ix-0.5)*stepX);
     tx.setAttribute('y', H - 28);
     tx.setAttribute('text-anchor','middle');
     tx.setAttribute('class','axisLabel');
@@ -697,6 +718,18 @@ function buildHeatmap(matched){
     svg.appendChild(tx);
 
     const ty = document.createElementNS(svgNS,'text');
+    ty.setAttribute('x', 6);
+    ty.setAttribute('y', padT + innerH - (ix-0.5)*stepY + 4);
+    ty.setAttribute('text-anchor','start');
+    ty.setAttribute('class','axisLabel');
+    ty.textContent = name;
+    svg.appendChild(ty);
+  });
+
+  // Dots (rating-colored) + labels
+  points.forEach(p=>{
+    const cx = xFor(p.x);
+    const cy = yFor(p.y);
     const cls = (p.rating && {
       'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
     }[p.rating]) || 'med';
@@ -706,18 +739,6 @@ function buildHeatmap(matched){
     dot.setAttribute('cy', cy);
     dot.setAttribute('r', 7);
     dot.setAttribute('class','dot ' + cls);
-    svg.appendChild(dot);
-  });
-
-  points.forEach(p=>{
-    const cx = xFor(p.x);
-    const cy = yFor(p.y);
-
-    const dot = document.createElementNS(svgNS,'circle');
-    dot.setAttribute('cx', cx);
-    dot.setAttribute('cy', cy);
-    dot.setAttribute('r', 7);
-    dot.setAttribute('class','dot');
     svg.appendChild(dot);
 
     const label = document.createElementNS(svgNS,'text');
@@ -729,7 +750,7 @@ function buildHeatmap(matched){
   });
 
   host.appendChild(svg);
- }
+}
   
 function showResults(){
   const answers = new Map();
