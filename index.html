@@ -75,6 +75,24 @@
   stroke:#fff;
   stroke-width:3px;
 }
+/* ===== Matrix dot color classes (by rating) ===== */
+.matrix .dot.vlow{ fill:#2e7d32; }     /* Very Low - green */
+.matrix .dot.low{  fill:#66bb6a; }     /* Low - light green */
+.matrix .dot.med{  fill:#f9a825; }     /* Medium - amber */
+.matrix .dot.high{ fill:#ef6c00; }     /* High - orange */
+.matrix .dot.crit{ fill:#c62828; }     /* Critical - red */
+
+/* ===== Heatmap band colors (by rating) ===== */
+.band-Very\ Low { background:#e6f4ea; }  /* green-ish */
+.band-Low       { background:#e8f5e9; }
+.band-Medium    { background:#fff3cd; }  /* amber */
+.band-High      { background:#ffe0b2; }  /* orange */
+.band-Critical  { background:#ffebee; }  /* red */
+
+/* ===== Rating filter bar ===== */
+.ratingFilter{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+.ratingFilter label{ display:inline-flex; align-items:center; gap:4px; }
+
   .legend{font-size:12px;color:#345;margin:6px 0}
   .badge{font-weight:600;border-radius:6px;padding:2px 6px;display:inline-block}
   .rate-Very\ Low{background:#eef7ff}
@@ -235,6 +253,16 @@
           <tbody></tbody>
         </table>
       </div>
+<!-- Rating filter -->
+<div id="ratingFilterBar" class="ratingFilter">
+  <span class="titleLabel">Show ratings:</span>
+  <label><input type="checkbox" value="Very Low" checked> VL</label>
+  <label><input type="checkbox" value="Low" checked> L</label>
+  <label><input type="checkbox" value="Medium" checked> M</label>
+  <label><input type="checkbox" value="High" checked> H</label>
+  <label><input type="checkbox" value="Critical" checked> C</label>
+  <span class="note">Uncheck to hide those ratings on the matrix.</span>
+</div>
 
       <!-- Risk Matrix Reference -->
      <div class="matrix">
@@ -285,15 +313,37 @@ const IMPACT_OPTS = ["", "Insignificant", "Minor", "Moderate", "Major", "Severe"
 const LIKE_SCORE = { "rare":1, "unlikely":2, "possible":3, "likely":4, "almost certain":5 };
 const IMP_SCORE  = { "insignificant":1, "minor":2, "moderate":3, "major":4, "severe":5 };
 const SCALE5 = ['Very Low','Low','Medium','High','Critical'];
+/* ===== 5×5 parsing (bands, Likelihood/Impact labels, or numeric) ===== */
 function parse5(v){
   if (!v) return null;
   const s = String(v).trim();
 
-  // Accept rating bands (Very Low..Critical)
+  // Rating band names (Very Low..Critical)
   const bandIdx = SCALE5.indexOf(s);
   if (bandIdx >= 0) return bandIdx + 1;
 
-  // Accept Likelihood / Impact labels (Rare..Almost Certain / Insignificant..Severe)
+  // Likelihood / Impact labels (Rare..Almost Certain / Insignificant..Severe)
+  const lk = LIKE_SCORE[s.toLowerCase()];
+  if (lk) return lk;
+  const ip = IMP_SCORE[s.toLowerCase()];
+  if (ip) return ip;
+
+  // Numeric 1..5
+  const num = Number(s);
+  if (!Number.isNaN(num) && num >= 1 && num <= 5) return num;
+
+  return null;
+}
+/* ===== Rating filter helpers ===== */
+function getActiveRatings(){
+  const bar = $('#ratingFilterBar');
+  if(!bar) return new Set(SCALE5);
+  const vals = Array.from(bar.querySelectorAll('input[type="checkbox"]'))
+    .filter(cb=>cb.checked)
+    .map(cb=>cb.value);
+  return new Set(vals.length ? vals : SCALE5);
+}
+
   const lk = LIKE_SCORE[s.toLowerCase()];
   if (lk) return lk;
   const ip = IMP_SCORE[s.toLowerCase()];
@@ -546,8 +596,9 @@ function buildHeatmap(matched){
   // Determine max for color scale
   let max = 0;
   counts.forEach(obj=>bands.forEach(b=>{ if(obj[b]>max) max=obj[b]; }));
-  const heat = $('#heatTable');
-  if(!matched.length){ heat.innerHTML = '<tr><td class="note">No matched risks yet.</td></tr>'; return; }
+  const val = obj[b];
+  const bandClass = 'band-' + b.replace(' ','\\ ');
+  html += `<td class="${bandClass}" title="${val} ${b}">${val||''}</td>`;
 
   let html = '<thead><tr><th>Category</th>';
   bands.forEach(b=> html+= `<th>${b}</th>`);
@@ -562,15 +613,21 @@ function buildHeatmap(matched){
       html += `<td class="h${level}" title="${val} ${b}">${val||''}</td>`;
     });
     html += `<td><b>${total||''}</b></td></tr>`;
-  });
-  html += '</tbody>';
-  heat.innerHTML = html;
-}
+   const allowed = getActiveRatings();
 
- function renderMatrix(){
-  const host = document.getElementById('matrixHost');
-  if (!host) return;
-  host.innerHTML = '';
+  // Collect points from the results table
+  const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
+  const points = rows.map(tr=>{
+    const tds = tr.children;
+    const riskNum = (tds[1]?.textContent || '').trim();
+    const likeVal = tds[7]?.querySelector('select')?.value || tds[7]?.textContent;
+    const impVal  = tds[8]?.querySelector('select')?.value || tds[8]?.textContent;
+    const x = parse5(likeVal);
+    const y = parse5(impVal);
+    const rating = scoreRating(likeVal, impVal).label || '';
+    return (x && y && allowed.has(rating)) ? { id:riskNum, x, y, rating } : null;
+  }).filter(Boolean);
+
 
   // Collect points from the results table
   const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
@@ -640,12 +697,16 @@ function buildHeatmap(matched){
     svg.appendChild(tx);
 
     const ty = document.createElementNS(svgNS,'text');
-    ty.setAttribute('x', 6);
-    ty.setAttribute('y', yFor(ix)+4);
-    ty.setAttribute('text-anchor','start');
-    ty.setAttribute('class','axisLabel');
-    ty.textContent = name;
-    svg.appendChild(ty);
+    const cls = (p.rating && {
+      'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
+    }[p.rating]) || 'med';
+
+    const dot = document.createElementNS(svgNS,'circle');
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', cy);
+    dot.setAttribute('r', 7);
+    dot.setAttribute('class','dot ' + cls);
+    svg.appendChild(dot);
   });
 
   points.forEach(p=>{
@@ -1013,6 +1074,11 @@ $('#resultsTable').addEventListener('change', (e)=>{
   if(e.target && e.target.id==='selAll'){
     const on = e.target.checked;
     $$('#resultsTable tbody .rowSel').forEach(cb=>cb.checked=on);
+    // Re-render matrix when rating filter is toggled
+document.getElementById('ratingFilterBar')?.addEventListener('change', ()=>{
+  renderMatrix();
+});
+
   }
 });
 
