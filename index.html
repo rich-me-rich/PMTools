@@ -727,9 +727,38 @@ function renderMatrix(){
   });
 
   // Dots (rating-colored) + labels
-  points.forEach(p=>{
-    const cx = xFor(p.x);
-    const cy = yFor(p.y);
+// Dots (rating-colored) + labels, with de-overlap inside each 5×5 cell
+// Group points by cell (Likelihood x Impact)
+const groups = new Map(); // key "x-y" -> array of points
+points.forEach(p=>{
+  const key = `${p.x}-${p.y}`;
+  if(!groups.has(key)) groups.set(key, []);
+  groups.get(key).push(p);
+});
+
+// Spiral layout params (keeps dots/labels readable inside the cell)
+const maxR = Math.min(stepX, stepY) * 0.30;  // max offset ~30% of cell size
+const stepR = 9;                              // radial increment in px
+const toRad = deg => deg * Math.PI / 180;
+
+groups.forEach(list=>{
+  list.forEach((p, idx)=>{
+    const cx0 = xFor(p.x);
+    const cy0 = yFor(p.y);
+
+    // Compute a golden-angle spiral offset if there are multiple points in the same cell
+    let ox = 0, oy = 0;
+    if(list.length > 1){
+      const ring = Math.floor(idx / 8) + 1;          // 8 points per ring
+      const angle = (idx * 137.508) % 360;           // golden-angle degrees
+      const r = Math.min(maxR, ring * stepR);        // clamp to cell
+      ox = r * Math.cos(toRad(angle));
+      oy = r * Math.sin(toRad(angle));
+    }
+
+    const cx = cx0 + ox;
+    const cy = cy0 + oy;
+
     const cls = (p.rating && {
       'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
     }[p.rating]) || 'med';
@@ -748,6 +777,7 @@ function renderMatrix(){
     label.textContent = p.id || '';
     svg.appendChild(label);
   });
+});
 
   host.appendChild(svg);
 }
@@ -1095,11 +1125,6 @@ $('#resultsTable').addEventListener('change', (e)=>{
   if(e.target && e.target.id==='selAll'){
     const on = e.target.checked;
     $$('#resultsTable tbody .rowSel').forEach(cb=>cb.checked=on);
-    // Re-render matrix when rating filter is toggled
-document.getElementById('ratingFilterBar')?.addEventListener('change', ()=>{
-  renderMatrix();
-});
-
   }
 });
 
@@ -1110,7 +1135,11 @@ $('#resultsTable').addEventListener('change', (e)=>{
   }
 });
 
-  
+  // Rating filter (VL/L/M/H/C) toggles re-render the matrix
+document.getElementById('ratingFilterBar')?.addEventListener('change', ()=>{
+  renderMatrix();
+});
+
 $('#bulkApply').addEventListener('click', bulkApply);
 
 // Fill bulk selects
