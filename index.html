@@ -81,6 +81,16 @@
 .matrix .dot.med{  fill:#f9a825; }     /* Medium - amber */
 .matrix .dot.high{ fill:#ef6c00; }     /* High - orange */
 .matrix .dot.crit{ fill:#c62828; }     /* Critical - red */
+/* ===== Matrix title & legend ===== */
+.matrixTitle{
+  font-size: 14px;       /* slightly larger than axis labels */
+  fill: #345;            /* matches .matrix .axisLabel color */
+  font-weight: 700;
+}
+.matrix .legendLabel{
+  font-size: 12px;       /* matches .matrix .axisLabel font size */
+  fill: #345;
+}
 
 /* ===== Heatmap band colors (by rating) ===== */
 .band-Very\ Low { background:#e6f4ea; }  /* green-ish */
@@ -643,6 +653,21 @@ function renderMatrix(){
   const svg = document.createElementNS(svgNS,'svg');
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+
+  // Title above the matrix
+  const title = document.createElementNS(svgNS,'text');
+  title.setAttribute('x', W/2);
+  title.setAttribute('y', 18);
+  title.setAttribute('text-anchor','middle');
+  title.setAttribute('class','matrixTitle');
+  title.textContent = 'Risk Matrix Plot';
+  svg.appendChild(title);
+
+
+  // Background: standard risk colors by (Likelihood × Impact)
 
   // Background: standard risk colors by (Likelihood × Impact)
   const bandFor = (l,i)=>{
@@ -735,8 +760,8 @@ points.forEach(p=>{
 });
 
 // Spiral layout params (keeps dots/labels readable inside the cell)
-const maxR = Math.min(stepX, stepY) * 0.55;  // max offset ~45% of cell size
-const stepR = 15;                              // radial increment in px
+const maxR = Math.min(stepX, stepY) * 0.60;  // max offset ~60% of cell size
+const stepR = 18;                              // radial increment in px
 const toRad = deg => deg * Math.PI / 180;
 
 groups.forEach(list=>{
@@ -776,6 +801,33 @@ groups.forEach(list=>{
     svg.appendChild(label);
   });
 });
+
+  // Legend (rating colors)
+  const legendItems = [
+    {label:'Very Low', cls:'vlow'},
+    {label:'Low', cls:'low'},
+    {label:'Medium', cls:'med'},
+    {label:'High', cls:'high'},
+    {label:'Critical', cls:'crit'}
+  ];
+  legendItems.forEach((item, i)=>{
+    const lx = padL + i * 120;
+    const ly = H - padB + 30;
+    const swatch = document.createElementNS(svgNS,'rect');
+    swatch.setAttribute('x', lx);
+    swatch.setAttribute('y', ly);
+    swatch.setAttribute('width', 14);
+    swatch.setAttribute('height', 14);
+    swatch.setAttribute('class','dot '+item.cls);
+    svg.appendChild(swatch);
+
+    const lbl = document.createElementNS(svgNS,'text');
+    lbl.setAttribute('x', lx + 20);
+    lbl.setAttribute('y', ly + 12);
+    lbl.setAttribute('class','legendLabel');
+    lbl.textContent = item.label;
+    svg.appendChild(lbl);
+  });
 
   host.appendChild(svg);
 }
