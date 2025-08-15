@@ -768,28 +768,26 @@ points.forEach(p=>{
 // Grid layout helper
 function gridLayout(count, cellW, cellH){
   const u = Math.min(cellW, cellH);
-  const r = 0.22 * u; // compact radius near center (tweak 0.18–0.26 if you want tighter/looser)
+  const r = 0.30 * u; // was 0.22 — more spacing for 1–4
 
-  // Hand-tuned layouts for 1–4 to keep them near the middle
   if (count === 1) {
     return [[0, 0]];
   }
   if (count === 2) {
-    return [[-r, 0], [r, 0]]; // opposite horizontally
+    return [[-r, 0], [r, 0]];
   }
   if (count === 3) {
-    const a = 0.866 * r; // sin(60°) * r
-    const b = 0.5 * r;   // cos(60°) * r
-    return [[0, -r], [-a, b], [a, b]]; // equilateral triangle
+    const a = 0.866 * r;
+    const b = 0.5 * r;
+    return [[0, -r], [-a, b], [a, b]];
   }
   if (count === 4) {
-    return [[-r, -r], [r, -r], [-r, r], [r, r]]; // small centered square
+    return [[-r, -r], [r, -r], [-r, r], [r, r]];
   }
 
-  // 5+ — start compact then gradually expand toward edges
-  // scale grows with count, capped at full 70% of cell
-  const baseUsable = 0.70; // matches your original inner area
-  const scale = Math.min(1, 0.45 + 0.10 * (count - 4)); // 5→0.55, 6→0.65 … up to 1.00
+  // More aggressive expansion for >4
+  const baseUsable = 0.70;
+  const scale = Math.min(1, 0.55 + 0.12 * (count - 4)); // was 0.45 + 0.10
   const usableW = cellW * baseUsable * scale;
   const usableH = cellH * baseUsable * scale;
 
