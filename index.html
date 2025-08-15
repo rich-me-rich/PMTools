@@ -729,9 +729,9 @@ function renderMatrix(){
   svg.appendChild(xLbl);
 
   const yLbl = document.createElementNS(svgNS,'text');
-  yLbl.setAttribute('x', 16);
+  yLbl.setAttribute('x', 4);
   yLbl.setAttribute('y', padT + innerH/2);
-  yLbl.setAttribute('transform', `rotate(-90 16 ${padT + innerH/2})`);
+  yLbl.setAttribute('transform', `rotate(-90 4 ${padT + innerH/2})`);
   yLbl.setAttribute('text-anchor','middle');
   yLbl.setAttribute('class','axisLabel');
   yLbl.textContent = 'Impact ↑';
@@ -770,24 +770,25 @@ function gridLayout(count, cellW, cellH){
   const u = Math.min(cellW, cellH);
   const r = 0.30 * u; // was 0.22 — more spacing for 1–4
 
+  const r = 0.22 * u; // base spacing (keep compact for 1–3)
   if (count === 1) {
     return [[0, 0]];
   }
   if (count === 2) {
-    return [[-r, 0], [r, 0]];
+    return [[0, -r], [0, r]]; // vertical pair
   }
   if (count === 3) {
-    const a = 0.866 * r;
-    const b = 0.5 * r;
-    return [[0, -r], [-a, b], [a, b]];
+    return [[0, -r], [0, 0], [0, r]]; // vertical stack
   }
   if (count === 4) {
-    return [[-r, -r], [r, -r], [-r, r], [r, r]];
+    const r4 = r * 1.30; // +30% spacing
+    return [[-r4, -r4], [r4, -r4], [-r4, r4], [r4, r4]];
   }
+
 
   // More aggressive expansion for >4
   const baseUsable = 0.70;
-  const scale = Math.min(1, 0.55 + 0.12 * (count - 4)); // was 0.45 + 0.10
+  const scale = Math.min(1, 0.45 + 0.10 * (count - 4)); // original scaling for 5+
   const usableW = cellW * baseUsable * scale;
   const usableH = cellH * baseUsable * scale;
 
@@ -860,22 +861,21 @@ groups.forEach(list=>{
     {label:'High', cls:'high'},
     {label:'Critical', cls:'crit'}
   ];
-  const legendX = padL + innerW - 5*96;   // roughly 5 items
-  const legendY = padT + 8;
+  const legendX = padL;                          // start at left
+  const legendY = padT + innerH + 22;            // below matrix
   legendItems.forEach((item, i)=>{
     const lx = legendX + i * 96;
     const ly = legendY;
-    const swatch = document.createElementNS(svgNS,'rect');
-    swatch.setAttribute('x', lx);
-    swatch.setAttribute('y', ly);
-    swatch.setAttribute('width', 14);
-    swatch.setAttribute('height', 14);
+    const swatch = document.createElementNS(svgNS,'circle'); // use circles
+    swatch.setAttribute('cx', lx);
+    swatch.setAttribute('cy', legendY);
+    swatch.setAttribute('r', 7);
     swatch.setAttribute('class','dot '+item.cls);
     svg.appendChild(swatch);
-
     const lbl = document.createElementNS(svgNS,'text');
     lbl.setAttribute('x', lx + 20);
-    lbl.setAttribute('y', ly + 12);
+    lbl.setAttribute('y', legendY + 4);
+    lbl.setAttribute('dominant-baseline','middle');
     lbl.setAttribute('class','legendLabel');
     lbl.textContent = item.label;
     svg.appendChild(lbl);
