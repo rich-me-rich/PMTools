@@ -769,6 +769,7 @@ points.forEach(p=>{
 function gridLayout(count, cellW, cellH){
   const u = Math.min(cellW, cellH);
   const r = 0.22 * u; // base spacing (keep compact for 1–3)
+
   if (count === 1) {
     return [[0, 0]];
   }
@@ -783,10 +784,9 @@ function gridLayout(count, cellW, cellH){
     return [[-r4, -r4], [r4, -r4], [-r4, r4], [r4, r4]];
   }
 
-
-  // More aggressive expansion for >4
+  // 5+ unchanged (original scaling)
   const baseUsable = 0.70;
-  const scale = Math.min(1, 0.45 + 0.10 * (count - 4)); // original scaling for 5+
+  const scale = Math.min(1, 0.45 + 0.10 * (count - 4));
   const usableW = cellW * baseUsable * scale;
   const usableH = cellH * baseUsable * scale;
 
@@ -860,7 +860,7 @@ groups.forEach(list=>{
     {label:'Critical', cls:'crit'}
   ];
   const legendX = padL;                          // start at left
-  const legendY = padT + innerH + 28;            // below matrix
+  const legendY = padT + innerH + 28; // a little more breathing room
   legendItems.forEach((item, i)=>{
     const lx = legendX + i * 96;
     const ly = legendY;
