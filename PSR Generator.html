@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Status Report Generator — v0.1</title>
+  <style>
+    :root{
+      --bg:#0f172a;          /* slate-900 */
+      --card:#111827;        /* gray-900 */
+      --muted:#374151;       /* gray-700 */
+      --text:#e5e7eb;        /* gray-200 */
+      --text-dim:#9ca3af;    /* gray-400 */
+      --accent:#22c55e;      /* green-500 */
+      --accent-2:#3b82f6;    /* blue-500 */
+      --warn:#f59e0b;        /* amber-500 */
+      --danger:#ef4444;      /* red-500 */
+      --ok:#10b981;          /* emerald-500 */
+      --border:#1f2937;      /* gray-800 */
+      --chip:#0b1220;        /* darker */
+      --shadow: 0 6px 24px rgba(0,0,0,.25), 0 2px 8px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+    h1,h2,h3{margin:0 0 .5rem}
+    h1{font-size:1.4rem}
+    h2{font-size:1.1rem;color:var(--text-dim);font-weight:600}
+    h3{font-size:1rem;color:var(--text-dim);font-weight:600}
+    a{color:var(--accent-2)}
+
+    .container{max-width:1200px;margin:0 auto;padding:24px}
+    .grid{display:grid;gap:16px}
+    .cols-2{grid-template-columns:1fr 1fr}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.005));border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .toolbar .spacer{flex:1}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .field{display:flex;flex-direction:column;gap:6px;min-width:180px;flex:1}
+    label{font-size:.85rem;color:var(--text-dim)}
+    input[type="text"],input[type="date"],input[type="number"],select,textarea{width:100%;border:1px solid var(--border);background:#0b1020;color:var(--text);padding:10px 12px;border-radius:10px;outline:none}
+    textarea{min-height:80px}
+
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--chip);font-size:.85rem}
+    .btn{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
+    .btn:hover{filter:brightness(1.05)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{border-color:#1f4f2e;background:linear-gradient(180deg,rgba(34,197,94,.35),rgba(34,197,94,.12))}
+    .btn.warn{border-color:#6b4600;background:linear-gradient(180deg,rgba(245,158,11,.35),rgba(245,158,11,.12))}
+    .btn.danger{border-color:#6b1d1d;background:linear-gradient(180deg,rgba(239,68,68,.35),rgba(239,68,68,.12))}
+    .btn.ghost{background:transparent}
+
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th,td{text-align:left;padding:10px 12px;background:#0b1020;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    th:first-child,td:first-child{border-left:1px solid var(--border);border-top-left-radius:10px;border-bottom-left-radius:10px}
+    th:last-child,td:last-child{border-right:1px solid var(--border);border-top-right-radius:10px;border-bottom-right-radius:10px}
+    th{font-weight:600;color:var(--text-dim)}
+
+    .status-dot{width:10px;height:10px;border-radius:50%}
+    .G{background:var(--ok)}
+    .A{background:var(--warn)}
+    .R{background:var(--danger)}
+    .B{background:var(--accent-2)}
+
+    .section-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem}
+    .section-title small{color:var(--text-dim)}
+
+    .sticky-footer{position:sticky;bottom:0;backdrop-filter:blur(8px);background:linear-gradient(180deg,rgba(15,23,42,.3),rgba(15,23,42,.8));border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:8px;align-items:center}
+
+    /* Print only the report */
+    @media print{
+      body{background:#fff;color:#111}
+      .no-print{display:none !important}
+      .report{box-shadow:none;border:none}
+      .report *{color:#111 !important}
+      .report .status-chip{border-color:#111}
+      .report h1{font-size:1.5rem}
+      .report h2{color:#222}
+      th,td{background:#fff;border-color:#ddd}
+    }
+
+    .report{background:#fff;color:#111;border-radius:16px;border:1px solid #e5e7eb;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:20px}
+    .report h1,.report h2,.report h3{color:#111}
+    .status-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px}
+    .status-chip .dot{width:10px;height:10px;border-radius:50%}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card" style="margin-bottom:12px">
+      <div class="section-title">
+        <h1>Project Status Report — Builder</h1>
+        <small>v0.1 • Matches risk-tool aesthetic</small>
+      </div>
+      <div class="toolbar no-print">
+        <button class="btn" id="newBtn">New</button>
+        <input class="btn" type="file" id="importFile" accept="application/json,text/json" />
+        <button class="btn" id="saveJsonBtn">Save JSON</button>
+        <button class="btn" id="exportCsvBtn">Export CSV (Summary)</button>
+        <div class="spacer"></div>
+        <button class="btn" id="printBtn">Print Report</button>
+      </div>
+    </div>
+
+    <!-- 1. Base Project Information -->
+    <div class="card">
+      <h2>1. Base Project Information</h2>
+      <div class="grid cols-2">
+        <div class="field"><label>1.1 Project Name</label><input id="projName" type="text" placeholder="e.g., Core Banking Upgrade" /></div>
+        <div class="field"><label>1.2 Project ID / Code</label><input id="projCode" type="text" placeholder="e.g., CBU-23" /></div>
+        <div class="field"><label>1.3 Sponsor</label><input id="sponsor" type="text" /></div>
+        <div class="field"><label>1.4 Project Manager</label><input id="pm" type="text" /></div>
+        <div class="field"><label>1.5 Report Date</label><input id="reportDate" type="date" /></div>
+        <div class="field"><label>1.6 Reporting Period (Start)</label><input id="periodStart" type="date" /></div>
+        <div class="field"><label>1.6 Reporting Period (End)</label><input id="periodEnd" type="date" /></div>
+        <div class="field"><label>1.7 Project Phase</label>
+          <select id="phase">
+            <option>Initiation</option>
+            <option>Planning</option>
+            <option>Execution</option>
+            <option>Closure</option>
+          </select>
+        </div>
+        <div class="field"><label>1.8 Version Number</label><input id="version" type="number" min="1" step="1" value="1" /></div>
+      </div>
+    </div>
+
+    <!-- 2. Status Summary (Current vs Previous) -->
+    <div class="card">
+      <h2>2. Status Summary (Current vs Previous)</h2>
+      <div class="row" style="margin-bottom:8px">
+        <span class="pill"><span class="status-dot G"></span> Green</span>
+        <span class="pill"><span class="status-dot A"></span> Amber</span>
+        <span class="pill"><span class="status-dot R"></span> Red</span>
+        <span class="pill"><span class="status-dot B"></span> Blue (Completed)</span>
+        <span class="spacer"></span>
+        <button class="btn ghost" id="copyCurrentToPrev">Copy Current → Previous</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Current (G/A/R/B)</th>
+            <th>Previous (G/A/R/B)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="statusTableBody"></tbody>
+      </table>
+      <div class="field" style="margin-top:8px">
+        <label>2.6 Key Message / Executive Summary</label>
+        <textarea id="execSummary" placeholder="2–3 sentences focusing on outcomes, variances, and asks."></textarea>
+      </div>
+    </div>
+
+    <!-- 3. Milestones -->
+    <div class="card">
+      <div class="section-title"><h2>3. Milestone Progress</h2><button class="btn" id="addMilestone">Add Milestone</button></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>Original Date</th>
+            <th>Revised Date</th>
+            <th>Status</th>
+            <th>Comments</th>
+            <th class="no-print">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="milestoneBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 4. Achievements -->
+    <div class="card">
+      <div class="section-title"><h2>4. Key Achievements This Period</h2><button class="btn" id="addAch">Add Row</button></div>
+      <table>
+        <thead><tr><th>Achievement</th><th class="no-print">Actions</th></tr></thead>
+        <tbody id="achBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 5. Next Period -->
+    <div class="card">
+      <div class="section-title"><h2>5. Key Activities Next Period</h2><button class="btn" id="addNext">Add Row</button></div>
+      <table>
+        <thead><tr><th>Planned Activity</th><th class="no-print">Actions</th></tr></thead>
+        <tbody id="nextBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 6. Issues & Risks -->
+    <div class="card">
+      <h2>6. Issues & Risks Summary</h2>
+      <div class="grid cols-2">
+        <div>
+          <div class="section-title"><h3>6.1 Top Issues</h3><button class="btn" id="addIssue">Add Issue</button></div>
+          <table>
+            <thead><tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th><th class="no-print">Actions</th></tr></thead>
+            <tbody id="issueBody"></tbody>
+          </table>
+        </div>
+        <div>
+          <div class="section-title"><h3>6.2 Top Risks</h3><button class="btn" id="addRisk">Add Risk</button></div>
+          <table>
+            <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th><th class="no-print">Actions</th></tr></thead>
+            <tbody id="riskBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Decisions Required -->
+    <div class="card">
+      <div class="section-title"><h2>7. Decisions Required</h2><button class="btn" id="addDecision">Add Decision</button></div>
+      <table>
+        <thead><tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th><th class="no-print">Actions</th></tr></thead>
+        <tbody id="decisionBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 8. Budget Summary -->
+    <div class="card">
+      <h2>8. Budget Summary</h2>
+      <div class="grid cols-2">
+        <div class="field"><label>8.1 Approved Budget</label><input id="budgetApproved" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label>8.2 Spend to Date</label><input id="budgetSpent" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label>8.3 Current ETC</label><input id="budgetEtc" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label>8.4 Budget Commentary</label><textarea id="budgetNotes"></textarea></div>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <span class="pill">Variance to Budget: <span id="varianceText">$0.00</span></span>
+      </div>
+    </div>
+
+    <!-- 9. Dependencies -->
+    <div class="card">
+      <div class="section-title"><h2>9. Dependencies & Constraints</h2><button class="btn" id="addDep">Add Row</button></div>
+      <table>
+        <thead><tr><th>Dependency</th><th>Impact if Delayed</th><th>Owner</th><th class="no-print">Actions</th></tr></thead>
+        <tbody id="depBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 10. Report Preview -->
+    <div class="card">
+      <div class="section-title"><h2>Report Preview</h2><button class="btn" id="refreshPreview">Refresh</button></div>
+      <div id="reportPreview" class="report"></div>
+    </div>
+
+    <div class="sticky-footer no-print">
+      <button class="btn" id="saveJsonBtn2">Save JSON</button>
+      <button class="btn" id="exportCsvBtn2">Export CSV (Summary)</button>
+      <button class="btn" id="exportTablesCsvBtn">Export Tables CSV</button>
+      <div class="spacer"></div>
+      <button class="btn primary" id="refreshPreview2">Build/Refresh Report</button>
+      <button class="btn" id="printBtn2">Print Report</button>
+    </div>
+  </div>
+
+<script>
+// ---------- Utilities ----------
+const $ = (sel) => document.querySelector(sel);
+const fmtCurrency = (n) => {
+  if (Number.isNaN(+n)) return '$0.00';
+  return new Intl.NumberFormat(undefined,{style:'currency', currency:'AUD'}).format(+n);
+};
+const download = (filename, text, mime='text/plain') => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:mime}));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+function statusRowDef(){
+  return [
+    {key:'overall', label:'2.1 Overall Status'},
+    {key:'scope', label:'2.2 Scope Status'},
+    {key:'schedule', label:'2.3 Schedule Status'},
+    {key:'budget', label:'2.4 Budget Status'},
+    {key:'quality', label:'2.5 Quality Status'},
+    {key:'risk', label:'2.7 Risk Status'},
+    {key:'stake', label:'2.8 Stakeholder Status'},
+  ];
+}
+
+function buildStatusTable(){
+  const body = $('#statusTableBody');
+  body.innerHTML = '';
+  for(const row of statusRowDef()){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.label}</td>
+      <td><input data-skey="${row.key}" data-field="current" type="text" placeholder="G/A/R/B" /></td>
+      <td><input data-skey="${row.key}" data-field="previous" type="text" placeholder="G/A/R/B" /></td>
+      <td><input data-skey="${row.key}" data-field="notes" type="text" placeholder="Notes (optional)" /></td>
+    `;
+    body.appendChild(tr);
+  }
+}
+
+function rowControlsTD(){
+  const td = document.createElement('td');
+  td.className = 'no-print';
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn danger';
+  delBtn.textContent = 'Delete';
+  delBtn.onclick = (e)=>{ e.target.closest('tr').remove(); };
+  td.appendChild(delBtn);
+  return td;
+}
+
+function addMilestoneRow(val={}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${val.name||''}"></td>
+    <td><input type="date" value="${val.orig||''}"></td>
+    <td><input type="date" value="${val.rev||''}"></td>
+    <td><input type="text" value="${val.status||''}" placeholder="On Track/Delayed/Completed"></td>
+    <td><input type="text" value="${val.notes||''}"></td>
+  `;
+  tr.appendChild(rowControlsTD());
+  $('#milestoneBody').appendChild(tr);
+}
+function addSimpleRow(tbodySel, val=''){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input type="text" value="${val}"></td>`;
+  tr.appendChild(rowControlsTD());
+  document.querySelector(tbodySel).appendChild(tr);
+}
+function addIssueRow(val={}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${val.issue||''}"></td>
+    <td><input type="text" value="${val.impact||''}"></td>
+    <td><input type="text" value="${val.owner||''}"></td>
+    <td><input type="text" value="${val.status||''}"></td>
+  `;
+  tr.appendChild(rowControlsTD());
+  $('#issueBody').appendChild(tr);
+}
+function addRiskRow(val={}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${val.risk||''}"></td>
+    <td><input type="text" value="${val.like||''}" placeholder="Very Low/Low/Medium/High/Critical"></td>
+    <td><input type="text" value="${val.impact||''}" placeholder="Very Low/Low/Medium/High/Critical"></td>
+    <td><input type="text" value="${val.mit||''}"></td>
+  `;
+  tr.appendChild(rowControlsTD());
+  $('#riskBody').appendChild(tr);
+}
+function addDecisionRow(val={}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${val.desc||''}"></td>
+    <td><input type="date" value="${val.req||''}"></td>
+    <td><input type="text" value="${val.owner||''}"></td>
+    <td><input type="text" value="${val.status||''}"></td>
+  `;
+  tr.appendChild(rowControlsTD());
+  $('#decisionBody').appendChild(tr);
+}
+function addDepRow(val={}){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" value="${val.dep||''}"></td>
+    <td><input type="text" value="${val.impact||''}"></td>
+    <td><input type="text" value="${val.owner||''}"></td>
+  `;
+  tr.appendChild(rowControlsTD());
+  $('#depBody').appendChild(tr);
+}
+
+// ---------- Data Extraction / Injection ----------
+function getTableRows(tbody){
+  const rows = [];
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const inputs = [...tr.querySelectorAll('input')];
+    rows.push(inputs.map(i=>i.value));
+  });
+  return rows;
+}
+
+function collectData(){
+  const status = {};
+  for(const row of statusRowDef()){
+    const cur = document.querySelector(`input[data-skey="${row.key}"][data-field="current"]`).value.trim();
+    const prev = document.querySelector(`input[data-skey="${row.key}"][data-field="previous"]`).value.trim();
+    const notes = document.querySelector(`input[data-skey="${row.key}"][data-field="notes"]`).value.trim();
+    status[row.key] = {current:cur, previous:prev, notes};
+  }
+  const data = {
+    meta: {
+      projName: $('#projName').value,
+      projCode: $('#projCode').value,
+      sponsor: $('#sponsor').value,
+      pm: $('#pm').value,
+      reportDate: $('#reportDate').value,
+      periodStart: $('#periodStart').value,
+      periodEnd: $('#periodEnd').value,
+      phase: $('#phase').value,
+      version: +$('#version').value || 1,
+    },
+    status,
+    execSummary: $('#execSummary').value,
+    milestones: getTableRows($('#milestoneBody')).map(r=>({name:r[0],orig:r[1],rev:r[2],status:r[3],notes:r[4]})),
+    achievements: getTableRows($('#achBody')).map(r=>r[0]).filter(Boolean),
+    next: getTableRows($('#nextBody')).map(r=>r[0]).filter(Boolean),
+    issues: getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3]})),
+    risks: getTableRows($('#riskBody')).map(r=>({risk:r[0],like:r[1],impact:r[2],mit:r[3]})),
+    decisions: getTableRows($('#decisionBody')).map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3]})),
+    deps: getTableRows($('#depBody')).map(r=>({dep:r[0],impact:r[1],owner:r[2]})),
+    budget: {
+      approved: +($('#budgetApproved').value||0),
+      spent: +($('#budgetSpent').value||0),
+      etc: +($('#budgetEtc').value||0),
+      notes: $('#budgetNotes').value
+    }
+  };
+  return data;
+}
+
+function populateData(d){
+  $('#projName').value = d.meta?.projName||'';
+  $('#projCode').value = d.meta?.projCode||'';
+  $('#sponsor').value = d.meta?.sponsor||'';
+  $('#pm').value = d.meta?.pm||'';
+  $('#reportDate').value = d.meta?.reportDate||'';
+  $('#periodStart').value = d.meta?.periodStart||'';
+  $('#periodEnd').value = d.meta?.periodEnd||'';
+  $('#phase').value = d.meta?.phase||'Initiation';
+  $('#version').value = (d.meta?.version||1);
+
+  for(const [k,v] of Object.entries(d.status||{})){
+    const cur = document.querySelector(`input[data-skey="${k}"][data-field="current"]`);
+    const prev = document.querySelector(`input[data-skey="${k}"][data-field="previous"]`);
+    const notes = document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
+    if(cur) cur.value = v.current||'';
+    if(prev) prev.value = v.previous||'';
+    if(notes) notes.value = v.notes||'';
+  }
+  $('#execSummary').value = d.execSummary||'';
+
+  const clearTbody = (sel)=>{const tb=document.querySelector(sel); tb.innerHTML=''; return tb;};
+  const msTB = clearTbody('#milestoneBody');
+  (d.milestones||[]).forEach(m=>addMilestoneRow(m));
+  if(!d.milestones || d.milestones.length===0) addMilestoneRow({});
+
+  const achTB = clearTbody('#achBody');
+  (d.achievements||[]).forEach(a=>addSimpleRow('#achBody', a));
+  if(!d.achievements || d.achievements.length===0) addSimpleRow('#achBody','');
+
+  const nextTB = clearTbody('#nextBody');
+  (d.next||[]).forEach(n=>addSimpleRow('#nextBody', n));
+  if(!d.next || d.next.length===0) addSimpleRow('#nextBody','');
+
+  const issueTB = clearTbody('#issueBody');
+  (d.issues||[]).forEach(i=>addIssueRow(i));
+  if(!d.issues || d.issues.length===0) addIssueRow({});
+
+  const riskTB = clearTbody('#riskBody');
+  (d.risks||[]).forEach(r=>addRiskRow(r));
+  if(!d.risks || d.risks.length===0) addRiskRow({});
+
+  const decTB = clearTbody('#decisionBody');
+  (d.decisions||[]).forEach(dc=>addDecisionRow(dc));
+  if(!d.decisions || d.decisions.length===0) addDecisionRow({});
+
+  const depTB = clearTbody('#depBody');
+  (d.deps||[]).forEach(dp=>addDepRow(dp));
+  if(!d.deps || d.deps.length===0) addDepRow({});
+
+  $('#budgetApproved').value = d.budget?.approved ?? 0;
+  $('#budgetSpent').value = d.budget?.spent ?? 0;
+  $('#budgetEtc').value = d.budget?.etc ?? 0;
+  $('#budgetNotes').value = d.budget?.notes || '';
+  updateVariance();
+}
+
+// ---------- CSV ----------
+function csvEscape(v){
+  if(v==null) return '';
+  const s = String(v).replaceAll('"','""');
+  return `"${s}"`;
+}
+function buildSummaryCsv(d){
+  const lines = [];
+  lines.push('Section,Field,Value');
+  const m = d.meta;
+  const budget = d.budget;
+  const pushMeta = (k,l)=>lines.push(`Meta,${csvEscape(l)},${csvEscape(m[k])}`);
+  pushMeta('projName','Project Name');
+  pushMeta('projCode','Project Code');
+  pushMeta('sponsor','Sponsor');
+  pushMeta('pm','Project Manager');
+  pushMeta('reportDate','Report Date');
+  pushMeta('periodStart','Period Start');
+  pushMeta('periodEnd','Period End');
+  pushMeta('phase','Project Phase');
+  lines.push(`Meta,Version,${csvEscape(m.version)}`);
+
+  for(const row of statusRowDef()){
+    const s = d.status[row.key]||{};
+    lines.push(`Status,${csvEscape(row.label+' (Current)')},${csvEscape(s.current||'')}`);
+    lines.push(`Status,${csvEscape(row.label+' (Previous)')},${csvEscape(s.previous||'')}`);
+    if(s.notes) lines.push(`Status,${csvEscape(row.label+' (Notes)')},${csvEscape(s.notes)}`);
+  }
+  if(d.execSummary) lines.push(`Status,Executive Summary,${csvEscape(d.execSummary)}`);
+
+  lines.push(`Budget,Approved,${csvEscape(budget.approved)}`);
+  lines.push(`Budget,Spend to Date,${csvEscape(budget.spent)}`);
+  lines.push(`Budget,Current ETC,${csvEscape(budget.etc)}`);
+  lines.push(`Budget,Notes,${csvEscape(budget.notes)}`);
+  return lines.join('\n');
+}
+function buildTableCsv(name, headers, rows){
+  const lines = [];
+  lines.push(headers.join(','));
+  rows.forEach(r=>{
+    lines.push(r.map(csvEscape).join(','));
+  });
+  download(`${name}.csv`, lines.join('\n'), 'text/csv');
+}
+
+// ---------- Report Preview ----------
+function statusDot(color){
+  const map = {G:'#10b981', A:'#f59e0b', R:'#ef4444', B:'#3b82f6'};
+  const bg = map[color?.toUpperCase?.()] || '#d1d5db';
+  return `<span class="dot" style="background:${bg}"></span>`;
+}
+function buildReportHTML(d){
+  const h = [];
+  const m = d.meta;
+  h.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">`);
+  h.push(`<div><h1>${m.projName||'Untitled Project'}</h1><div style="color:#4b5563">${m.projCode||''}</div></div>`);
+  h.push(`<div class="status-chip">${statusDot(d.status.overall?.current)} <strong>Overall:</strong> ${d.status.overall?.current||''}</div>`);
+  h.push(`</div>`);
+  h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''} • Version: ${m.version||1}</div>`);
+
+  // Exec summary
+  if(d.execSummary){
+    h.push(`<h2 style="margin-top:16px">Executive Summary</h2>`);
+    h.push(`<p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p>`);
+  }
+
+  // Status grid
+  h.push(`<h2 style="margin-top:12px">Status Summary</h2>`);
+  h.push(`<table style="width:100%;border-collapse:collapse;margin:8px 0">`);
+  h.push(`<thead><tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Item</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Current</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Previous</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Notes</th></tr></thead>`);
+  h.push(`<tbody>`);
+  for(const row of statusRowDef()){
+    const s = d.status[row.key] || {};
+    h.push(`<tr><td style="padding:8px;border-bottom:1px solid #f3f4f6">${row.label}</td><td style="padding:8px;border-bottom:1px solid #f3f4f6">${statusDot(s.current)} ${s.current||''}</td><td style="padding:8px;border-bottom:1px solid #f3f4f6">${statusDot(s.previous)} ${s.previous||''}</td><td style="padding:8px;border-bottom:1px solid #f3f4f6">${s.notes||''}</td></tr>`);
+  }
+  h.push(`</tbody></table>`);
+
+  // Milestones
+  if((d.milestones||[]).length){
+    h.push(`<h2 style="margin-top:12px">Milestone Progress</h2>`);
+    h.push(`<table style="width:100%;border-collapse:collapse;margin:8px 0">`);
+    h.push(`<thead><tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Milestone</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Original</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Revised</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Status</th><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Comments</th></tr></thead>`);
+    h.push(`<tbody>`);
+    (d.milestones||[]).forEach(ms=>{
+      h.push(`<tr><td style="padding:8px;border-bottom:1px solid #f3f4f6">${ms.name||''}</td><td style="padding:8px;border-bottom:1px solid #f3f4f6">${ms.orig||''}</td><td style="padding:8px;border-bottom:1px solid #f3f4f6">${ms.rev||''}</td><td style="padding:8px;border-bottom:1px solid #f3f4f6">${ms.status||''}</td><td style="padding:8px;border-bottom:1px solid #f3f4f6">${ms.notes||''}</td></tr>`);
+    });
+    h.push(`</tbody></table>`);
+  }
+
+  // Achievements & Next
+  if((d.achievements||[]).filter(Boolean).length){
+    h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><ul>`);
+    (d.achievements||[]).filter(Boolean).forEach(a=>h.push(`<li>${a}</li>`));
+    h.push(`</ul>`);
+  }
+  if((d.next||[]).filter(Boolean).length){
+    h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><ul>`);
+    (d.next||[]).filter(Boolean).forEach(n=>h.push(`<li>${n}</li>`));
+    h.push(`</ul>`);
+  }
+
+  // Issues / Risks
+  if((d.issues||[]).length){
+    h.push(`<h2 style="margin-top:12px">Top Issues</h2>`);
+    h.push(`<table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Issue</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Impact</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Owner</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Status / Next Steps</th></tr></thead><tbody>`);
+    (d.issues||[]).forEach(i=>h.push(`<tr><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${i.issue||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${i.impact||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${i.owner||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${i.status||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+  if((d.risks||[]).length){
+    h.push(`<h2 style="margin-top:12px">Top Risks</h2>`);
+    h.push(`<table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Risk</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Likelihood</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Impact</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Mitigation</th></tr></thead><tbody>`);
+    (d.risks||[]).forEach(r=>h.push(`<tr><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${r.risk||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${r.like||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${r.impact||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${r.mit||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  // Decisions
+  if((d.decisions||[]).length){
+    h.push(`<h2 style="margin-top:12px">Decisions Required</h2>`);
+    h.push(`<table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Decision</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Required By</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Owner</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Status</th></tr></thead><tbody>`);
+    (d.decisions||[]).forEach(dc=>h.push(`<tr><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${dc.desc||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${dc.req||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${dc.owner||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${dc.status||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  // Budget
+  h.push(`<h2 style="margin-top:12px">Budget Summary</h2>`);
+  const variance = d.budget.approved - (d.budget.spent + d.budget.etc);
+  h.push(`<div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">`);
+  h.push(`<span class="status-chip"><strong>Approved:</strong> ${fmtCurrency(d.budget.approved)}</span>`);
+  h.push(`<span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency(d.budget.spent)}</span>`);
+  h.push(`<span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency(d.budget.etc)}</span>`);
+  h.push(`<span class="status-chip"><strong>Variance:</strong> ${fmtCurrency(variance)}</span>`);
+  h.push(`</div>`);
+  if(d.budget.notes){ h.push(`<p>${(d.budget.notes||'').replace(/\n/g,'<br>')}</p>`); }
+
+  // Dependencies
+  if((d.deps||[]).length){
+    h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2>`);
+    h.push(`<table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Dependency</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Impact if Delayed</th><th style=\"text-align:left;border-bottom:1px solid #e5e7eb;padding:8px\">Owner</th></tr></thead><tbody>`);
+    (d.deps||[]).forEach(dp=>h.push(`<tr><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${dp.dep||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${dp.impact||''}</td><td style=\"padding:8px;border-bottom:1px solid #f3f4f6\">${dp.owner||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  // Footer
+  h.push(`<div style="margin-top:16px;color:#6b7280">Sponsor: ${m.sponsor||''} • Project Manager: ${m.pm||''}</div>`);
+
+  return h.join('');
+}
+
+function refreshPreview(){
+  const data = collectData();
+  $('#reportPreview').innerHTML = buildReportHTML(data);
+}
+
+function updateVariance(){
+  const approved = +($('#budgetApproved').value||0);
+  const spent = +($('#budgetSpent').value||0);
+  const etc = +($('#budgetEtc').value||0);
+  const variance = approved - (spent + etc);
+  $('#varianceText').textContent = fmtCurrency(variance);
+}
+
+// ---------- Import / Export ----------
+function saveJSON(){
+  const data = collectData();
+  const fn = `${(data.meta.projCode||'project')}_status_v${data.meta.version||1}.json`;
+  download(fn, JSON.stringify(data, null, 2), 'application/json');
+}
+
+function importJSON(file){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const d = JSON.parse(e.target.result);
+      // Auto-increment version for new report based on old
+      if(d?.meta){ d.meta.version = (d.meta.version||1) + 1; }
+      // Move current statuses to previous as a convenience if user wants to roll forward
+      if(d?.status){
+        for(const [k,v] of Object.entries(d.status)){
+          d.status[k].previous = v.current || v.previous || '';
+          d.status[k].current = '';
+        }
+      }
+      populateData(d);
+      refreshPreview();
+    }catch(err){
+      alert('Failed to parse JSON: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function exportTablesCsv(){
+  const d = collectData();
+  // Milestones
+  buildTableCsv('milestones', ['Milestone','Original Date','Revised Date','Status','Comments'],
+    d.milestones.map(ms=>[ms.name,ms.orig,ms.rev,ms.status,ms.notes]));
+  // Issues
+  buildTableCsv('issues', ['Issue','Impact','Owner','Status / Next Steps'],
+    d.issues.map(i=>[i.issue,i.impact,i.owner,i.status]));
+  // Risks
+  buildTableCsv('risks', ['Risk','Likelihood','Impact','Mitigation'],
+    d.risks.map(r=>[r.risk,r.like,r.impact,r.mit]));
+  // Decisions
+  buildTableCsv('decisions', ['Decision','Required By','Owner','Status'],
+    d.decisions.map(dc=>[dc.desc,dc.req,dc.owner,dc.status]));
+  // Dependencies
+  buildTableCsv('dependencies', ['Dependency','Impact if Delayed','Owner'],
+    d.deps.map(dp=>[dp.dep,dp.impact,dp.owner]));
+}
+
+// ---------- Event Wiring ----------
+buildStatusTable();
+addMilestoneRow({});
+addSimpleRow('#achBody','');
+addSimpleRow('#nextBody','');
+addIssueRow({});
+addRiskRow({});
+addDecisionRow({});
+addDepRow({});
+refreshPreview();
+
+$('#copyCurrentToPrev').onclick = ()=>{
+  for(const row of statusRowDef()){
+    const cur = document.querySelector(`input[data-skey="${row.key}"][data-field="current"]`);
+    const prev = document.querySelector(`input[data-skey="${row.key}"][data-field="previous"]`);
+    if(prev) prev.value = (cur?.value || '');
+  }
+};
+
+$('#addMilestone').onclick = ()=>addMilestoneRow({});
+$('#addAch').onclick = ()=>addSimpleRow('#achBody','');
+$('#addNext').onclick = ()=>addSimpleRow('#nextBody','');
+$('#addIssue').onclick = ()=>addIssueRow({});
+$('#addRisk').onclick = ()=>addRiskRow({});
+$('#addDecision').onclick = ()=>addDecisionRow({});
+$('#addDep').onclick = ()=>addDepRow({});
+
+$('#budgetApproved').addEventListener('input', updateVariance);
+$('#budgetSpent').addEventListener('input', updateVariance);
+$('#budgetEtc').addEventListener('input', updateVariance);
+
+$('#refreshPreview').onclick = refreshPreview;
+$('#refreshPreview2').onclick = refreshPreview;
+$('#printBtn').onclick = ()=>window.print();
+$('#printBtn2').onclick = ()=>window.print();
+$('#saveJsonBtn').onclick = saveJSON;
+$('#saveJsonBtn2').onclick = saveJSON;
+$('#exportCsvBtn').onclick = ()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
+$('#exportCsvBtn2').onclick = ()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
+$('#exportTablesCsvBtn').onclick = exportTablesCsv;
+$('#newBtn').onclick = ()=>{ if(confirm('Clear all fields and start a new report?')) location.reload(); };
+$('#importFile').addEventListener('change', (e)=>{ const f = e.target.files[0]; if(f) importJSON(f); });
+
+</script>
+</body>
+</html>
