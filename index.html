@@ -159,7 +159,7 @@
       <input id="searchBox" type="search" placeholder="Search question text">
       <select id="categoryFilter"><option value="">All categories</option></select>
       <button class="btn" id="resetBtn">Reset answers</button>
-      <button class="btn primary" id="showResultsBtnTop">Show Results</button>
+      <button class="btn primary" id="showResultsBtnTop">Apply Results</button>
       <button class="btn" id="jumpBtn">Jump to matched results</button>
       <button class="btn" id="exportBtnTop">Export to XLS</button>
       <button class="btn ghost noPrint" id="printBtn" title="Print matched risks only">Print Matched</button>
@@ -174,7 +174,7 @@
           <div class="note" id="resultsMeta"></div>
         </div>
         <div>
-          <button class="btn primary" id="showResultsBtnBottom">Show Results</button>
+          <button class="btn primary" id="showResultsBtnBottom">Apply Results</button>
           <button class="btn" id="exportBtnBottom">Export to XLS</button>
           <button class="btn ghost noPrint" id="printBtn2">Print Matched</button>
         </div>
@@ -856,9 +856,9 @@ groups.forEach(list=>{
     lbl.setAttribute('dominant-baseline', 'middle');  // keep vertically aligned to dot center
     lbl.setAttribute('style', 'pointer-events:none;');
     lbl.setAttribute('class','dotLabel');
-    // Matrix-only display: drop "R-" and leading zeros (e.g., R-007 → 7)
-    const idText = String(p.id||'').replace(/^R-0*(\d+)$/, '$1');
-    lbl.textContent = idText;
+    // Matrix-only display: drop "R-" and leading zeros, then prefix with "R"
+    const num = String(p.id||'').replace(/^R-0*(\d+)$/, '$1');
+    lbl.textContent = `R${num}`;
     svg.appendChild(lbl);
   });
 });
