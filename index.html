@@ -768,7 +768,7 @@ points.forEach(p=>{
 // Grid layout helper
 function gridLayout(count, cellW, cellH){
   const u = Math.min(cellW, cellH);
-  const r = 0.22 * u; // base spacing (keep compact for 1–3)
+  const r = 0.22 * u; // base spacing for 1–3
 
   if (count === 1) {
     return [[0, 0]];
@@ -780,12 +780,12 @@ function gridLayout(count, cellW, cellH){
     return [[0, -r], [0, 0], [0, r]]; // vertical stack
   }
   if (count === 4) {
-    const r4 = r * 1.30; // +30% spacing
+    const r4 = r * 1.30; // +30% spacing for 4-dot square
     return [[-r4, -r4], [r4, -r4], [-r4, r4], [r4, r4]];
   }
 
-  // 5+ unchanged (original scaling)
-  const baseUsable = 0.70;
+  // 5+ grid layout — also with +30% spacing
+  const baseUsable = 0.70 * 1.30; // increase usable width/height by 30%
   const scale = Math.min(1, 0.45 + 0.10 * (count - 4));
   const usableW = cellW * baseUsable * scale;
   const usableH = cellH * baseUsable * scale;
