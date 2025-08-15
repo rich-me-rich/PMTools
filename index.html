@@ -839,10 +839,15 @@ groups.forEach(list=>{
     dot.setAttribute('class','dot ' + cls);
     svg.appendChild(dot);
 
-    // Label follows the offset direction slightly, so labels don't stack
+    // --- Label: always to the RIGHT of the dot, with slight vertical stagger ---
     const lbl = document.createElementNS(svgNS,'text');
-    lbl.setAttribute('x', cx + Math.sign(ox || 1) * 8);
-    lbl.setAttribute('y', cy - Math.sign(oy || -1) * 8);
+    const LABEL_DX = 10;                               // pixels to the right of the dot
+    const LABEL_STAGGER = ((idx % 3) - 1) * 5;         // -5, 0, +5 vertical offset pattern
+    lbl.setAttribute('x', cx + LABEL_DX);
+    lbl.setAttribute('y', cy + LABEL_STAGGER);
+    lbl.setAttribute('text-anchor', 'start');
+    lbl.setAttribute('dominant-baseline', 'middle');  // keep vertically aligned to dot center
+    lbl.setAttribute('style', 'pointer-events:none;');
     lbl.setAttribute('class','dotLabel');
     lbl.textContent = p.id || '';
     svg.appendChild(lbl);
