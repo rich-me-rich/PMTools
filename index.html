@@ -69,11 +69,11 @@
   stroke-width:1.5px;
 }
 .matrix .dotLabel{
-  font-size:12px;
+  font-size:9px;
   fill:#111;
   paint-order:stroke;
   stroke:#fff;
-  stroke-width:3px;
+  stroke-width:2px;
 }
 /* ===== Matrix dot color classes (by rating) ===== */
 .matrix .dot.vlow{ fill:#2e7d32; }     /* Very Low - green */
@@ -856,7 +856,9 @@ groups.forEach(list=>{
     lbl.setAttribute('dominant-baseline', 'middle');  // keep vertically aligned to dot center
     lbl.setAttribute('style', 'pointer-events:none;');
     lbl.setAttribute('class','dotLabel');
-    lbl.textContent = p.id || '';
+    // Matrix-only display: drop "R-" and leading zeros (e.g., R-007 → 7)
+    const idText = String(p.id||'').replace(/^R-0*(\d+)$/, '$1');
+    lbl.textContent = idText;
     svg.appendChild(lbl);
   });
 });
