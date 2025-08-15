@@ -91,6 +91,12 @@
   font-size: 11px;       /* matches .matrix .axisLabel font size */
   fill: #345;
 }
+/* Base style for band-coloured heat cells */
+.band-Very, .band-Low, .band-Medium, .band-High, .band-Critical,
+.band-Low, .band-Medium, .band-High, .band-Critical {
+  text-align:center;
+  font-weight:600;
+}
 
 /* ===== Heatmap band colors (by rating) ===== */
 .band-Very\ Low { background:#e6f4ea; }  /* green-ish */
@@ -279,7 +285,7 @@
 <div class="matrix">
   <div id="matrixHost" class="plot"><!-- SVG populated by JS --></div>
   <div class="legend" style="margin-top:6px">
-    Likelihood (left → right) × Impact (bottom → top). Dots are colored by rating; labels show Risk ID.
+    Likelihood (left → right) × Impact (bottom → top). Dots are coloured by rating; labels show Risk ID.
   </div>
 </div>
 
@@ -615,11 +621,17 @@ function buildHeatmap(matched){
   counts.forEach((obj,cat)=>{
     const total = bands.reduce((a,b)=>a+obj[b],0);
     html += `<tr><th>${cat}</th>`;
-    bands.forEach(b=>{
-      const val = obj[b];
-      const level = max ? Math.min(5, Math.ceil((val/max)*5)) : 0;
-      html += `<td class="h${level}" title="${val} ${b}">${val||''}</td>`;
-    });
+  bands.forEach(b=>{
+    const val = obj[b];
+    // For "Very Low", CSS selector uses an escaped space: .band-Very\ Low
+    // That matches elements with classes "band-Very" and "Low" (two tokens).
+    // So we emit both tokens for that case.
+    const cls = (b === 'Very Low')
+      ? 'band-Very Low'
+      : `band-${b}`;
+    html += `<td class="${cls}" title="${val||0} ${b}">${val||''}</td>`;
+});
+
     html += `<td><b>${total||''}</b></td></tr>`;
   });
   html += '</tbody>';
@@ -729,13 +741,15 @@ function renderMatrix(){
   svg.appendChild(xLbl);
 
   const yLbl = document.createElementNS(svgNS,'text');
-  yLbl.setAttribute('x', 4);
+  // Push further left and rotate around the same (x,y) so it clears the y tick labels
+  yLbl.setAttribute('x', -6);
   yLbl.setAttribute('y', padT + innerH/2);
-  yLbl.setAttribute('transform', `rotate(-90 4 ${padT + innerH/2})`);
+  yLbl.setAttribute('transform', `rotate(-90 -6 ${padT + innerH/2})`);
   yLbl.setAttribute('text-anchor','middle');
   yLbl.setAttribute('class','axisLabel');
-  yLbl.textContent = 'Impact ↑';
+  yLbl.textContent = '↑ Impact';
   svg.appendChild(yLbl);
+
 
   SCALE5.forEach((name, i)=>{
     const ix = i+1;
@@ -863,33 +877,36 @@ groups.forEach(list=>{
   });
 });
 
-  // Legend (top-right, inside plot)
-  const legendItems = [
-    {label:'Very Low', cls:'vlow'},
-    {label:'Low', cls:'low'},
-    {label:'Medium', cls:'med'},
-    {label:'High', cls:'high'},
-    {label:'Critical', cls:'crit'}
-  ];
-  const legendX = padL;                          // start at left
-  const legendY = padT + innerH + 28; // a little more breathing room
-  legendItems.forEach((item, i)=>{
-    const lx = legendX + i * 96;
-    const ly = legendY;
-    const swatch = document.createElementNS(svgNS,'circle'); // use circles
-    swatch.setAttribute('cx', lx);
-    swatch.setAttribute('cy', legendY);
-    swatch.setAttribute('r', 7);
-    swatch.setAttribute('class','dot '+item.cls);
-    svg.appendChild(swatch);
-    const lbl = document.createElementNS(svgNS,'text');
-    lbl.setAttribute('x', lx + 20);
-    lbl.setAttribute('y', legendY + 4);
-    lbl.setAttribute('dominant-baseline','middle');
-    lbl.setAttribute('class','legendLabel');
-    lbl.textContent = item.label;
-    svg.appendChild(lbl);
-  });
+    // Legend (bottom-left, inside plot)
+    const legendItems = [
+      {label:'Very Low', cls:'vlow'},
+      {label:'Low', cls:'low'},
+      {label:'Medium', cls:'med'},
+      {label:'High', cls:'high'},
+      {label:'Critical', cls:'crit'}
+    ];
+// Put the legend just above the bottom axis labels, on the left
+const legendX = padL;
+const legendY = H - 56; // ~just above tick labels (which are around H-34) and axis title (H-14)
+
+legendItems.forEach((item, i)=>{
+  const lx = legendX + i * 120;  // a bit wider spacing to avoid overlap
+  const swatch = document.createElementNS(svgNS,'circle');
+  swatch.setAttribute('cx', lx);
+  swatch.setAttribute('cy', legendY);
+  swatch.setAttribute('r', 7);
+  swatch.setAttribute('class','dot '+item.cls);
+  svg.appendChild(swatch);
+
+  const lbl = document.createElementNS(svgNS,'text');
+  lbl.setAttribute('x', lx + 16);
+  lbl.setAttribute('y', legendY + 1);
+  lbl.setAttribute('dominant-baseline','middle');
+  lbl.setAttribute('class','legendLabel');
+  lbl.textContent = item.label;
+  svg.appendChild(lbl);
+});
+
 
   host.appendChild(svg);
 }
