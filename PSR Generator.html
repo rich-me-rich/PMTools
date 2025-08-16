@@ -1,33 +1,33 @@
 <!--
 Mini Change Log:
-v0.15 – Revert Section 2 to earlier layout: removed Current/Previous icon columns and header tints; restored simple G/A/R radio groups
-        for Current and Previous; moved "Copy Current → Previous" back under the table.
-v0.14 – Section 1: default Reporting Period to Report Date; new 2-row layout.
-        General: Budget moved above Section 2; Sections 4/5 moved above Section 2; guidance text italic; print shows only Report.
-        Section 2 (now reverted in v0.15): coloured subheaders; icon columns; copy button moved above the table.
-        Section 9: include checkbox + comment.
-v1.0  – Guidance text + Budget note/EAC row; removed number spinners; button styling.
-v0.9  – Title + how-to; milestones auto-seed; decisions include+status; budget single-row; dependencies table.
-v0.8  – Include flags on issues/risks; milestone strike on Completed.
-v0.7  – Section 2 grouped layout tweaks; prompt when Current ≠ Green.
-v0.6  – Milestone dropdowns; include flags; 4&5 side-by-side.
-v0.5  – Section 2 grouped Current/Previous with G/A/R radios.
-v0.4  – Copy Current → Previous; prompt when Current ≠ Green.
-v0.3  – Swapped 1.6 & 1.7; removed 1.8.
-v0.2  – White theme baseline; CSV exports; print-friendly report.
-v0.1  – Initial functional build.
+v0.16 – From v13 baseline: 
+        Section 1: two-row layout (Name, ID, Sponsor, PM, Phase) then (Report Date, Period Start, Period End); 
+                   Period Start/End default to Report Date.
+        General: Re-ordered & renumbered sections sequentially:
+                 1 Base Info, 2 Budget, 3 Narrative (old 4–5), 4 Status (old 2), 5 Milestones (old 3), 
+                 6 Issues & Risks (old 6), 7 Decisions (old 7), 8 Dependencies (old 9).
+        Section 4: keep classic radios (NO icon columns), add coloured G/A/R header cells only; 
+                   "Copy Current → Previous" stays below table.
+        Section 8: add Include checkbox + Comment column; report respects Include.
+        Print: print shows only the Report preview.
+        UI: Add "Jump to Report" button in top toolbar; remove refresh buttons; live auto-refresh preview on input/change.
+v0.15 – (rolled back experiment on Section 2 icons/colours – superseded by this version)
+v0.14 – Prior structural changes (section moves, guidance styling, print tweaks) – superseded/realigned here.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.15</title>
+<title>Project Status Report — v0.16</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
     --text:#111827; --text-dim:#4b5563;
     --g:#10b981; --a:#f59e0b; --r:#ef4444; --b:#2563eb;
+    --g-tint: rgba(16,185,129,.14);
+    --a-tint: rgba(245,158,11,.16);
+    --r-tint: rgba(239,68,68,.14);
     --shadow: 0 6px 24px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.06);
     --chip:#f8fafc;
     --btn:#2563eb; --btn-text:#ffffff; --btn-hover:#1d4ed8;
@@ -43,7 +43,6 @@ v0.1  – Initial functional build.
   .cols-2{grid-template-columns:1fr 1fr}
   .cols-2-slim{grid-template-columns:1fr 1fr}
   .cols-4{grid-template-columns:repeat(4,1fr)}
-  .cols-5{grid-template-columns:repeat(5,1fr)}
   .cols-5-tight{grid-template-columns:repeat(5,minmax(0,1fr))}
   .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
   .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -55,6 +54,7 @@ v0.1  – Initial functional build.
   }
   textarea{min-height:140px}
   .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .center{text-align:center}
 
   /* Buttons */
   .btn{border:1px solid transparent;border-radius:12px;cursor:pointer;padding:10px 14px;font-weight:600}
@@ -62,16 +62,14 @@ v0.1  – Initial functional build.
   .btn.filled:hover{background:var(--btn-hover)}
   .btn.alt{background:var(--btn-alt);color:#fff}
   .btn.alt:hover{background:var(--btn-alt-hover)}
-  .checkbox{display:inline-flex;align-items:center;gap:8px}
 
   table{width:100%;border-collapse:separate;border-spacing:0 8px}
   th,td{padding:10px 12px;background:#fff;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle}
   th:first-child,td:first-child{border-left:1px solid var(--border);border-top-left-radius:10px;border-bottom-left-radius:10px}
   th:last-child,td:last-child{border-right:1px solid var(--border);border-top-right-radius:10px;border-bottom-right-radius:10px}
   th{font-weight:600;color:#394150}
-  .center{text-align:center}
 
-  /* Guidance now italic so it doesn't look like an input */
+  /* Guidance in italics so it doesn't look like an editable field */
   .hint,.guidance{font-size:.9rem;color:#6b7280}
   .guidance{font-style:italic;background:#fff;border:0;border-left:3px solid #e5e7eb;border-radius:0;padding:8px 12px;margin:6px 0 10px}
 
@@ -89,6 +87,11 @@ v0.1  – Initial functional build.
   .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:var(--chip)}
   .pill.ok{border-color:#166534;background:rgba(22,101,52,.08);color:#166534;font-weight:700}
   .pill.bad{border-color:#7f1d1d;background:rgba(127,29,29,.08);color:#7f1d1d;font-weight:700}
+
+  /* Coloured G/A/R header cells (headers only, not entire columns) */
+  .th-g{background:var(--g-tint)}
+  .th-a{background:var(--a-tint)}
+  .th-r{background:var(--r-tint)}
 
   /* Print: show ONLY the Report card */
   @media print{
@@ -112,18 +115,18 @@ v0.1  – Initial functional build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.15</small>
+        <button class="btn filled" id="jumpReportBtn" title="Scroll to Report Preview">Jump to Report</button>
+        <small class="hint">v0.16</small>
       </div>
 
       <div class="guidance small">
-        <strong>How to use:</strong> 1) Fill Section 1 basics. 2) Set Current/Previous in Section 2 (amber/red needs a brief “path to green”).
-        3) Add milestones — selecting <em>Completed</em> will strike the text. 4) Add issues/risks/decisions and tick <em>Include</em> to show in the report.
-        5) Enter budget values in <em>000’s</em>; EAC is calculated and variance shows green (underrun) or red (overrun). 6) Refresh the preview and print/export.
+        <strong>How to use:</strong> 1) Fill Section 1 basics. 2) Enter budget (in 000’s). 3) Add narrative, status, milestones, 
+        issues/risks/decisions, dependencies (tick <em>Include</em> to show in report). The preview updates automatically; print will only output the report.
       </div>
 
       <div class="toolbar no-print" style="margin-top:8px">
         <button class="btn filled" id="newBtn">New</button>
-        <input class="btn filled" type="file" id="importFile" accept="application/json,text/json" value="Import JSON" />
+        <input class="btn filled" type="file" id="importFile" accept="application/json,text/json" />
         <button class="btn filled" id="saveJsonBtn">Save JSON</button>
         <button class="btn alt" id="exportCsvBtn">Export CSV (Summary)</button>
         <div class="spacer"></div>
@@ -136,7 +139,7 @@ v0.1  – Initial functional build.
       <h2>1. Base Project Information</h2>
       <div class="guidance">Enter the key identifiers and reporting dates used to label the report and period covered.</div>
 
-      <!-- Row 1 -->
+      <!-- Row 1: Project Name, Project ID, Sponsor, PM, Phase -->
       <div class="grid cols-5-tight" style="align-items:end">
         <div class="field"><label>Project Name</label><input id="projName" type="text" /></div>
         <div class="field"><label>Project ID / Code</label><input id="projCode" type="text" /></div>
@@ -146,7 +149,8 @@ v0.1  – Initial functional build.
           <select id="phase"><option>Initiation</option><option>Discovery</option><option>Planning</option><option>Execution</option><option>Closure</option></select>
         </div>
       </div>
-      <!-- Row 2 -->
+
+      <!-- Row 2: Report Date, Period Start, Period End -->
       <div class="grid cols-4" style="margin-top:12px">
         <div class="field"><label>Report Date</label><input id="reportDate" type="date" /></div>
         <div class="field"><label>Reporting Period (Start)</label><input id="periodStart" type="date" /></div>
@@ -154,11 +158,11 @@ v0.1  – Initial functional build.
       </div>
     </div>
 
-    <!-- 8. Budget Summary (000’s) -->
+    <!-- 2. Budget Summary (000’s) -->
     <div class="card">
-      <h2>8. Budget Summary (000’s)</h2>
-      <div class="guidance">Enter values in thousands. Budget includes contingency and all <em>approved</em> change requests. EAC is calculated as <strong>Spend to Date + Current ETC</strong>. Variance = <strong>Approved – EAC</strong>.</div>
-      <div class="grid cols-5" style="margin-top:8px">
+      <h2>2. Budget Summary (000’s)</h2>
+      <div class="guidance">Enter values in thousands. Budget includes contingency and all <em>approved</em> change requests. EAC is <strong>Spend to Date + Current ETC</strong>. Variance = <strong>Approved – EAC</strong>.</div>
+      <div class="grid cols-4" style="margin-top:8px">
         <div class="field">
           <label>Approved Budget</label>
           <div class="money"><span>$</span><input id="budgetApproved" type="number" min="0" step="1" placeholder="0" /></div>
@@ -172,36 +176,35 @@ v0.1  – Initial functional build.
           <div class="money"><span>$</span><input id="budgetEtc" type="number" min="0" step="1" placeholder="0" /></div>
         </div>
         <div class="field">
-          <label>Estimate at Completion (EAC)</label>
-          <div class="pill" id="eacPill"><strong id="eacText">$0</strong></div>
-        </div>
-        <div class="field">
-          <label>Variance (Approved – EAC)</label>
-          <div class="pill" id="variancePill"><strong id="varianceText">$0</strong></div>
+          <label>EAC & Variance</label>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <span class="pill" id="eacPill"><strong>EAC:</strong> <strong id="eacText">$0</strong></span>
+            <span class="pill" id="variancePill"><strong>Variance:</strong> <strong id="varianceText">$0</strong></span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 4–5. Narrative -->
+    <!-- 3. Narrative (old 4–5) -->
     <div class="card">
-      <h2>4–5. Narrative</h2>
+      <h2>3. Narrative</h2>
       <div class="guidance">Summarise what was achieved this period and what’s planned next period. Keep it concise and executive-ready.</div>
       <div class="grid cols-2-slim">
         <div class="field">
-          <h3>4. Key Achievements This Period</h3>
+          <h3>3.1 Key Achievements This Period</h3>
           <textarea id="achText" style="min-height:180px" placeholder="Free text…"></textarea>
         </div>
         <div class="field">
-          <h3>5. Key Activities planned for Next Period</h3>
+          <h3>3.2 Key Activities planned for Next Period</h3>
           <textarea id="nextText" style="min-height:180px" placeholder="Free text…"></textarea>
         </div>
       </div>
     </div>
 
-    <!-- 2. Status Summary (REVERTED) -->
+    <!-- 4. Status Summary (classic, coloured headings only) -->
     <div class="card">
-      <h2>2. Status Summary</h2>
-      <div class="guidance">Choose one status (G/A/R) for each row under <em>Current</em> and <em>Previous</em>. If Current is Amber/Red (except 2.1) add a brief path-to-green.</div>
+      <h2>4. Status Summary</h2>
+      <div class="guidance">Choose one status (G/A/R) for each row under <em>Current</em> and <em>Previous</em>. If Current is Amber/Red (except 4.1) add a brief path-to-green.</div>
 
       <div class="field" style="margin:10px 0">
         <label>Status summary</label>
@@ -217,8 +220,8 @@ v0.1  – Initial functional build.
             <th rowspan="2">Path to green / comments</th>
           </tr>
           <tr>
-            <th>Green</th><th>Amber</th><th>Red</th>
-            <th>Green</th><th>Amber</th><th>Red</th>
+            <th class="th-g">Green</th><th class="th-a">Amber</th><th class="th-r">Red</th>
+            <th class="th-g">Green</th><th class="th-a">Amber</th><th class="th-r">Red</th>
           </tr>
         </thead>
         <tbody id="statusTableBody"></tbody>
@@ -229,10 +232,10 @@ v0.1  – Initial functional build.
       </div>
     </div>
 
-    <!-- 3. Milestone Status -->
+    <!-- 5. Milestone Status (old 3) -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>3. Milestone Status</h2>
+        <h2>5. Milestone Status</h2>
         <button class="btn filled" id="addMilestone">Add Milestone</button>
       </div>
       <div class="guidance">Enter milestones with dates; first time you enter an <em>Original</em> date, <em>Revised</em> will copy it (editable). Mark <em>Completed</em> to strike through.</div>
@@ -251,14 +254,14 @@ v0.1  – Initial functional build.
       </table>
     </div>
 
-    <!-- 6. Issues & Risks -->
+    <!-- 6. Issues & 7. Risks (old 6) -->
     <div class="card">
-      <h2>6. Issues & Risks</h2>
+      <h2>6–7. Issues & Risks</h2>
       <div class="guidance">Capture the top issues and risks. Use <em>Include</em> to control what appears in the report and CSV.</div>
       <div class="grid cols-2">
         <div>
           <div class="row" style="justify-content:space-between;align-items:center">
-            <h3>6.1 Significant Issues</h3>
+            <h3>6. Significant Issues</h3>
             <button class="btn filled" id="addIssue">Add Issue</button>
           </div>
           <table>
@@ -268,7 +271,7 @@ v0.1  – Initial functional build.
         </div>
         <div>
           <div class="row" style="justify-content:space-between;align-items:center">
-            <h3>6.2 Significant Risks</h3>
+            <h3>7. Significant Risks</h3>
             <button class="btn filled" id="addRisk">Add Risk</button>
           </div>
           <table>
@@ -279,7 +282,7 @@ v0.1  – Initial functional build.
       </div>
     </div>
 
-    <!-- 7. Decisions -->
+    <!-- 7. Decisions (old 7; now Section 7 after renumbering) -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>7. Key Decisions Required</h2>
@@ -294,13 +297,13 @@ v0.1  – Initial functional build.
       </table>
     </div>
 
-    <!-- 9. Dependencies & Constraints (include + comment retained) -->
+    <!-- 8. Dependencies & Constraints (old 9): include + comment -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>9. Dependencies & Constraints</h2>
+        <h2>8. Dependencies & Constraints</h2>
         <button class="btn filled" id="addDep">Add Row</button>
       </div>
-      <div class="guidance">Reference dependencies with an ID, capture actions, and set status. Mark <em>Completed</em> to strike through in the preview.</div>
+      <div class="guidance">Reference dependencies with an ID, capture actions, and set status. Mark <em>Completed</em> to strike through in the preview. Tick <em>Include</em> to show in report.</div>
       <table>
         <thead>
           <tr>
@@ -324,8 +327,7 @@ v0.1  – Initial functional build.
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>Report Preview</h2>
         <div class="row no-print">
-          <button class="btn alt" id="refreshPreview">Refresh</button>
-          <button class="btn filled" id="refreshPreview2">Build/Refresh Report</button>
+          <!-- Refresh buttons removed by request -->
           <button class="btn filled" id="printBtn2">Print Report</button>
         </div>
       </div>
@@ -337,6 +339,7 @@ v0.1  – Initial functional build.
 <script>
 /* ===== Utilities ===== */
 const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => [...document.querySelectorAll(sel)];
 const fmtCurrency0 = (n) => '$' + Math.round(+n||0).toLocaleString();
 const download = (filename, text, mime='text/plain') => {
   const a = document.createElement('a');
@@ -344,20 +347,20 @@ const download = (filename, text, mime='text/plain') => {
   a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 };
 
-/* ===== Status rows ===== */
+/* ===== Status rows (renumbered to section 4.x) ===== */
 function statusRowDef(){
   return [
-    {key:'overall', label:'2.1 Overall Status'},
-    {key:'scope',   label:'2.2 Scope Status'},
-    {key:'schedule',label:'2.3 Schedule Status'},
-    {key:'budget',  label:'2.4 Budget Status'},
-    {key:'quality', label:'2.5 Quality Status'},
-    {key:'risk',    label:'2.7 Risk Status'},
-    {key:'stake',   label:'2.8 Stakeholder Status'},
+    {key:'overall', label:'4.1 Overall Status'},
+    {key:'scope',   label:'4.2 Scope Status'},
+    {key:'schedule',label:'4.3 Schedule Status'},
+    {key:'budget',  label:'4.4 Budget Status'},
+    {key:'quality', label:'4.5 Quality Status'},
+    {key:'risk',    label:'4.6 Risk Status'},
+    {key:'stake',   label:'4.7 Stakeholder Status'},
   ];
 }
 
-/* ===== Section 2 (REVERTED) ===== */
+/* ===== Section 4 (classic table, coloured headings only) ===== */
 function buildStatusTable(){
   const body = $('#statusTableBody');
   body.innerHTML = '';
@@ -384,9 +387,10 @@ function buildStatusTable(){
       const key = el.name.replace('current_','');
       const notes = document.querySelector(`input[data-skey="${key}"][data-field="notes"]`);
       if(!notes) return;
-      if(el.value !== 'G'){ notes.classList.add('needs-comment'); if(!notes.value.trim()) notes.placeholder='Please add path to green'; notes.focus(); }
+      if(el.value !== 'G'){ notes.classList.add('needs-comment'); if(!notes.value.trim()) notes.placeholder='Please add path to green'; }
       else { notes.classList.remove('needs-comment'); }
     }
+    schedulePreview();
   });
 }
 function radioTd(key, section, val){
@@ -399,7 +403,8 @@ function radioTd(key, section, val){
 function rowControlsTD(){
   const td=document.createElement('td'); td.className='no-print';
   const del=document.createElement('button'); del.className='btn filled'; del.textContent='Delete';
-  del.onclick=(e)=>e.target.closest('tr').remove(); td.appendChild(del); return td;
+  del.onclick=(e)=>{ e.target.closest('tr').remove(); schedulePreview(); };
+  td.appendChild(del); return td;
 }
 function milestoneStatusSelect(value){
   const opts = ['On Track','Delayed','Not started','Completed'];
@@ -410,11 +415,9 @@ function updateMilestoneStrike(tr){
   const statusSel = tr.querySelector('.ms-status');
   if(!nameInput || !statusSel) return;
   if(statusSel.value === 'Completed'){
-    nameInput.style.textDecoration = 'line-through';
-    nameInput.style.color = '#6b7280';
+    nameInput.classList.add('strike');
   }else{
-    nameInput.style.textDecoration = '';
-    nameInput.style.color = '';
+    nameInput.classList.remove('strike');
   }
 }
 function addMilestoneRow(v={}){
@@ -432,11 +435,12 @@ function addMilestoneRow(v={}){
   const orig = tr.querySelector('.ms-orig');
   const rev  = tr.querySelector('.ms-rev');
   orig.addEventListener('change', ()=>{
-    if(!rev.value){ rev.value = orig.value; rev.dataset.autoset = '1'; }
+    if(!rev.value){ rev.value = orig.value; rev.dataset.autoset = '1'; schedulePreview(); }
   });
 
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
   updateMilestoneStrike(tr);
-  tr.querySelector('.ms-status').addEventListener('change', ()=>updateMilestoneStrike(tr));
+  tr.querySelector('.ms-status').addEventListener('change', ()=>{ updateMilestoneStrike(tr); schedulePreview(); });
 }
 
 /* ===== Issues / Risks / Decisions / Deps ===== */
@@ -447,6 +451,7 @@ function addIssueRow(v={}){ const tr=document.createElement('tr');
                 <td><input type="text" value="${v.status||''}"></td>
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#issueBody').appendChild(tr);
+  tr.querySelectorAll('input').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 function addRiskRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" value="${v.risk||''}"></td>
@@ -455,6 +460,7 @@ function addRiskRow(v={}){ const tr=document.createElement('tr');
                 <td><input type="text" value="${v.mit||''}"></td>
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#riskBody').appendChild(tr);
+  tr.querySelectorAll('input').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 
 /* Decisions */
@@ -477,8 +483,9 @@ function addDecisionRow(v={}){ const tr=document.createElement('tr');
                 <td class="center"><input type="checkbox" class="dc-include" ${v.include===false?'':'checked'}></td>`;
   tr.appendChild(rowControlsTD());
   $('#decisionBody').appendChild(tr);
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
   updateDecisionStrike(tr);
-  tr.querySelector('.dc-status').addEventListener('change', ()=>updateDecisionStrike(tr));
+  tr.querySelector('.dc-status').addEventListener('change', ()=>{ updateDecisionStrike(tr); schedulePreview(); });
 }
 
 /* Dependencies (include + comment) */
@@ -504,8 +511,9 @@ function addDepRow(v={}){ const tr=document.createElement('tr');
                 <td class="center"><input type="checkbox" class="dep-include" ${v.include===false?'':'checked'}></td>`;
   tr.appendChild(rowControlsTD());
   $('#depBody').appendChild(tr);
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
   updateDepStrike(tr);
-  tr.querySelector('.dep-status').addEventListener('change', ()=>updateDepStrike(tr));
+  tr.querySelector('.dep-status').addEventListener('change', ()=>{ updateDepStrike(tr); schedulePreview(); });
 }
 
 /* ===== Data extraction / injection ===== */
@@ -526,8 +534,8 @@ function collectData(){
   }));
   const issueRows = getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3],include:r[4]}));
   const riskRows  = getTableRows($('#riskBody')).map(r=>({risk:r[0],like:r[1],impact:r[2],mit:r[3],include:r[4]}));
-  const decisionRows = getTableRows($('#decisionBody')).map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3],include:r[4]}));
-  const depRows = getTableRows($('#depBody')).map(r=>({id:r[0],dep:r[1],impact:r[2],owner:r[3],actions:r[4],status:r[5],comment:r[6],include:r[7]}));
+  const decisionRows = getTableRows('#decisionBody').map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3],include:r[4]}));
+  const depRows = getTableRows('#depBody').map(r=>({id:r[0],dep:r[1],impact:r[2],owner:r[3],actions:r[4],status:r[5],comment:r[6],include:r[7]}));
 
   return {
     meta:{
@@ -573,12 +581,238 @@ function populateData(d){
   clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
 
   $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0; $('#budgetEtc').value=d.budget?.etc??0;
-  updateBudgetPills();
+  updateBudgetPills(); schedulePreview();
 }
 
-/* ===== CSV / Preview / Import-Export ===== */
+/* ===== CSV (summary) ===== */
 function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
 function buildSummaryCsv(d){
   const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
   push('Meta','Project Name',m.projName); push('Meta','Project Code',m.projCode);
-  push('Meta','Sponsor',m.sponsor); push('Meta','Project
+  push('Meta','Sponsor',m.sponsor); push('Meta','Project Manager',m.pm);
+  push('Meta','Report Date',m.reportDate); push('Meta','Period Start',m.periodStart);
+  push('Meta','Period End',m.periodEnd); push('Meta','Project Phase',m.phase);
+  for(const row of statusRowDef()){
+    const s=d.status[row.key]||{};
+    push('Status',`${row.label} (Current)`,s.current||''); push('Status',`${row.label} (Previous)`,s.previous||'');
+    if(s.notes) push('Status',`${row.label} (Path to green / comments)`,s.notes);
+  }
+  if(d.execSummary) push('Status','Status summary',d.execSummary);
+
+  (d.milestones||[]).forEach(ms=>{
+    lines.push(`Milestone,${csvEscape(ms.name)},${csvEscape(JSON.stringify({orig:ms.orig,rev:ms.rev,status:ms.status,include:ms.include}))}`);
+  });
+  (d.issues||[]).forEach((i,idx)=>{ lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({impact:i.impact,owner:i.owner,status:i.status,include:i.include}))}`); });
+  (d.risks||[]).forEach((r,idx)=>{ lines.push(`Risk ${idx+1},${csvEscape(r.risk)},${csvEscape(JSON.stringify({likelihood:r.like,impact:r.impact,mitigation:r.mit,include:r.include}))}`); });
+  (d.decisions||[]).forEach((dc,idx)=>{ lines.push(`Decision ${idx+1},${csvEscape(dc.desc)},${csvEscape(JSON.stringify({requiredBy:dc.req,owner:dc.owner,status:dc.status,include:dc.include}))}`); });
+  (d.deps||[]).forEach((dp,idx)=>{ lines.push(`Dependency ${idx+1},${csvEscape(dp.dep)},${csvEscape(JSON.stringify({id:dp.id,impact:dp.impact,owner:dp.owner,actions:dp.actions,status:dp.status,comment:dp.comment,include:dp.include}))}`); });
+
+  const eac = b.spent + b.etc;
+  push('Budget','Approved (000s)',b.approved);
+  push('Budget','Spend to Date (000s)',b.spent);
+  push('Budget','Current ETC (000s)',b.etc);
+  push('Budget','EAC (000s)', eac);
+  push('Budget','Variance (000s)', b.approved - eac);
+  return lines.join('\n');
+}
+
+/* ===== Report builder ===== */
+function statusDot(color){ const map={G:'#10b981',A:'#f59e0b',R:'#ef4444'}; const bg=map[color?.toUpperCase?.()]||'#9ca3af';
+  return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bg}"></span>`;}
+
+function isCompleted(val){ return String(val||'').toLowerCase()==='completed'; }
+
+function buildReportHTML(d){
+  const h=[], m=d.meta;
+  h.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">`);
+  h.push(`<div><h1>${m.projName||'Untitled Project'}</h1><div style="color:#4b5563">${m.projCode||''}</div></div>`);
+  h.push(`<div class="status-chip">${statusDot(d.status.overall?.current)} <strong>Overall:</strong> ${d.status.overall?.current||''}</div>`);
+  h.push(`</div>`);
+  h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''}</div>`);
+  if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${d.execSummary.replace(/\n/g,'<br>')}</p>`); }
+
+  h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
+  <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+    <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
+  for(const row of statusRowDef()){
+    const s=d.status[row.key]||{};
+    h.push(`<tr><td>${row.label}</td><td>${statusDot(s.current)} ${s.current||''}</td><td>${statusDot(s.previous)} ${s.previous||''}</td><td>${s.notes||''}</td></tr>`);
+  }
+  h.push(`</tbody></table>`);
+
+  const msShown = (d.milestones||[]).filter(ms => ms.include !== false);
+  if(msShown.length){
+    h.push(`<h2 style="margin-top:12px">Milestone Status</h2>
+    <table style="width:100%;border-collapse:collapse;margin:8px 0">
+      <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
+    msShown.forEach(ms=>{
+      const strikeClass = isCompleted(ms.status) ? 'class="strike"' : '';
+      h.push(`<tr ${strikeClass}><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${ms.status||''}</td></tr>`);
+    });
+    h.push(`</tbody></table>`);
+  }
+
+  if((d.achText||'').trim()){
+    h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${d.achText.replace(/\n/g,'<br>')}</p>`);
+  }
+  if((d.nextText||'').trim()){
+    h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${d.nextText.replace(/\n/g,'<br>')}</p>`);
+  }
+
+  const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
+  if(issuesIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Top Issues</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead><tbody>`);
+    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
+  if(risksIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Top Risks</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead><tbody>`);
+    risksIncluded.forEach(r=>h.push(`<tr><td>${r.risk||''}</td><td>${r.like||''}</td><td>${r.impact||''}</td><td>${r.mit||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  // Budget (000s)
+  const eac = d.budget.spent + d.budget.etc;
+  const variance = d.budget.approved - eac;
+  const varClass = variance >= 0 ? 'ok' : 'bad';
+  h.push(`<h2 style="margin-top:12px">Budget Summary (000’s)</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+      <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency0(d.budget.approved)}</span>
+      <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency0(d.budget.spent)}</span>
+      <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency0(d.budget.etc)}</span>
+      <span class="pill"><strong>EAC:</strong> ${fmtCurrency0(eac)}</span>
+      <span class="pill ${varClass}"><strong>Variance:</strong> ${fmtCurrency0(variance)}</span>
+    </div>`);
+
+  const depsIncluded = (d.deps||[]).filter(dp=>dp.include!==false);
+  if(depsIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th><th>Comment</th></tr></thead><tbody>`);
+    depsIncluded.forEach(dp=>{
+      const strike = isCompleted(dp.status) ? 'class="strike"' : '';
+      h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${dp.status||''}</td><td>${dp.comment||''}</td></tr>`);
+    });
+    h.push(`</tbody></table>`);
+  }
+
+  h.push(`<div style="margin-top:16px;color:#6b7280">Sponsor: ${m.sponsor||''} • Project Manager: ${m.pm||''}</div>`);
+  return h.join('');
+}
+
+function refreshPreview(){ $('#reportPreview').innerHTML = buildReportHTML(collectData()); }
+
+/* Debounced live preview (so we can remove refresh buttons) */
+let previewTimer=null;
+function schedulePreview(){ clearTimeout(previewTimer); previewTimer=setTimeout(refreshPreview, 120); }
+
+/* ===== Budget pills (EAC + Variance) ===== */
+function updateBudgetPills(){
+  const a=+($('#budgetApproved').value||0), s=+($('#budgetSpent').value||0), e=+($('#budgetEtc').value||0);
+  const eac = s+e;
+  const v = a - eac;
+  $('#eacText').textContent = fmtCurrency0(eac);
+  const pill=$('#variancePill'); const txt=$('#varianceText');
+  txt.textContent = fmtCurrency0(v);
+  pill.classList.remove('ok','bad'); pill.classList.add(v>=0?'ok':'bad');
+  schedulePreview();
+}
+
+/* ===== Import / Export ===== */
+function saveJSON(){
+  const data=collectData();
+  download(`${(data.meta.projCode||'project')}_status_${data.meta.reportDate||'undated'}.json`,
+           JSON.stringify(data,null,2), 'application/json');
+}
+function importJSON(file){
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      // When importing an old snapshot, carry previous from current if needed.
+      if(d?.status){
+        for(const [k,v] of Object.entries(d.status)){
+          d.status[k].previous = v.previous || v.current || '';
+        }
+      }
+      populateData(d);
+    }catch(err){ alert('Failed to parse JSON: '+err.message); }
+  };
+  reader.readAsText(file);
+}
+
+/* ===== Copy Current → Previous ===== */
+function copyCurrentToPrevious(){
+  for(const row of statusRowDef()){
+    const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
+    const prevVal = cur ? cur.value : '';
+    const prevRadio = prevVal ? document.querySelector(`input[name="previous_${row.key}"][value="${prevVal}"]`) : null;
+    if(prevRadio) prevRadio.checked = true;
+    if(!prevVal){
+      const checkedPrev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
+      if(checkedPrev) checkedPrev.checked = false;
+    }
+  }
+  schedulePreview();
+}
+
+/* ===== Wire up & seed ===== */
+buildStatusTable();
+
+/* Seed a minimal set of rows */
+addMilestoneRow({});
+for(let i=0;i<2;i++){ addIssueRow({}); addRiskRow({}); }
+addDecisionRow({}); addDepRow({});
+
+/* Default dates: Report Date = today; Reporting Period defaults to Report Date; keep in sync if empty */
+(function initDates(){
+  const report = $('#reportDate'), start = $('#periodStart'), end = $('#periodEnd');
+  if(!report.value){
+    const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0');
+    report.value=`${t.getFullYear()}-${m}-${d}`;
+  }
+  if(!start.value) start.value = report.value;
+  if(!end.value) end.value = report.value;
+
+  report.addEventListener('change', ()=>{
+    if(!start.value || start.dataset.synced==='1'){ start.value = report.value; start.dataset.synced='1'; }
+    if(!end.value || end.dataset.synced==='1'){ end.value = report.value; end.dataset.synced='1'; }
+    schedulePreview();
+  });
+  start.addEventListener('change', ()=>{ start.dataset.synced='0'; schedulePreview(); });
+  end.addEventListener('change',   ()=>{ end.dataset.synced='0';   schedulePreview(); });
+})();
+
+function attachAutoPreview(){
+  // Auto preview on any input/change across the form
+  document.body.addEventListener('input', (e)=>{ if(e.target.closest('.card')) schedulePreview(); }, {passive:true});
+  document.body.addEventListener('change', (e)=>{ if(e.target.closest('.card')) schedulePreview(); }, {passive:true});
+}
+attachAutoPreview();
+
+updateBudgetPills(); refreshPreview();
+
+/* Buttons */
+$('#addMilestone').onclick=()=>addMilestoneRow({});
+$('#addIssue').onclick=()=>addIssueRow({});
+$('#addRisk').onclick=()=>addRiskRow({});
+$('#addDecision').onclick=()=>addDecisionRow({});
+$('#addDep').onclick=()=>addDepRow({});
+['#budgetApproved','#budgetSpent','#budgetEtc'].forEach(id=>$(id).addEventListener('input', updateBudgetPills));
+$('#printBtn').onclick=()=>{ refreshPreview(); window.print(); };
+$('#printBtn2').onclick=()=>{ refreshPreview(); window.print(); };
+$('#saveJsonBtn').onclick=saveJSON;
+$('#exportCsvBtn').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
+$('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f) importJSON(f); });
+$('#newBtn').onclick=()=>{ if(confirm('Clear all fields and start a new report?')) location.reload(); };
+$('#copyCurrentToPrev').onclick=copyCurrentToPrevious;
+$('#jumpReportBtn').onclick=()=>{ document.getElementById('reportCard')?.scrollIntoView({behavior:'smooth', block:'start'}); };
+</script>
+</body>
+</html>
