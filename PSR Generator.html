@@ -1,10 +1,13 @@
 <!--
 Change Log:
-v0.7 – Reverted Section 2 (Status Summary) to v0.5 layout & behavior: Current/Previous grouped headers, G/A/R columns, unlabeled radios, comment prompt when Current ≠ Green.
-v0.6 – Milestone Status dropdown (On Track/Delayed/Not started); removed comments col; “Add to report” checkbox; completed milestones strikethrough; sections 4 & 5 side-by-side.
-v0.5 – Introduced grouped Current/Previous columns for Section 2 with (Green/Amber/Red) and colgroup tinting.
-v0.4 – Copy Current → Previous; smaller radios; moved 2.6 above table; comment prompt when Current ≠ Green.
-v0.3 – Swapped 1.6 Phase ahead of Reporting Period; removed 1.8 Version Number from UI (hidden, import tolerant).
+v0.8 – (1) Removed comment box for 2.1 Overall Status (blank cell kept for alignment).
+       (2) Milestones: added "Completed"; live strikethrough on row + preview when status = Completed.
+       (3) Issues & Risks: "Add Issue"/"Add Risk" buttons; per-row "Include" checkbox (default yes); preview/CSV honor include.
+v0.7 – Reverted Section 2 to grouped Current/Previous with G/A/R, comment prompt; kept v0.6 milestone/side-by-side changes.
+v0.6 – Milestone Status dropdown; include flag; completed strikethrough; 4&5 side-by-side.
+v0.5 – Section 2 grouped headers (Current/Previous) each with Green/Amber/Red columns; unlabeled radios.
+v0.4 – Copy Current → Previous; 2.6 above table; prompt comments when Current ≠ Green.
+v0.3 – Swapped 1.6 & 1.7; removed 1.8 (hidden only).
 v0.2 – White theme baseline; CSV exports; print-friendly report.
 v0.1 – Initial functional build.
 -->
@@ -13,7 +16,7 @@ v0.1 – Initial functional build.
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Status Report Generator — v0.7</title>
+  <title>Status Report Generator — v0.8</title>
   <style>
     :root{
       --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -79,7 +82,7 @@ v0.1 – Initial functional build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.7</small>
+        <small class="hint">v0.8</small>
       </div>
       <div class="toolbar no-print" style="margin-top:8px">
         <button class="btn" id="newBtn">New</button>
@@ -95,39 +98,39 @@ v0.1 – Initial functional build.
     <div class="card">
       <h2>1. Base Project Information</h2>
       <div class="grid cols-2">
-        <div class="field"><label>1.1 Project Name</label><input id="projName" type="text" /></div>
-        <div class="field"><label>1.2 Project ID / Code</label><input id="projCode" type="text" /></div>
-        <div class="field"><label>1.3 Sponsor Name</label><input id="sponsor" type="text" /></div>
-        <div class="field"><label>1.4 Project Manager</label><input id="pm" type="text" /></div>
-        <div class="field"><label>1.5 Reporting Date</label><input id="reportDate" type="date" /></div>
-        <div class="field"><label>1.6 Current Project Phase</label>
+        <div class="field"><label>Project Name</label><input id="projName" type="text" /></div>
+        <div class="field"><label>Project ID / Code</label><input id="projCode" type="text" /></div>
+        <div class="field"><label>Sponsor Name</label><input id="sponsor" type="text" /></div>
+        <div class="field"><label>Project Manager</label><input id="pm" type="text" /></div>
+        <div class="field"><label>Report Date</label><input id="reportDate" type="date" /></div>
+        <div class="field"><label>Project Phase</label>
           <select id="phase"><option>Initiation</option><option>Discovery</option><option>Planning</option><option>Execution</option><option>Closure</option></select>
         </div>
-        <div class="field"><label>1.7 Reporting Period (Start)</label><input id="periodStart" type="date" /></div>
-        <div class="field"><label>1.7 Reporting Period (End)</label><input id="periodEnd" type="date" /></div>
+        <div class="field"><label>Reporting Period (Start)</label><input id="periodStart" type="date" /></div>
+        <div class="field"><label>Reporting Period (End)</label><input id="periodEnd" type="date" /></div>
       </div>
     </div>
 
-    <!-- 2. Status Summary (REVERTED to v0.5 spec) -->
+    <!-- 2. Status Summary (kept as in v0.7/v0.5; blank notes cell for 2.1) -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>2. Status Summary</h2>
         <div class="row no-print">
-          <button class="btn" id="copyCurrentToPrev">Copy Current → Previous</button>
+          <button class="btn" id="copyCurrentToPrev">Copy Current Status to Previous</button>
         </div>
       </div>
 
       <!-- 2.6 above the table -->
       <div class="field" style="margin:10px 0">
-        <label>2.6 Overall Project Status summary</label>
+        <label>Status summary</label>
         <textarea id="execSummary" placeholder="2–3 sentences on outcomes, variances, and asks."></textarea>
       </div>
 
       <table id="statusTable">
         <colgroup>
           <col class="col-item">
-          <col class="col-g"><col class="col-a"><col class="col-r">  <!-- Current -->
-          <col class="col-g"><col class="col-a"><col class="col-r">  <!-- Previous -->
+          <col class="col-g"><col class="col-a"><col class="col-r">
+          <col class="col-g"><col class="col-a"><col class="col-r">
           <col class="col-cmt">
         </colgroup>
         <thead>
@@ -144,13 +147,13 @@ v0.1 – Initial functional build.
         </thead>
         <tbody id="statusTableBody"></tbody>
       </table>
-      <div class="hint" style="margin-top:6px">If Current is Amber/Red, a short “path to green” is required.</div>
+      <div class="hint" style="margin-top:6px">If Status is Amber/Red, a short “path to green” is required (except 2.1).</div>
     </div>
 
     <!-- 3. Milestone Status -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>3. Milestone Status</h2>
+        <h2>Milestone Status</h2>
         <button class="btn" id="addMilestone">Add Milestone</button>
       </div>
       <table>
@@ -159,45 +162,50 @@ v0.1 – Initial functional build.
             <th>Milestone</th>
             <th>Original Date</th>
             <th>Revised Date</th>
-            <th>Status</th>
+            <th>Status</th> <!-- Dropdown with Completed -->
             <th class="center">Add to report</th>
             <th class="no-print">Actions</th>
           </tr>
         </thead>
         <tbody id="milestoneBody"></tbody>
       </table>
-      <div class="hint" style="margin-top:6px">“Completed” is inferred when the date is in the past and status is <em>On Track</em>; such milestones are shown with strikethrough.</div>
     </div>
 
     <!-- 4 & 5 side by side -->
     <div class="card">
       <div class="grid cols-2-slim">
         <div class="field">
-          <h2>4. Key Achievements This Period</h2>
-          <textarea id="achText" style="min-height:180px" placeholder="Keep it to 2 or 3 items…"></textarea>
+          <h2>Key Achievements This Period</h2>
+          <textarea id="achText" style="min-height:180px" placeholder="Free text…"></textarea>
         </div>
         <div class="field">
-          <h2>5. Key Activities Next Period</h2>
-          <textarea id="nextText" style="min-height:180px" placeholder="Be clear on what will be done and the completion status"></textarea>
+          <h2>Key Activities planned for Next Period</h2>
+          <textarea id="nextText" style="min-height:180px" placeholder="Free text…"></textarea>
         </div>
       </div>
     </div>
 
     <!-- 6. Issues & Risks -->
     <div class="card">
-      <h2>6. Issues & Risks Summary</h2>
+      <h2>6. Issues & Risks</h2>
       <div class="grid cols-2">
         <div>
-          <h3>6.1 Top 5 Issues</h3>
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>6.1 Significant Issues</h3>
+            <button class="btn" id="addIssue">Add Issue</button>
+          </div>
           <table>
-            <thead><tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead>
+            <thead><tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th><th class="center">Include</th></tr></thead>
             <tbody id="issueBody"></tbody>
           </table>
         </div>
         <div>
-          <h3>6.2 Top 5 Risks</h3>
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>6.2 Significant Risks</h3>
+            <button class="btn" id="addRisk">Add Risk</button>
+          </div>
           <table>
-            <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead>
+            <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th><th class="center">Include</th></tr></thead>
             <tbody id="riskBody"></tbody>
           </table>
         </div>
@@ -207,7 +215,7 @@ v0.1 – Initial functional build.
     <!-- 7. Decisions -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>7. Decisions Required</h2>
+        <h2>7. Key Decisions Required</h2>
         <button class="btn" id="addDecision">Add Decision</button>
       </div>
       <table>
@@ -220,10 +228,10 @@ v0.1 – Initial functional build.
     <div class="card">
       <h2>8. Budget Summary</h2>
       <div class="grid cols-2" style="margin-top:8px">
-        <div class="field"><label>8.1 Approved Budget</label><input id="budgetApproved" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>8.2 Spend to Date</label><input id="budgetSpent" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>8.3 Current ETC</label><input id="budgetEtc" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>8.4 Budget Commentary</label><textarea id="budgetNotes" style="min-height:120px"></textarea></div>
+        <div class="field"><label>Approved Budget</label><input id="budgetApproved" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label>Spend to Date</label><input id="budgetSpent" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label>Current ETC</label><input id="budgetEtc" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+        <div class="field"><label>Budget Commentary</label><textarea id="budgetNotes" style="min-height:120px"></textarea></div>
       </div>
       <div class="row" style="margin-top:8px">
         <span class="btn">Variance to Budget: <strong id="varianceText" style="margin-left:8px">$0.00</strong></span>
@@ -233,7 +241,7 @@ v0.1 – Initial functional build.
     <!-- 9. Dependencies -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>9. Dependencies & Constraints</h2>
+        <h2>Dependencies & Constraints</h2>
         <button class="btn" id="addDep">Add Row</button>
       </div>
       <table>
@@ -270,21 +278,22 @@ const download = (filename, text, mime='text/plain') => {
 /* ===== Status rows (no Blue for status) ===== */
 function statusRowDef(){
   return [
-    {key:'overall', label:'Overall Status'},
-    {key:'scope',   label:'Scope Status'},
-    {key:'schedule',label:'Schedule Status'},
-    {key:'budget',  label:'Budget Status'},
-    {key:'quality', label:'Quality Status'},
-    {key:'risk',    label:'Risk Status'},
-    {key:'stake',   label:'Stakeholder Status'},
+    {key:'overall', label:'2.1 Overall Status'},
+    {key:'scope',   label:'2.2 Scope Status'},
+    {key:'schedule',label:'2.3 Schedule Status'},
+    {key:'budget',  label:'2.4 Budget Status'},
+    {key:'quality', label:'2.5 Quality Status'},
+    {key:'risk',    label:'2.7 Risk Status'},
+    {key:'stake',   label:'2.8 Stakeholder Status'},
   ];
 }
 
-/* ===== Build Status Table (reverted spec): two sections with 3 columns each; unlabeled radios ===== */
+/* ===== Build Status Table: two sections with 3 columns each; no notes for 2.1 ===== */
 function buildStatusTable(){
   const body = $('#statusTableBody');
   body.innerHTML = '';
   for(const row of statusRowDef()){
+    const isOverall = row.key === 'overall';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${row.label}</td>
@@ -294,17 +303,19 @@ function buildStatusTable(){
       ${radioTd(row.key,'previous','G')}
       ${radioTd(row.key,'previous','A')}
       ${radioTd(row.key,'previous','R')}
-      <td><input data-skey="${row.key}" data-field="notes" type="text" placeholder="Path to green / comments" /></td>
+      ${isOverall ? '<td></td>' :
+        '<td><input data-skey="'+row.key+'" data-field="notes" type="text" placeholder="Path to green / comments" /></td>'}
     `;
     body.appendChild(tr);
   }
 
-  // Prompt for comments when current ≠ Green (same as v0.5)
+  // Prompt for comments when current ≠ Green (skip overall)
   body.addEventListener('change', (e)=>{
     const el = e.target;
     if(el.type === 'radio' && el.name.startsWith('current_')){
       const key = el.name.replace('current_','');
       const notes = document.querySelector(`input[data-skey="${key}"][data-field="notes"]`);
+      if(!notes) return; // overall row has no notes
       if(el.value !== 'G'){
         notes.classList.add('needs-comment');
         if(!notes.value.trim()) notes.placeholder = 'Please add path to green';
@@ -321,15 +332,27 @@ function radioTd(key, section, val){
   return `<td class="center"><input class="status-radio" type="radio" name="${name}" value="${val}" aria-label="${aria}"></td>`;
 }
 
-/* ===== Milestones (v0.6 spec retained) ===== */
+/* ===== Milestones ===== */
 function rowControlsTD(){
   const td=document.createElement('td'); td.className='no-print';
   const del=document.createElement('button'); del.className='btn'; del.textContent='Delete';
   del.onclick=(e)=>e.target.closest('tr').remove(); td.appendChild(del); return td;
 }
 function milestoneStatusSelect(value){
-  const opts = ['On Track','Delayed','Not started'];
+  const opts = ['On Track','Delayed','Not started','Completed'];
   return `<select class="ms-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
+}
+function updateMilestoneStrike(tr){
+  const nameInput = tr.querySelector('td:nth-child(1) input[type="text"]');
+  const statusSel = tr.querySelector('.ms-status');
+  if(!nameInput || !statusSel) return;
+  if(statusSel.value === 'Completed'){
+    nameInput.style.textDecoration = 'line-through';
+    nameInput.style.color = '#6b7280';
+  }else{
+    nameInput.style.textDecoration = '';
+    nameInput.style.color = '';
+  }
 }
 function addMilestoneRow(v={}){
   const tr=document.createElement('tr');
@@ -342,15 +365,26 @@ function addMilestoneRow(v={}){
   `;
   tr.appendChild(rowControlsTD());
   $('#milestoneBody').appendChild(tr);
+  // live strike handling
+  updateMilestoneStrike(tr);
+  tr.querySelector('.ms-status').addEventListener('change', ()=>updateMilestoneStrike(tr));
 }
 
-/* ===== Other tables ===== */
+/* ===== Issues / Risks / Decisions / Deps ===== */
 function addIssueRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.issue||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.owner||''}"></td><td><input type="text" value="${v.status||''}"></td>`;
+  tr.innerHTML=`<td><input type="text" value="${v.issue||''}"></td>
+                <td><input type="text" value="${v.impact||''}"></td>
+                <td><input type="text" value="${v.owner||''}"></td>
+                <td><input type="text" value="${v.status||''}"></td>
+                <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#issueBody').appendChild(tr);
 }
 function addRiskRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.risk||''}"></td><td><input type="text" value="${v.like||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.mit||''}"></td>`;
+  tr.innerHTML=`<td><input type="text" value="${v.risk||''}"></td>
+                <td><input type="text" value="${v.like||''}"></td>
+                <td><input type="text" value="${v.impact||''}"></td>
+                <td><input type="text" value="${v.mit||''}"></td>
+                <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#riskBody').appendChild(tr);
 }
 function addDecisionRow(v={}){ const tr=document.createElement('tr');
@@ -371,12 +405,17 @@ function collectData(){
   for(const row of statusRowDef()){
     const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
     const prev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
-    const notes= document.querySelector(`input[data-skey="${row.key}"][data-field="notes"]`).value.trim();
+    const notesEl= document.querySelector(`input[data-skey="${row.key}"][data-field="notes"]`);
+    const notes = notesEl ? notesEl.value.trim() : ''; // overall has no notes box
     status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
   }
   const msRows = getTableRows($('#milestoneBody')).map(r=>({
     name:r[0], orig:r[1], rev:r[2], status:r[3], include:r[4]
   }));
+  // issues & risks include flag (last column)
+  const issueRows = getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3],include:r[4]}));
+  const riskRows  = getTableRows($('#riskBody')).map(r=>({risk:r[0],like:r[1],impact:r[2],mit:r[3],include:r[4]}));
+
   return {
     meta:{
       projName:$('#projName').value, projCode:$('#projCode').value, sponsor:$('#sponsor').value, pm:$('#pm').value,
@@ -387,8 +426,8 @@ function collectData(){
     milestones: msRows,
     achText:$('#achText')?.value||'',
     nextText:$('#nextText')?.value||'',
-    issues:getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3]})),
-    risks:getTableRows($('#riskBody')).map(r=>({risk:r[0],like:r[1],impact:r[2],mit:r[3]})),
+    issues: issueRows,
+    risks: riskRows,
     decisions:getTableRows($('#decisionBody')).map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3]})),
     deps:getTableRows($('#depBody')).map(r=>({dep:r[0],impact:r[1],owner:r[2]})),
     budget:{approved:+($('#budgetApproved').value||0),spent:+($('#budgetSpent').value||0),etc:+($('#budgetEtc').value||0),notes:$('#budgetNotes').value}
@@ -405,17 +444,21 @@ function populateData(d){
     const cur=document.querySelector(`input[name="current_${k}"][value="${v.current}"]`);
     const prev=document.querySelector(`input[name="previous_${k}"][value="${v.previous}"]`);
     const notes=document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
-    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes) notes.value=v.notes||'';
+    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes && typeof v.notes==='string') notes.value=v.notes;
   }
   $('#execSummary').value=d.execSummary||'';
 
+  // Milestones
   const tb = $('#milestoneBody'); tb.innerHTML='';
   (d.milestones||[]).forEach(m=>addMilestoneRow(m));
   if(!d.milestones?.length) addMilestoneRow({});
 
+  // Issues/Risks (seed a couple if empty)
   const clear=(sel)=>{const t=$(sel); t.innerHTML=''; return t;};
-  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); while(document.querySelectorAll('#issueBody tr').length<5) addIssueRow({});
-  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); while(document.querySelectorAll('#riskBody tr').length<5) addRiskRow({});
+  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<3;i++) addIssueRow({}); }
+  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<3;i++) addRiskRow({}); }
+
+  // Decisions/Deps
   clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
   clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
 
@@ -438,11 +481,17 @@ function buildSummaryCsv(d){
     if(s.notes) push('Status',`${row.label} (Path to green / comments)`,s.notes);
   }
   if(d.execSummary) push('Status','Status summary',d.execSummary);
-  // Milestones include flag
+
+  // Milestones
   lines.push('Milestones,Header,Value');
   (d.milestones||[]).forEach(ms=>{
     lines.push(`Milestone,${csvEscape(ms.name)},${csvEscape(JSON.stringify({orig:ms.orig,rev:ms.rev,status:ms.status,include:ms.include}))}`);
   });
+
+  // Issues & Risks (honor include)
+  (d.issues||[]).forEach((i,idx)=>{ lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({impact:i.impact,owner:i.owner,status:i.status,include:i.include}))}`); });
+  (d.risks||[]).forEach((r,idx)=>{ lines.push(`Risk ${idx+1},${csvEscape(r.risk)},${csvEscape(JSON.stringify({likelihood:r.like,impact:r.impact,mitigation:r.mit,include:r.include}))}`); });
+
   push('Budget','Approved',b.approved); push('Budget','Spend to Date',b.spent);
   push('Budget','Current ETC',b.etc); push('Budget','Notes',b.notes);
   return lines.join('\n');
@@ -455,14 +504,8 @@ function buildTableCsv(name, headers, rows){
 function statusDot(color){ const map={G:'#10b981',A:'#f59e0b',R:'#ef4444',B:'#2563eb'}; const bg=map[color?.toUpperCase?.()]||'#9ca3af';
   return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bg}"></span>`;}
 
-/* Completed milestone detection */
-function isMilestoneCompleted(ms){
-  const dateStr = ms.rev || ms.orig || '';
-  if(!dateStr) return false;
-  const d = new Date(dateStr + 'T00:00:00');
-  const today = new Date(); today.setHours(0,0,0,0);
-  return (ms.status === 'On Track') && (d < today);
-}
+/* Completed milestone detection now based on explicit status */
+function isMilestoneCompleted(ms){ return ms.status === 'Completed'; }
 
 function buildReportHTML(d){
   const h=[], m=d.meta;
@@ -473,7 +516,7 @@ function buildReportHTML(d){
   h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''}</div>`);
   if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${d.execSummary.replace(/\n/g,'<br>')}</p>`); }
 
-  // Detail status table (summary view)
+  // Detail status table
   h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
   <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
     <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
@@ -483,19 +526,20 @@ function buildReportHTML(d){
   }
   h.push(`</tbody></table>`);
 
-  // Milestones
-  const shown = (d.milestones||[]).filter(ms => ms.include !== false);
-  if(shown.length){
+  // Milestones (respect include flag; strike when Completed)
+  const msShown = (d.milestones||[]).filter(ms => ms.include !== false);
+  if(msShown.length){
     h.push(`<h2 style="margin-top:12px">Milestone Status</h2>
     <table style="width:100%;border-collapse:collapse;margin:8px 0">
       <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
-    shown.forEach(ms=>{
+    msShown.forEach(ms=>{
       const strikeClass = isMilestoneCompleted(ms) ? 'class="strike"' : '';
       h.push(`<tr ${strikeClass}><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${ms.status||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
   }
 
+  // 4 & 5
   if((d.achText||'').trim()){
     h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${d.achText.replace(/\n/g,'<br>')}</p>`);
   }
@@ -503,21 +547,27 @@ function buildReportHTML(d){
     h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${d.nextText.replace(/\n/g,'<br>')}</p>`);
   }
 
-  if((d.issues||[]).length){
-    h.push(`<h2 style="margin-top:12px">Top 5 Issues</h2>
+  // Issues (include-only)
+  const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
+  if(issuesIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Top Issues</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead><tbody>`);
-    (d.issues||[]).slice(0,5).forEach(i=>h.push(`<tr><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
-    h.push(`</tbody></table>`);
-  }
-  if((d.risks||[]).length){
-    h.push(`<h2 style="margin-top:12px">Top 5 Risks</h2>
-      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-        <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead><tbody>`);
-    (d.risks||[]).slice(0,5).forEach(r=>h.push(`<tr><td>${r.risk||''}</td><td>${r.like||''}</td><td>${r.impact||''}</td><td>${r.mit||''}</td></tr>`));
+    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
 
+  // Risks (include-only)
+  const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
+  if(risksIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Top Risks</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead><tbody>`);
+    risksIncluded.forEach(r=>h.push(`<tr><td>${r.risk||''}</td><td>${r.like||''}</td><td>${r.impact||''}</td><td>${r.mit||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  // Budget
   const variance = d.budget.approved - (d.budget.spent + d.budget.etc);
   h.push(`<h2 style="margin-top:12px">Budget Summary</h2>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
@@ -527,6 +577,7 @@ function buildReportHTML(d){
     <span class="status-chip"><strong>Variance:</strong> ${fmtCurrency(variance)}</span></div>`);
   if(d.budget.notes){ h.push(`<p>${d.budget.notes.replace(/\n/g,'<br>')}</p>`); }
 
+  // Dependencies
   if((d.deps||[]).length){
     h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
@@ -575,10 +626,10 @@ function exportTablesCsv(){
   const d=collectData();
   buildTableCsv('milestones', ['Milestone','Original Date','Revised Date','Status','Include'],
     d.milestones.map(ms=>[ms.name,ms.orig,ms.rev,ms.status,ms.include]));
-  buildTableCsv('issues', ['Issue','Impact','Owner','Status / Next Steps'],
-    d.issues.slice(0,5).map(i=>[i.issue,i.impact,i.owner,i.status]));
-  buildTableCsv('risks', ['Risk','Likelihood','Impact','Mitigation'],
-    d.risks.slice(0,5).map(r=>[r.risk,r.like,r.impact,r.mit]));
+  buildTableCsv('issues', ['Issue','Impact','Owner','Status / Next Steps','Include'],
+    d.issues.map(i=>[i.issue,i.impact,i.owner,i.status,i.include]));
+  buildTableCsv('risks', ['Risk','Likelihood','Impact','Mitigation','Include'],
+    d.risks.map(r=>[r.risk,r.like,r.impact,r.mit,r.include]));
   buildTableCsv('decisions', ['Decision','Required By','Owner','Status'],
     d.decisions.map(dc=>[dc.desc,dc.req,dc.owner,dc.status]));
   buildTableCsv('dependencies', ['Dependency','Impact if Delayed','Owner'],
@@ -602,12 +653,14 @@ function copyCurrentToPrevious(){
 /* ===== Wire up & seed ===== */
 buildStatusTable();
 addMilestoneRow({});
-for(let i=0;i<5;i++){ addIssueRow({}); addRiskRow({}); }
+for(let i=0;i<2;i++){ addIssueRow({}); addRiskRow({}); }
 addDecisionRow({}); addDepRow({});
 if(!$('#reportDate').value){ const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0'); $('#reportDate').value=`${t.getFullYear()}-${m}-${d}`; }
 updateVariance(); refreshPreview();
 
 $('#addMilestone').onclick=()=>addMilestoneRow({});
+$('#addIssue').onclick=()=>addIssueRow({});
+$('#addRisk').onclick=()=>addRiskRow({});
 $('#addDecision').onclick=()=>addDecisionRow({});
 $('#addDep').onclick=()=>addDepRow({});
 $('#budgetApproved').addEventListener('input', updateVariance);
