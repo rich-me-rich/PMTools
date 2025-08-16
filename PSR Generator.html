@@ -1,13 +1,15 @@
 <!--
-Change Log:
-v0.8 – (1) Removed comment box for 2.1 Overall Status (blank cell kept for alignment).
-       (2) Milestones: added "Completed"; live strikethrough on row + preview when status = Completed.
-       (3) Issues & Risks: "Add Issue"/"Add Risk" buttons; per-row "Include" checkbox (default yes); preview/CSV honor include.
-v0.7 – Reverted Section 2 to grouped Current/Previous with G/A/R, comment prompt; kept v0.6 milestone/side-by-side changes.
-v0.6 – Milestone Status dropdown; include flag; completed strikethrough; 4&5 side-by-side.
-v0.5 – Section 2 grouped headers (Current/Previous) each with Green/Amber/Red columns; unlabeled radios.
-v0.4 – Copy Current → Previous; 2.6 above table; prompt comments when Current ≠ Green.
-v0.3 – Swapped 1.6 & 1.7; removed 1.8 (hidden only).
+Mini Change Log:
+v0.9 – Title + inline guidance; Milestones: auto-set Revised = Original on first entry;
+       Section 7 Decisions: Include checkbox + Status dropdown (incl. Completed) with strikethrough;
+       Section 8 Budget Summary (000's): $ prefixes, single-row layout, variance color (red<0 / green>0) with no decimals, commentary removed;
+       Section 9 Dependencies: add Reference/ID, Actions textarea, Status dropdown with strikethrough on Completed.
+v0.8 – Removed comment box for 2.1; Milestones: Completed + live strike; Issues/Risks add & Include; preview/CSV honor include.
+v0.7 – Reverted Section 2 grouped layout; comment prompt when Current ≠ Green.
+v0.6 – Milestone dropdown, include flag, completed strikethrough; sections 4&5 side-by-side.
+v0.5 – Section 2 grouped Current/Previous with G/A/R.
+v0.4 – Copy Current → Previous; 2.6 above table; prompt when Current ≠ Green.
+v0.3 – Swapped 1.6 & 1.7; removed 1.8.
 v0.2 – White theme baseline; CSV exports; print-friendly report.
 v0.1 – Initial functional build.
 -->
@@ -16,7 +18,7 @@ v0.1 – Initial functional build.
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Status Report Generator — v0.8</title>
+  <title>Project Status Report Generator — v0.9</title>
   <style>
     :root{
       --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -26,6 +28,7 @@ v0.1 – Initial functional build.
       --a-tint: rgba(245,158,11,.08);
       --r-tint: rgba(239,68,68,.06);
       --shadow: 0 6px 24px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.06);
+      --chip:#f8fafc;
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
@@ -35,6 +38,7 @@ v0.1 – Initial functional build.
     .container{max-width:1200px;margin:0 auto;padding:24px}
     .grid{display:grid;gap:16px}
     .cols-2{grid-template-columns:1fr 1fr}
+    .cols-4{grid-template-columns:repeat(4,1fr)}
     .cols-2-slim{grid-template-columns:1fr 1fr}
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
     .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -66,6 +70,16 @@ v0.1 – Initial functional build.
     .needs-comment{outline:2px dashed var(--r); outline-offset:2px; background:rgba(239,68,68,.05)}
     .hint{font-size:.85rem;color:#6b7280}
 
+    /* Money input with $ prefix */
+    .money{display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;background:#fff}
+    .money > span{display:inline-block;padding:10px 10px;border-right:1px solid var(--border);color:#6b7280}
+    .money > input{border:0;flex:1;padding-left:10px}
+
+    /* Variance pill */
+    .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:var(--chip)}
+    .pill.ok{border-color:#166534;background:rgba(22,101,52,.08);color:#166534;font-weight:600}
+    .pill.bad{border-color:#7f1d1d;background:rgba(127,29,29,.08);color:#7f1d1d;font-weight:600}
+
     @media print{
       .no-print{display:none !important}
       .report{box-shadow:none;border:none}
@@ -74,6 +88,8 @@ v0.1 – Initial functional build.
     .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
     .status-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px}
     .strike{ text-decoration: line-through; color:#6b7280}
+    .guidance{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;padding:10px 12px;color:#475569}
+    .small{font-size:.9rem}
   </style>
 </head>
 <body>
@@ -82,8 +98,16 @@ v0.1 – Initial functional build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.8</small>
+        <small class="hint">v0.9</small>
       </div>
+
+      <!-- Guidance: placed after title, before action buttons -->
+      <div class="guidance small" style="margin-top:8px">
+        <strong>How to use:</strong> 1) Fill Section 1 basics. 2) Set Current/Previous in Section 2 (amber/red requires a brief “path to green”). 
+        3) Add milestones — picking <em>Completed</em> will strike the text. 4) Enter issues/risks/decisions and tick <em>Include</em> for items to appear in the report. 
+        5) Enter budget in <em>000’s</em> — variance turns green for underrun, red for overrun. 6) Refresh the preview and print/export as needed.
+      </div>
+
       <div class="toolbar no-print" style="margin-top:8px">
         <button class="btn" id="newBtn">New</button>
         <input class="btn" type="file" id="importFile" accept="application/json,text/json" />
@@ -111,16 +135,15 @@ v0.1 – Initial functional build.
       </div>
     </div>
 
-    <!-- 2. Status Summary (kept as in v0.7/v0.5; blank notes cell for 2.1) -->
+    <!-- 2. Status Summary (unchanged layout; 2.1 still no notes) -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>2. Status Summary</h2>
         <div class="row no-print">
-          <button class="btn" id="copyCurrentToPrev">Copy Current Status to Previous</button>
+          <button class="btn" id="copyCurrentToPrev">Copy Current → Previous</button>
         </div>
       </div>
 
-      <!-- 2.6 above the table -->
       <div class="field" style="margin:10px 0">
         <label>Status summary</label>
         <textarea id="execSummary" placeholder="2–3 sentences on outcomes, variances, and asks."></textarea>
@@ -128,22 +151,12 @@ v0.1 – Initial functional build.
 
       <table id="statusTable">
         <colgroup>
-          <col class="col-item">
-          <col class="col-g"><col class="col-a"><col class="col-r">
-          <col class="col-g"><col class="col-a"><col class="col-r">
-          <col class="col-cmt">
+          <col class="col-item"><col class="col-g"><col class="col-a"><col class="col-r">
+          <col class="col-g"><col class="col-a"><col class="col-r"><col class="col-cmt">
         </colgroup>
         <thead>
-          <tr>
-            <th rowspan="2">Item</th>
-            <th colspan="3">Current</th>
-            <th colspan="3">Previous</th>
-            <th rowspan="2">Path to green / comments</th>
-          </tr>
-          <tr>
-            <th>Green</th><th>Amber</th><th>Red</th>
-            <th>Green</th><th>Amber</th><th>Red</th>
-          </tr>
+          <tr><th rowspan="2">Item</th><th colspan="3">Current</th><th colspan="3">Previous</th><th rowspan="2">Path to green / comments</th></tr>
+          <tr><th>Green</th><th>Amber</th><th>Red</th><th>Green</th><th>Amber</th><th>Red</th></tr>
         </thead>
         <tbody id="statusTableBody"></tbody>
       </table>
@@ -153,7 +166,7 @@ v0.1 – Initial functional build.
     <!-- 3. Milestone Status -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>Milestone Status</h2>
+        <h2>3. Milestone Status</h2>
         <button class="btn" id="addMilestone">Add Milestone</button>
       </div>
       <table>
@@ -162,24 +175,25 @@ v0.1 – Initial functional build.
             <th>Milestone</th>
             <th>Original Date</th>
             <th>Revised Date</th>
-            <th>Status</th> <!-- Dropdown with Completed -->
+            <th>Status</th>
             <th class="center">Add to report</th>
             <th class="no-print">Actions</th>
           </tr>
         </thead>
         <tbody id="milestoneBody"></tbody>
       </table>
+      <div class="hint" style="margin-top:6px">When you set <em>Original</em> for the first time, <em>Revised</em> will default to the same date (editable).</div>
     </div>
 
     <!-- 4 & 5 side by side -->
     <div class="card">
       <div class="grid cols-2-slim">
         <div class="field">
-          <h2>Key Achievements This Period</h2>
+          <h2>4. Key Achievements This Period</h2>
           <textarea id="achText" style="min-height:180px" placeholder="Free text…"></textarea>
         </div>
         <div class="field">
-          <h2>Key Activities planned for Next Period</h2>
+          <h2>5. Key Activities planned for Next Period</h2>
           <textarea id="nextText" style="min-height:180px" placeholder="Free text…"></textarea>
         </div>
       </div>
@@ -219,33 +233,55 @@ v0.1 – Initial functional build.
         <button class="btn" id="addDecision">Add Decision</button>
       </div>
       <table>
-        <thead><tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th><th class="no-print">Actions</th></tr></thead>
+        <thead>
+          <tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th><th class="center">Include</th><th class="no-print">Actions</th></tr>
+        </thead>
         <tbody id="decisionBody"></tbody>
       </table>
     </div>
 
     <!-- 8. Budget -->
     <div class="card">
-      <h2>8. Budget Summary</h2>
-      <div class="grid cols-2" style="margin-top:8px">
-        <div class="field"><label>Approved Budget</label><input id="budgetApproved" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>Spend to Date</label><input id="budgetSpent" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>Current ETC</label><input id="budgetEtc" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>Budget Commentary</label><textarea id="budgetNotes" style="min-height:120px"></textarea></div>
-      </div>
-      <div class="row" style="margin-top:8px">
-        <span class="btn">Variance to Budget: <strong id="varianceText" style="margin-left:8px">$0.00</strong></span>
+      <h2>8. Budget Summary (000’s)</h2>
+      <!-- Single-row layout: Approved / Spent / ETC / Variance -->
+      <div class="grid cols-4" style="margin-top:8px">
+        <div class="field">
+          <label>Approved Budget</label>
+          <div class="money"><span>$</span><input id="budgetApproved" type="number" min="0" step="1" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label>Spend to Date</label>
+          <div class="money"><span>$</span><input id="budgetSpent" type="number" min="0" step="1" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label>Current ETC</label>
+          <div class="money"><span>$</span><input id="budgetEtc" type="number" min="0" step="1" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label>Variance</label>
+          <div class="pill" id="variancePill"><strong id="varianceText">$0</strong></div>
+        </div>
       </div>
     </div>
 
     <!-- 9. Dependencies -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>Dependencies & Constraints</h2>
+        <h2>9. Dependencies & Constraints</h2>
         <button class="btn" id="addDep">Add Row</button>
       </div>
       <table>
-        <thead><tr><th>Dependency</th><th>Impact if Delayed</th><th>Owner</th><th class="no-print">Actions</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Reference / ID</th>
+            <th>Dependency</th>
+            <th>Impact if Delayed</th>
+            <th>Owner</th>
+            <th>Actions</th>
+            <th>Status</th>
+            <th class="no-print">Controls</th>
+          </tr>
+        </thead>
         <tbody id="depBody"></tbody>
       </table>
     </div>
@@ -267,15 +303,17 @@ v0.1 – Initial functional build.
 <script>
 /* ===== Utilities ===== */
 const $ = (sel) => document.querySelector(sel);
-const fmtCurrency = (n) => Number.isNaN(+n) ? '$0.00' :
-  new Intl.NumberFormat(undefined,{style:'currency', currency:'AUD'}).format(+n);
+const fmtCurrency0 = (n) => {
+  const v = Math.round(+n||0); // no decimals
+  return '$' + v.toLocaleString();
+};
 const download = (filename, text, mime='text/plain') => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], {type:mime}));
   a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 };
 
-/* ===== Status rows (no Blue for status) ===== */
+/* ===== Status rows ===== */
 function statusRowDef(){
   return [
     {key:'overall', label:'2.1 Overall Status'},
@@ -288,7 +326,7 @@ function statusRowDef(){
   ];
 }
 
-/* ===== Build Status Table: two sections with 3 columns each; no notes for 2.1 ===== */
+/* ===== Section 2 table ===== */
 function buildStatusTable(){
   const body = $('#statusTableBody');
   body.innerHTML = '';
@@ -308,21 +346,14 @@ function buildStatusTable(){
     `;
     body.appendChild(tr);
   }
-
-  // Prompt for comments when current ≠ Green (skip overall)
   body.addEventListener('change', (e)=>{
     const el = e.target;
     if(el.type === 'radio' && el.name.startsWith('current_')){
       const key = el.name.replace('current_','');
       const notes = document.querySelector(`input[data-skey="${key}"][data-field="notes"]`);
-      if(!notes) return; // overall row has no notes
-      if(el.value !== 'G'){
-        notes.classList.add('needs-comment');
-        if(!notes.value.trim()) notes.placeholder = 'Please add path to green';
-        notes.focus();
-      }else{
-        notes.classList.remove('needs-comment');
-      }
+      if(!notes) return;
+      if(el.value !== 'G'){ notes.classList.add('needs-comment'); if(!notes.value.trim()) notes.placeholder='Please add path to green'; notes.focus(); }
+      else { notes.classList.remove('needs-comment'); }
     }
   });
 }
@@ -358,13 +389,21 @@ function addMilestoneRow(v={}){
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td><input type="text" value="${v.name||''}" placeholder="Milestone"></td>
-    <td><input type="date" value="${v.orig||''}"></td>
-    <td><input type="date" value="${v.rev||''}"></td>
+    <td><input class="ms-orig" type="date" value="${v.orig||''}"></td>
+    <td><input class="ms-rev" type="date" value="${v.rev||''}"></td>
     <td>${milestoneStatusSelect(v.status||'')}</td>
     <td class="center"><label class="checkbox"><input type="checkbox" class="ms-include" ${v.include===false?'':'checked'}> Include</label></td>
   `;
   tr.appendChild(rowControlsTD());
   $('#milestoneBody').appendChild(tr);
+
+  // one-off defaulting: when Original is first entered, if Revised empty -> copy once
+  const orig = tr.querySelector('.ms-orig');
+  const rev  = tr.querySelector('.ms-rev');
+  orig.addEventListener('change', ()=>{
+    if(!rev.value){ rev.value = orig.value; rev.dataset.autoset = '1'; }
+  }, {once:false});
+
   // live strike handling
   updateMilestoneStrike(tr);
   tr.querySelector('.ms-status').addEventListener('change', ()=>updateMilestoneStrike(tr));
@@ -387,13 +426,54 @@ function addRiskRow(v={}){ const tr=document.createElement('tr');
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#riskBody').appendChild(tr);
 }
+
+/* Decisions (Section 7) with Include + Status dropdown + strike on Completed */
+function decisionStatusSelect(value){
+  const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
+  return `<select class="dc-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
+}
+function updateDecisionStrike(tr){
+  const desc = tr.querySelector('td:nth-child(1) input[type="text"]');
+  const sel  = tr.querySelector('.dc-status');
+  if(!desc || !sel) return;
+  if(sel.value === 'Completed'){ desc.classList.add('strike'); }
+  else { desc.classList.remove('strike'); }
+}
 function addDecisionRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td><td><input type="date" value="${v.req||''}"></td><td><input type="text" value="${v.owner||''}"></td><td><input type="text" value="${v.status||''}"></td>`;
-  tr.appendChild(rowControlsTD()); $('#decisionBody').appendChild(tr);
+  tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td>
+                <td><input type="date" value="${v.req||''}"></td>
+                <td><input type="text" value="${v.owner||''}"></td>
+                <td>${decisionStatusSelect(v.status||'')}</td>
+                <td class="center"><input type="checkbox" class="dc-include" ${v.include===false?'':'checked'}></td>`;
+  tr.appendChild(rowControlsTD());
+  $('#decisionBody').appendChild(tr);
+  updateDecisionStrike(tr);
+  tr.querySelector('.dc-status').addEventListener('change', ()=>updateDecisionStrike(tr));
+}
+
+/* Dependencies (Section 9) with ID + Actions + Status dropdown + strike on Completed */
+function depStatusSelect(value){
+  const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
+  return `<select class="dep-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
+}
+function updateDepStrike(tr){
+  const depTxt = tr.querySelector('td:nth-child(2) input[type="text"]');
+  const sel = tr.querySelector('.dep-status');
+  if(!depTxt || !sel) return;
+  if(sel.value === 'Completed'){ depTxt.classList.add('strike'); }
+  else { depTxt.classList.remove('strike'); }
 }
 function addDepRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.dep||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.owner||''}"></td>`;
-  tr.appendChild(rowControlsTD()); $('#depBody').appendChild(tr);
+  tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID / REF"></td>
+                <td><input type="text" value="${v.dep||''}" placeholder="Dependency"></td>
+                <td><input type="text" value="${v.impact||''}" placeholder="Impact if delayed"></td>
+                <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
+                <td><input type="text" value="${v.actions||''}" placeholder="Actions"></td>
+                <td>${depStatusSelect(v.status||'')}</td>`;
+  tr.appendChild(rowControlsTD());
+  $('#depBody').appendChild(tr);
+  updateDepStrike(tr);
+  tr.querySelector('.dep-status').addEventListener('change', ()=>updateDepStrike(tr));
 }
 
 /* ===== Data extraction / injection ===== */
@@ -406,15 +486,16 @@ function collectData(){
     const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
     const prev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
     const notesEl= document.querySelector(`input[data-skey="${row.key}"][data-field="notes"]`);
-    const notes = notesEl ? notesEl.value.trim() : ''; // overall has no notes box
+    const notes = notesEl ? notesEl.value.trim() : '';
     status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
   }
   const msRows = getTableRows($('#milestoneBody')).map(r=>({
     name:r[0], orig:r[1], rev:r[2], status:r[3], include:r[4]
   }));
-  // issues & risks include flag (last column)
   const issueRows = getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3],include:r[4]}));
   const riskRows  = getTableRows($('#riskBody')).map(r=>({risk:r[0],like:r[1],impact:r[2],mit:r[3],include:r[4]}));
+  const decisionRows = getTableRows($('#decisionBody')).map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3],include:r[4]}));
+  const depRows = getTableRows($('#depBody')).map(r=>({id:r[0],dep:r[1],impact:r[2],owner:r[3],actions:r[4],status:r[5]}));
 
   return {
     meta:{
@@ -428,9 +509,9 @@ function collectData(){
     nextText:$('#nextText')?.value||'',
     issues: issueRows,
     risks: riskRows,
-    decisions:getTableRows($('#decisionBody')).map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3]})),
-    deps:getTableRows($('#depBody')).map(r=>({dep:r[0],impact:r[1],owner:r[2]})),
-    budget:{approved:+($('#budgetApproved').value||0),spent:+($('#budgetSpent').value||0),etc:+($('#budgetEtc').value||0),notes:$('#budgetNotes').value}
+    decisions: decisionRows,
+    deps: depRows,
+    budget:{approved:+($('#budgetApproved').value||0),spent:+($('#budgetSpent').value||0),etc:+($('#budgetEtc').value||0)}
   };
 }
 
@@ -448,22 +529,17 @@ function populateData(d){
   }
   $('#execSummary').value=d.execSummary||'';
 
-  // Milestones
   const tb = $('#milestoneBody'); tb.innerHTML='';
   (d.milestones||[]).forEach(m=>addMilestoneRow(m));
   if(!d.milestones?.length) addMilestoneRow({});
 
-  // Issues/Risks (seed a couple if empty)
   const clear=(sel)=>{const t=$(sel); t.innerHTML=''; return t;};
-  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<3;i++) addIssueRow({}); }
-  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<3;i++) addRiskRow({}); }
-
-  // Decisions/Deps
+  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<2;i++) addIssueRow({}); }
+  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<2;i++) addRiskRow({}); }
   clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
   clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
 
-  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0;
-  $('#budgetEtc').value=d.budget?.etc??0; $('#budgetNotes').value=d.budget?.notes||'';
+  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0; $('#budgetEtc').value=d.budget?.etc??0;
   updateVariance();
 }
 
@@ -482,18 +558,16 @@ function buildSummaryCsv(d){
   }
   if(d.execSummary) push('Status','Status summary',d.execSummary);
 
-  // Milestones
-  lines.push('Milestones,Header,Value');
   (d.milestones||[]).forEach(ms=>{
     lines.push(`Milestone,${csvEscape(ms.name)},${csvEscape(JSON.stringify({orig:ms.orig,rev:ms.rev,status:ms.status,include:ms.include}))}`);
   });
-
-  // Issues & Risks (honor include)
   (d.issues||[]).forEach((i,idx)=>{ lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({impact:i.impact,owner:i.owner,status:i.status,include:i.include}))}`); });
   (d.risks||[]).forEach((r,idx)=>{ lines.push(`Risk ${idx+1},${csvEscape(r.risk)},${csvEscape(JSON.stringify({likelihood:r.like,impact:r.impact,mitigation:r.mit,include:r.include}))}`); });
+  (d.decisions||[]).forEach((dc,idx)=>{ lines.push(`Decision ${idx+1},${csvEscape(dc.desc)},${csvEscape(JSON.stringify({requiredBy:dc.req,owner:dc.owner,status:dc.status,include:dc.include}))}`); });
+  (d.deps||[]).forEach((dp,idx)=>{ lines.push(`Dependency ${idx+1},${csvEscape(dp.dep)},${csvEscape(JSON.stringify({id:dp.id,impact:dp.impact,owner:dp.owner,actions:dp.actions,status:dp.status}))}`); });
 
-  push('Budget','Approved',b.approved); push('Budget','Spend to Date',b.spent);
-  push('Budget','Current ETC',b.etc); push('Budget','Notes',b.notes);
+  push('Budget','Approved (000s)',b.approved); push('Budget','Spend to Date (000s)',b.spent);
+  push('Budget','Current ETC (000s)',b.etc); push('Budget','Variance (000s)', b.approved - (b.spent + b.etc));
   return lines.join('\n');
 }
 function buildTableCsv(name, headers, rows){
@@ -504,9 +578,10 @@ function buildTableCsv(name, headers, rows){
 function statusDot(color){ const map={G:'#10b981',A:'#f59e0b',R:'#ef4444',B:'#2563eb'}; const bg=map[color?.toUpperCase?.()]||'#9ca3af';
   return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bg}"></span>`;}
 
-/* Completed milestone detection now based on explicit status */
-function isMilestoneCompleted(ms){ return ms.status === 'Completed'; }
+/* Completed helpers */
+function isCompleted(val){ return String(val||'').toLowerCase()==='completed'; }
 
+/* Build Preview */
 function buildReportHTML(d){
   const h=[], m=d.meta;
   h.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">`);
@@ -516,7 +591,6 @@ function buildReportHTML(d){
   h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''}</div>`);
   if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${d.execSummary.replace(/\n/g,'<br>')}</p>`); }
 
-  // Detail status table
   h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
   <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
     <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
@@ -526,20 +600,18 @@ function buildReportHTML(d){
   }
   h.push(`</tbody></table>`);
 
-  // Milestones (respect include flag; strike when Completed)
   const msShown = (d.milestones||[]).filter(ms => ms.include !== false);
   if(msShown.length){
     h.push(`<h2 style="margin-top:12px">Milestone Status</h2>
     <table style="width:100%;border-collapse:collapse;margin:8px 0">
       <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
     msShown.forEach(ms=>{
-      const strikeClass = isMilestoneCompleted(ms) ? 'class="strike"' : '';
+      const strikeClass = isCompleted(ms.status) ? 'class="strike"' : '';
       h.push(`<tr ${strikeClass}><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${ms.status||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
   }
 
-  // 4 & 5
   if((d.achText||'').trim()){
     h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${d.achText.replace(/\n/g,'<br>')}</p>`);
   }
@@ -547,7 +619,6 @@ function buildReportHTML(d){
     h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${d.nextText.replace(/\n/g,'<br>')}</p>`);
   }
 
-  // Issues (include-only)
   const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
   if(issuesIncluded.length){
     h.push(`<h2 style="margin-top:12px">Top Issues</h2>
@@ -557,7 +628,6 @@ function buildReportHTML(d){
     h.push(`</tbody></table>`);
   }
 
-  // Risks (include-only)
   const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
   if(risksIncluded.length){
     h.push(`<h2 style="margin-top:12px">Top Risks</h2>
@@ -567,22 +637,26 @@ function buildReportHTML(d){
     h.push(`</tbody></table>`);
   }
 
-  // Budget
+  // Budget (000s)
   const variance = d.budget.approved - (d.budget.spent + d.budget.etc);
-  h.push(`<h2 style="margin-top:12px">Budget Summary</h2>
+  const varClass = variance >= 0 ? 'ok' : 'bad';
+  h.push(`<h2 style="margin-top:12px">Budget Summary (000’s)</h2>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
-    <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency(d.budget.approved)}</span>
-    <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency(d.budget.spent)}</span>
-    <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency(d.budget.etc)}</span>
-    <span class="status-chip"><strong>Variance:</strong> ${fmtCurrency(variance)}</span></div>`);
-  if(d.budget.notes){ h.push(`<p>${d.budget.notes.replace(/\n/g,'<br>')}</p>`); }
+      <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency0(d.budget.approved)}</span>
+      <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency0(d.budget.spent)}</span>
+      <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency0(d.budget.etc)}</span>
+      <span class="pill ${varClass}"><strong>Variance:</strong> ${fmtCurrency0(variance)}</span>
+    </div>`);
 
   // Dependencies
   if((d.deps||[]).length){
     h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-        <tr><th>Dependency</th><th>Impact if Delayed</th><th>Owner</th></tr></thead><tbody>`);
-    (d.deps||[]).forEach(dp=>h.push(`<tr><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td></tr>`));
+        <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th></tr></thead><tbody>`);
+    (d.deps||[]).forEach(dp=>{
+      const strike = isCompleted(dp.status) ? 'class="strike"' : '';
+      h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${dp.status||''}</td></tr>`);
+    });
     h.push(`</tbody></table>`);
   }
 
@@ -591,9 +665,14 @@ function buildReportHTML(d){
 }
 
 function refreshPreview(){ $('#reportPreview').innerHTML = buildReportHTML(collectData()); }
+
+/* ===== Budget variance UI (colors + no decimals) ===== */
 function updateVariance(){
   const a=+($('#budgetApproved').value||0), s=+($('#budgetSpent').value||0), e=+($('#budgetEtc').value||0);
-  $('#varianceText').textContent = fmtCurrency(a-(s+e));
+  const v=a-(s+e);
+  const pill=$('#variancePill'); const txt=$('#varianceText');
+  txt.textContent = fmtCurrency0(v);
+  pill.classList.remove('ok','bad'); pill.classList.add(v>=0?'ok':'bad');
 }
 
 /* ===== Import / Export ===== */
@@ -630,10 +709,10 @@ function exportTablesCsv(){
     d.issues.map(i=>[i.issue,i.impact,i.owner,i.status,i.include]));
   buildTableCsv('risks', ['Risk','Likelihood','Impact','Mitigation','Include'],
     d.risks.map(r=>[r.risk,r.like,r.impact,r.mit,r.include]));
-  buildTableCsv('decisions', ['Decision','Required By','Owner','Status'],
-    d.decisions.map(dc=>[dc.desc,dc.req,dc.owner,dc.status]));
-  buildTableCsv('dependencies', ['Dependency','Impact if Delayed','Owner'],
-    d.deps.map(dp=>[dp.dep,dp.impact,dp.owner]));
+  buildTableCsv('decisions', ['Decision','Required By','Owner','Status','Include'],
+    d.decisions.map(dc=>[dc.desc,dc.req,dc.owner,dc.status,dc.include]));
+  buildTableCsv('dependencies', ['ID','Dependency','Impact','Owner','Actions','Status'],
+    d.deps.map(dp=>[dp.id,dp.dep,dp.impact,dp.owner,dp.actions,dp.status]));
 }
 
 /* ===== Copy Current → Previous ===== */
@@ -655,7 +734,10 @@ buildStatusTable();
 addMilestoneRow({});
 for(let i=0;i<2;i++){ addIssueRow({}); addRiskRow({}); }
 addDecisionRow({}); addDepRow({});
-if(!$('#reportDate').value){ const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0'); $('#reportDate').value=`${t.getFullYear()}-${m}-${d}`; }
+if(!$('#reportDate').value){
+  const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0');
+  $('#reportDate').value=`${t.getFullYear()}-${m}-${d}`;
+}
 updateVariance(); refreshPreview();
 
 $('#addMilestone').onclick=()=>addMilestoneRow({});
@@ -663,9 +745,7 @@ $('#addIssue').onclick=()=>addIssueRow({});
 $('#addRisk').onclick=()=>addRiskRow({});
 $('#addDecision').onclick=()=>addDecisionRow({});
 $('#addDep').onclick=()=>addDepRow({});
-$('#budgetApproved').addEventListener('input', updateVariance);
-$('#budgetSpent').addEventListener('input', updateVariance);
-$('#budgetEtc').addEventListener('input', updateVariance);
+['#budgetApproved','#budgetSpent','#budgetEtc'].forEach(id=>$(id).addEventListener('input', updateVariance));
 $('#refreshPreview').onclick=refreshPreview;
 $('#refreshPreview2').onclick=refreshPreview;
 $('#printBtn').onclick=()=>window.print();
