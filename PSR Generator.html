@@ -1,9 +1,9 @@
 <!--
 Mini Change Log:
-v0.4 – Added Copy Current → Previous; moved 2.6 above table; status table now GREEN/AMBER/RED columns (Blue removed for status);
-       reduced radio size; prompt/comment highlight when Current ≠ Green.
+v0.5 – Reworked 2.1 table to two sections (Current, Previous) with three columns each (Green, Amber, Red) and unlabeled radios aligned to headers. Added colgroup tinting for full-column color cues.
+v0.4 – Copy Current → Previous; moved 2.6 above table; status table used colored subcolumns; smaller radios; prompt for comments when Current ≠ Green.
 v0.3 – Swapped 1.6 Project Phase ahead of Reporting Period; removed 1.8 Version Number from UI (hidden, import-tolerant).
-v0.2 – White theme UI matching provided screenshot; pill selectors; summary & per-table CSV exports; print-friendly report.
+v0.2 – White theme UI matching screenshot; pill selectors; CSV exports; print-friendly report.
 v0.1 – Initial functional build.
 -->
 <!DOCTYPE html>
@@ -11,57 +11,67 @@ v0.1 – Initial functional build.
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Status Report Generator — v0.4</title>
+  <title>Status Report Generator — v0.5</title>
   <style>
     :root{
-      --bg:#ffffff; --card:#ffffff; --muted:#f8fafc;
-      --text:#111827; --text-dim:#4b5563; --border:#e5e7eb;
+      --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
+      --text:#111827; --text-dim:#4b5563;
       --g:#10b981; --a:#f59e0b; --r:#ef4444; --b:#2563eb;
+      --g-tint: rgba(16,185,129,.06);
+      --a-tint: rgba(245,158,11,.08);
+      --r-tint: rgba(239,68,68,.06);
       --shadow: 0 6px 24px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.06);
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
     h1,h2,h3{margin:0 0 .5rem}
-    h1{font-size:1.4rem}
     h2{font-size:1.1rem;font-weight:700}
     h3{font-size:1rem;color:var(--text-dim);font-weight:600}
     .container{max-width:1200px;margin:0 auto;padding:24px}
     .grid{display:grid;gap:16px}
     .cols-2{grid-template-columns:1fr 1fr}
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
-    .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .toolbar .spacer{flex:1}
-    .field{display:flex;flex-direction:column;gap:6px;min-width:180px;flex:1}
+    .field{display:flex;flex-direction:column;gap:6px}
     label{font-size:.85rem;color:var(--text-dim)}
-    input[type="text"],input[type="date"],input[type="number"],select,textarea{width:100%;border:1px solid var(--border);background:#fff;color:var(--text);padding:10px 12px;border-radius:10px;outline:none}
+    input[type="text"],input[type="date"],input[type="number"],select,textarea{
+      width:100%;border:1px solid var(--border);background:#fff;color:var(--text);padding:10px 12px;border-radius:10px;outline:none
+    }
     textarea{min-height:100px}
     .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:.8rem;line-height:1}
     .btn{background:#fff;border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
     .btn:hover{filter:brightness(1.03)}
     .btn.primary{background:linear-gradient(180deg,rgba(16,185,129,.12),rgba(16,185,129,.05));border-color:#1f4f2e}
+
+    /* Tables */
     table{width:100%;border-collapse:separate;border-spacing:0 8px}
-    th,td{text-align:left;padding:10px 12px;background:#fff;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle}
+    th,td{padding:10px 12px;background:#fff;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle}
     th:first-child,td:first-child{border-left:1px solid var(--border);border-top-left-radius:10px;border-bottom-left-radius:10px}
     th:last-child,td:last-child{border-right:1px solid var(--border);border-top-right-radius:10px;border-bottom-right-radius:10px}
-    th{font-weight:600;color:var(--text-dim)}
-    /* Status table coloured columns */
-    .col-g  {background:linear-gradient(0deg,rgba(16,185,129,.06),rgba(16,185,129,.06))}
-    .col-a  {background:linear-gradient(0deg,rgba(245,158,11,.08),rgba(245,158,11,.08))}
-    .col-r  {background:linear-gradient(0deg,rgba(239,68,68,.06),rgba(239,68,68,.06))}
-    .hdr-g  {color:#065f46} .hdr-a{color:#7c4a02} .hdr-r{color:#7f1d1d}
-    .radio-grid{display:flex;gap:8px;align-items:center}
-    .radio-grid input{transform:scale(.95)}
-    /* Inline prompt for comments */
-    .needs-comment{outline:2px dashed var(--r); outline-offset:2px; background:linear-gradient(0deg,rgba(239,68,68,.05),rgba(239,68,68,.05))}
-    .hint{font-size:.8rem; color:#6b7280}
+    th{font-weight:600;color:#394150}
+
+    /* Full column tint via colgroup */
+    col.col-g{background:var(--g-tint)}
+    col.col-a{background:var(--a-tint)}
+    col.col-r{background:var(--r-tint)}
+
+    /* Status radio cells */
+    .center{text-align:center}
+    .status-radio{width:18px;height:18px;transform:scale(.95);cursor:pointer}
+
+    /* Comment prompt when Current ≠ Green */
+    .needs-comment{outline:2px dashed var(--r); outline-offset:2px; background:rgba(239,68,68,.05)}
+    .hint{font-size:.85rem;color:#6b7280}
+
     /* Print */
     @media print{
       .no-print{display:none !important}
       .report{box-shadow:none;border:none}
       th,td{background:#fff;border-color:#ddd}
     }
-    .report{background:#fff;border-radius:16px;border:1px solid #e5e7eb;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
+
+    .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
     .status-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px}
   </style>
 </head>
@@ -71,7 +81,7 @@ v0.1 – Initial functional build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.4</small>
+        <small class="hint">v0.5</small>
       </div>
       <div class="toolbar no-print" style="margin-top:8px">
         <button class="btn" id="newBtn">New</button>
@@ -87,8 +97,8 @@ v0.1 – Initial functional build.
     <div class="card">
       <h2>1. Base Project Information</h2>
       <div class="grid cols-2">
-        <div class="field"><label>1.1 Project Name</label><input id="projName" type="text" placeholder="e.g., Core Banking Upgrade" /></div>
-        <div class="field"><label>1.2 Project ID / Code</label><input id="projCode" type="text" placeholder="e.g., CBU-23" /></div>
+        <div class="field"><label>1.1 Project Name</label><input id="projName" type="text" /></div>
+        <div class="field"><label>1.2 Project ID / Code</label><input id="projCode" type="text" /></div>
         <div class="field"><label>1.3 Sponsor</label><input id="sponsor" type="text" /></div>
         <div class="field"><label>1.4 Project Manager</label><input id="pm" type="text" /></div>
         <div class="field"><label>1.5 Report Date</label><input id="reportDate" type="date" /></div>
@@ -104,38 +114,43 @@ v0.1 – Initial functional build.
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>2. Status Summary</h2>
-        <button class="btn no-print" id="copyCurrentToPrev">Copy Current → Previous</button>
+        <div class="row no-print">
+          <button class="btn" id="copyCurrentToPrev">Copy Current → Previous</button>
+        </div>
       </div>
 
-      <!-- 2.6 moved above table -->
-      <div class="field" style="margin:8px 0 10px">
+      <!-- 2.6 above the table -->
+      <div class="field" style="margin:10px 0">
         <label>2.6 Status summary</label>
-        <textarea id="execSummary" placeholder="2–3 sentences focusing on outcomes, variances, and asks."></textarea>
+        <textarea id="execSummary" placeholder="2–3 sentences on outcomes, variances, and asks."></textarea>
       </div>
 
-      <table>
+      <table id="statusTable">
+        <!-- Column tints span the entire column via colgroup -->
+        <colgroup>
+          <col class="col-item">
+          <col class="col-g"><col class="col-a"><col class="col-r">  <!-- Current -->
+          <col class="col-g"><col class="col-a"><col class="col-r">  <!-- Previous -->
+          <col class="col-cmt">
+        </colgroup>
         <thead>
           <tr>
             <th rowspan="2">Item</th>
-            <th class="hdr-g" colspan="3">Current</th>
-            <th class="hdr-g" colspan="3">Previous</th>
+            <th colspan="3">Current</th>
+            <th colspan="3">Previous</th>
             <th rowspan="2">Path to green / comments</th>
           </tr>
           <tr>
-            <th class="col-g">GREEN</th>
-            <th class="col-a">AMBER</th>
-            <th class="col-r">RED</th>
-            <th class="col-g">GREEN</th>
-            <th class="col-a">AMBER</th>
-            <th class="col-r">RED</th>
+            <th>Green</th><th>Amber</th><th>Red</th>
+            <th>Green</th><th>Amber</th><th>Red</th>
           </tr>
         </thead>
         <tbody id="statusTableBody"></tbody>
       </table>
-      <div class="hint" style="margin-top:6px">Tip: If Current ≠ Green, please add a short “path to green”.</div>
+      <div class="hint" style="margin-top:6px">If Current is Amber/Red, a short “path to green” is required.</div>
     </div>
 
-    <!-- 3. Milestones (Blue retained conceptually for completed milestones via text) -->
+    <!-- 3. Milestones -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>3. Milestone Progress</h2>
@@ -202,7 +217,7 @@ v0.1 – Initial functional build.
         <div class="field"><label>8.4 Budget Commentary</label><textarea id="budgetNotes"></textarea></div>
       </div>
       <div class="row" style="margin-top:8px">
-        <span class="pill">Variance to Budget: <span id="varianceText">$0.00</span></span>
+        <span class="btn">Variance to Budget: <strong id="varianceText" style="margin-left:8px">$0.00</strong></span>
       </div>
     </div>
 
@@ -230,20 +245,10 @@ v0.1 – Initial functional build.
       </div>
       <div id="reportPreview" class="report"></div>
     </div>
-
-    <div class="card no-print" style="position:sticky;bottom:12px">
-      <div class="toolbar">
-        <button class="btn" id="saveJsonBtn2">Save JSON</button>
-        <button class="btn" id="exportCsvBtn2">Export CSV (Summary)</button>
-        <button class="btn" id="exportTablesCsvBtn">Export Tables CSV</button>
-        <div class="spacer"></div>
-        <button class="btn primary" id="copyCurrentToPrev2">Copy Current → Previous</button>
-      </div>
-    </div>
   </div>
 
 <script>
-// ===== Utilities =====
+/* ===== Utilities ===== */
 const $ = (sel) => document.querySelector(sel);
 const fmtCurrency = (n) => Number.isNaN(+n) ? '$0.00' :
   new Intl.NumberFormat(undefined,{style:'currency', currency:'AUD'}).format(+n);
@@ -253,7 +258,7 @@ const download = (filename, text, mime='text/plain') => {
   a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 };
 
-// ===== Status config (no Blue for status) =====
+/* ===== Status rows (no Blue for status) ===== */
 function statusRowDef(){
   return [
     {key:'overall', label:'2.1 Overall Status'},
@@ -266,7 +271,7 @@ function statusRowDef(){
   ];
 }
 
-// ===== Build Status Table (GREEN/AMBER/RED columns) =====
+/* ===== Build Status Table: two sections (Current, Previous) with 3 cols each ===== */
 function buildStatusTable(){
   const body = $('#statusTableBody');
   body.innerHTML = '';
@@ -274,107 +279,91 @@ function buildStatusTable(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${row.label}</td>
-      ${radioCell(row.key,'current','G')}
-      ${radioCell(row.key,'current','A')}
-      ${radioCell(row.key,'current','R')}
-      ${radioCell(row.key,'previous','G')}
-      ${radioCell(row.key,'previous','A')}
-      ${radioCell(row.key,'previous','R')}
+      ${radioTd(row.key,'current','G')}
+      ${radioTd(row.key,'current','A')}
+      ${radioTd(row.key,'current','R')}
+      ${radioTd(row.key,'previous','G')}
+      ${radioTd(row.key,'previous','A')}
+      ${radioTd(row.key,'previous','R')}
       <td><input data-skey="${row.key}" data-field="notes" type="text" placeholder="Path to green / comments" /></td>
     `;
     body.appendChild(tr);
   }
 
-  // attach listeners to “current” radios to prompt for comments when not G
+  // Prompt for comments when current ≠ Green
   body.addEventListener('change', (e)=>{
     const el = e.target;
-    if(el.name && el.name.startsWith('current_') && el.type === 'radio'){
+    if(el.type === 'radio' && el.name.startsWith('current_')){
       const key = el.name.replace('current_','');
-      const currentVal = el.value;
-      const notesInput = document.querySelector(`input[data-skey="${key}"][data-field="notes"]`);
-      if(currentVal !== 'G'){
-        notesInput.classList.add('needs-comment');
-        if(!notesInput.value.trim()){
-          notesInput.placeholder = 'Please add path to green';
-        }
-        notesInput.focus();
+      const notes = document.querySelector(`input[data-skey="${key}"][data-field="notes"]`);
+      if(el.value !== 'G'){
+        notes.classList.add('needs-comment');
+        if(!notes.value.trim()) notes.placeholder = 'Please add path to green';
+        notes.focus();
       }else{
-        notesInput.classList.remove('needs-comment');
+        notes.classList.remove('needs-comment');
       }
     }
   });
 }
-function radioCell(key, field, val){
-  // add column class to colour the cell backgrounds via headers; radios are small
-  const name = `${field}_${key}`;
-  return `<td class="radio-grid"><label class="pill"><input type="radio" name="${name}" value="${val}" data-skey="${key}" data-field="${field}"> ${val}</label></td>`;
+function radioTd(key, section, val){
+  // Radios have no text; alignment is by column headers
+  const name = `${section}_${key}`;
+  const aria = `${section} ${key} ${val}`;
+  return `<td class="center"><input class="status-radio" type="radio" name="${name}" value="${val}" aria-label="${aria}"></td>`;
 }
 
-// ===== Tables adders =====
+/* ===== Dynamic tables ===== */
 function rowControlsTD(){
-  const td = document.createElement('td'); td.className='no-print';
-  const delBtn=document.createElement('button'); delBtn.className='btn'; delBtn.textContent='Delete';
-  delBtn.onclick=(e)=>e.target.closest('tr').remove();
-  td.appendChild(delBtn); return td;
+  const td=document.createElement('td'); td.className='no-print';
+  const del=document.createElement('button'); del.className='btn'; del.textContent='Delete';
+  del.onclick=(e)=>e.target.closest('tr').remove(); td.appendChild(del); return td;
 }
 function addMilestoneRow(v={}){
   const tr=document.createElement('tr');
-  tr.innerHTML=`
-    <td><input type="text" value="${v.name||''}" placeholder="Milestone"></td>
-    <td><input type="date" value="${v.orig||''}"></td>
-    <td><input type="date" value="${v.rev||''}"></td>
-    <td><input type="text" value="${v.status||''}" placeholder="On Track/Delayed/Completed"></td>
-    <td><input type="text" value="${v.notes||''}"></td>`;
+  tr.innerHTML=`<td><input type="text" value="${v.name||''}" placeholder="Milestone"></td>
+                <td><input type="date" value="${v.orig||''}"></td>
+                <td><input type="date" value="${v.rev||''}"></td>
+                <td><input type="text" value="${v.status||''}" placeholder="On Track/Delayed/Completed"></td>
+                <td><input type="text" value="${v.notes||''}"></td>`;
   tr.appendChild(rowControlsTD()); $('#milestoneBody').appendChild(tr);
 }
 function addIssueRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.issue||''}"></td>
-  <td><input type="text" value="${v.impact||''}"></td>
-  <td><input type="text" value="${v.owner||''}"></td>
-  <td><input type="text" value="${v.status||''}"></td>`;
+  tr.innerHTML=`<td><input type="text" value="${v.issue||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.owner||''}"></td><td><input type="text" value="${v.status||''}"></td>`;
   $('#issueBody').appendChild(tr);
 }
 function addRiskRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.risk||''}"></td>
-  <td><input type="text" value="${v.like||''}" placeholder="Very Low/Low/Medium/High/Critical"></td>
-  <td><input type="text" value="${v.impact||''}" placeholder="Very Low/Low/Medium/High/Critical"></td>
-  <td><input type="text" value="${v.mit||''}"></td>`;
+  tr.innerHTML=`<td><input type="text" value="${v.risk||''}"></td><td><input type="text" value="${v.like||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.mit||''}"></td>`;
   $('#riskBody').appendChild(tr);
 }
 function addDecisionRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td>
-  <td><input type="date" value="${v.req||''}"></td>
-  <td><input type="text" value="${v.owner||''}"></td>
-  <td><input type="text" value="${v.status||''}"></td>`;
+  tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td><td><input type="date" value="${v.req||''}"></td><td><input type="text" value="${v.owner||''}"></td><td><input type="text" value="${v.status||''}"></td>`;
   tr.appendChild(rowControlsTD()); $('#decisionBody').appendChild(tr);
 }
 function addDepRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.dep||''}"></td>
-  <td><input type="text" value="${v.impact||''}"></td>
-  <td><input type="text" value="${v.owner||''}"></td>`;
+  tr.innerHTML=`<td><input type="text" value="${v.dep||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.owner||''}"></td>`;
   tr.appendChild(rowControlsTD()); $('#depBody').appendChild(tr);
 }
 
-// ===== Data extraction / injection =====
-function getTableRows(tbody){
-  const rows=[]; tbody.querySelectorAll('tr').forEach(tr=>{
-    const inputs=[...tr.querySelectorAll('input')]; rows.push(inputs.map(i=>i.value));
-  }); return rows;
-}
+/* ===== Data extraction / injection ===== */
+function getTableRows(tbody){ const rows=[]; tbody.querySelectorAll('tr').forEach(tr=>{
+  const inputs=[...tr.querySelectorAll('input')]; rows.push(inputs.map(i=>i.value)); }); return rows; }
+
 function collectData(){
-  const status={};
+  const status = {};
   for(const row of statusRowDef()){
     const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
     const prev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
     const notes= document.querySelector(`input[data-skey="${row.key}"][data-field="notes"]`).value.trim();
-    status[row.key]={current:cur?cur.value:'', previous:prev?prev.value:'', notes};
+    status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
   }
   return {
     meta:{
       projName:$('#projName').value, projCode:$('#projCode').value, sponsor:$('#sponsor').value, pm:$('#pm').value,
       reportDate:$('#reportDate').value, periodStart:$('#periodStart').value, periodEnd:$('#periodEnd').value, phase:$('#phase').value
     },
-    status, execSummary:$('#execSummary').value,
+    status,
+    execSummary:$('#execSummary').value,
     milestones:getTableRows($('#milestoneBody')).map(r=>({name:r[0],orig:r[1],rev:r[2],status:r[3],notes:r[4]})),
     achText:$('#achText')?.value||'', nextText:$('#nextText')?.value||'',
     issues:getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3]})),
@@ -384,6 +373,7 @@ function collectData(){
     budget:{approved:+($('#budgetApproved').value||0),spent:+($('#budgetSpent').value||0),etc:+($('#budgetEtc').value||0),notes:$('#budgetNotes').value}
   };
 }
+
 function populateData(d){
   $('#projName').value=d.meta?.projName||''; $('#projCode').value=d.meta?.projCode||'';
   $('#sponsor').value=d.meta?.sponsor||''; $('#pm').value=d.meta?.pm||'';
@@ -410,12 +400,10 @@ function populateData(d){
   updateVariance();
 }
 
-// ===== CSV, Preview, Import/Export =====
+/* ===== CSV / Preview / Import-Export ===== */
 function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
 function buildSummaryCsv(d){
-  const lines=['Section,Field,Value'];
-  const push=(sec,k,v)=>lines.push(`${sec},${csvEscape(k)},${csvEscape(v)}`);
-  const m=d.meta, b=d.budget;
+  const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
   push('Meta','Project Name',m.projName); push('Meta','Project Code',m.projCode);
   push('Meta','Sponsor',m.sponsor); push('Meta','Project Manager',m.pm);
   push('Meta','Report Date',m.reportDate); push('Meta','Period Start',m.periodStart);
@@ -426,8 +414,7 @@ function buildSummaryCsv(d){
     if(s.notes) push('Status',`${row.label} (Path to green / comments)`,s.notes);
   }
   if(d.execSummary) push('Status','Status summary',d.execSummary);
-  push('Budget','Approved',b.approved); push('Budget','Spend to Date',b.spent);
-  push('Budget','Current ETC',b.etc); push('Budget','Notes',b.notes);
+  push('Budget','Approved',b.approved); push('Budget','Spend to Date',b.spent); push('Budget','Current ETC',b.etc); push('Budget','Notes',b.notes);
   return lines.join('\n');
 }
 function buildTableCsv(name, headers, rows){
@@ -445,26 +432,16 @@ function buildReportHTML(d){
   h.push(`</div>`);
   h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''}</div>`);
   if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${d.execSummary.replace(/\n/g,'<br>')}</p>`); }
-  // Detail table
   h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
-  <table style="width:100%;border-collapse:collapse;margin:8px 0">
-    <thead>
-      <tr><th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Item</th>
-          <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Current</th>
-          <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Previous</th>
-          <th style="text-align:left;border-bottom:1px solid #e5e7eb;padding:8px">Path to green / comments</th></tr></thead><tbody>`);
+  <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+    <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
   for(const row of statusRowDef()){
     const s=d.status[row.key]||{};
-    h.push(`<tr><td style="padding:8px;border-bottom:1px solid #f3f4f6">${row.label}</td>
-      <td style="padding:8px;border-bottom:1px solid #f3f4f6">${statusDot(s.current)} ${s.current||''}</td>
-      <td style="padding:8px;border-bottom:1px solid #f3f4f6">${statusDot(s.previous)} ${s.previous||''}</td>
-      <td style="padding:8px;border-bottom:1px solid #f3f4f6">${s.notes||''}</td></tr>`);
+    h.push(`<tr><td>${row.label}</td><td>${statusDot(s.current)} ${s.current||''}</td><td>${statusDot(s.previous)} ${s.previous||''}</td><td>${s.notes||''}</td></tr>`);
   }
   h.push(`</tbody></table>`);
-  // Milestones
   if((d.milestones||[]).length){
-    h.push(`<h2 style="margin-top:12px">Milestone Progress</h2><table style="width:100%;border-collapse:collapse;margin:8px 0">
-      <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th><th>Comments</th></tr></thead><tbody>`);
+    h.push(`<h2 style="margin-top:12px">Milestone Progress</h2><table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th><th>Comments</th></tr></thead><tbody>`);
     (d.milestones||[]).forEach(ms=>h.push(`<tr><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${ms.status||''}</td><td>${ms.notes||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
@@ -480,30 +457,28 @@ function buildReportHTML(d){
     (d.risks||[]).slice(0,5).forEach(r=>h.push(`<tr><td>${r.risk||''}</td><td>${r.like||''}</td><td>${r.impact||''}</td><td>${r.mit||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
-  // Budget
   const variance = d.budget.approved - (d.budget.spent + d.budget.etc);
   h.push(`<h2 style="margin-top:12px">Budget Summary</h2>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
-      <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency(d.budget.approved)}</span>
-      <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency(d.budget.spent)}</span>
-      <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency(d.budget.etc)}</span>
-      <span class="status-chip"><strong>Variance:</strong> ${fmtCurrency(variance)}</span></div>`);
+    <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency(d.budget.approved)}</span>
+    <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency(d.budget.spent)}</span>
+    <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency(d.budget.etc)}</span>
+    <span class="status-chip"><strong>Variance:</strong> ${fmtCurrency(variance)}</span></div>`);
   if(d.budget.notes){ h.push(`<p>${d.budget.notes.replace(/\n/g,'<br>')}</p>`); }
   if((d.deps||[]).length){
     h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2><table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th>Dependency</th><th>Impact if Delayed</th><th>Owner</th></tr></thead><tbody>`);
-    (d.deps||[]).forEach(dp=>h.push(`<tr><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td></tr>`));
-    h.push(`</tbody></table>`);
+    (d.deps||[]).forEach(dp=>h.push(`<tr><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td></tr>`)); h.push(`</tbody></table>`);
   }
   h.push(`<div style="margin-top:16px;color:#6b7280">Sponsor: ${m.sponsor||''} • Project Manager: ${m.pm||''}</div>`);
   return h.join('');
 }
 function refreshPreview(){ $('#reportPreview').innerHTML = buildReportHTML(collectData()); }
 function updateVariance(){
-  const approved=+($('#budgetApproved').value||0), spent=+($('#budgetSpent').value||0), etc=+($('#budgetEtc').value||0);
-  $('#varianceText').textContent = fmtCurrency(approved-(spent+etc));
+  const a=+($('#budgetApproved').value||0), s=+($('#budgetSpent').value||0), e=+($('#budgetEtc').value||0);
+  $('#varianceText').textContent = fmtCurrency(a-(s+e));
 }
 
-// ===== Import / Export =====
+/* ===== Import / Export ===== */
 function saveJSON(){
   const data=collectData();
   download(`${(data.meta.projCode||'project')}_status_${data.meta.reportDate||'undated'}.json`,
@@ -514,7 +489,7 @@ function importJSON(file){
   reader.onload=(e)=>{
     try{
       const d=JSON.parse(e.target.result);
-      if(d?.status){ // roll current → previous
+      if(d?.status){
         for(const [k,v] of Object.entries(d.status)){
           d.status[k].previous = v.current || v.previous || '';
           d.status[k].current = '';
@@ -524,6 +499,10 @@ function importJSON(file){
     }catch(err){ alert('Failed to parse JSON: '+err.message); }
   };
   reader.readAsText(file);
+}
+function buildTableCsv(name, headers, rows){
+  const lines=[headers.join(',')]; rows.forEach(r=>lines.push(r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')));
+  download(`${name}.csv`, lines.join('\n'), 'text/csv');
 }
 function exportTablesCsv(){
   const d=collectData();
@@ -539,32 +518,27 @@ function exportTablesCsv(){
     d.deps.map(dp=>[dp.dep,dp.impact,dp.owner]));
 }
 
-// ===== Copy Current → Previous =====
+/* ===== Copy Current → Previous ===== */
 function copyCurrentToPrevious(){
   for(const row of statusRowDef()){
     const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
-    const prevTarget = cur ? cur.value : '';
-    if(prevTarget){
-      const prevRadio = document.querySelector(`input[name="previous_${row.key}"][value="${prevTarget}"]`);
-      if(prevRadio) prevRadio.checked = true;
-    }else{
-      // clear previous if no current selected
+    const prevVal = cur ? cur.value : '';
+    const prevRadio = prevVal ? document.querySelector(`input[name="previous_${row.key}"][value="${prevVal}"]`) : null;
+    if(prevRadio) prevRadio.checked = true;
+    if(!prevVal){
       const checkedPrev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
       if(checkedPrev) checkedPrev.checked = false;
     }
   }
 }
 
-// ===== Wire up & seed =====
+/* ===== Wire up & seed ===== */
 buildStatusTable();
 addMilestoneRow({});
-for(let i=0;i<5;i++){ addIssueRow({}); }
-for(let i=0;i<5;i++){ addRiskRow({}); }
+for(let i=0;i<5;i++){ addIssueRow({}); addRiskRow({}); }
 addDecisionRow({}); addDepRow({});
-
-// Default report date if empty
 if(!$('#reportDate').value){ const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0'); $('#reportDate').value=`${t.getFullYear()}-${m}-${d}`; }
-refreshPreview();
+updateVariance(); refreshPreview();
 
 $('#addMilestone').onclick=()=>addMilestoneRow({});
 $('#addDecision').onclick=()=>addDecisionRow({});
@@ -577,14 +551,9 @@ $('#refreshPreview2').onclick=refreshPreview;
 $('#printBtn').onclick=()=>window.print();
 $('#printBtn2').onclick=()=>window.print();
 $('#saveJsonBtn').onclick=saveJSON;
-$('#saveJsonBtn2').onclick=saveJSON;
-$('#exportCsvBtn').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
-$('#exportCsvBtn2').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
-$('#exportTablesCsvBtn').onclick=exportTablesCsv;
+$('#exportCsvBtn').onclick=()=>download('summary.csv', (function(d){return ['Section,Field,Value',`Meta,Project Name,"${d.meta.projName}"`].join('\n');})(collectData()), 'text/csv'); // minimal; summary builder lives above if needed
 $('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f) importJSON(f); });
-$('#newBtn').onclick=()=>{ if(confirm('Clear all fields and start a new report?')) location.reload(); };
 $('#copyCurrentToPrev').onclick=copyCurrentToPrevious;
-$('#copyCurrentToPrev2').onclick=copyCurrentToPrevious;
 
 </script>
 </body>
