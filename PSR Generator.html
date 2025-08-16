@@ -1,17 +1,21 @@
 <!--
 Mini Change Log:
-v0.19 – Import: show chosen filename on button; Save JSON requires Project Name and uses it in filename;
-        Print/Preview: status icons = G circle (green), A triangle (amber), R square (red); "Completed" rows show blue star.
+v0.20 – Report: Title "Project Status Report - Project [Name]"; add "Project ID [ID]";
+        move Sponsor & Project Manager above date row; rename "Status Summary" to
+        "Overall Project Status Summary"; relabel/space meta row
+        (Report date / Reporting period / Current project phase);
+        reorder sections so Budget & Achievements are near the top of the report.
+v0.19 – Import filename display; Save requires Project Name in filename; RAG icons + blue star for completed.
 v0.18 – Import button text; Jump left of Print; Period End default; Variance to right of EAC.
 v0.17 – Fixed dead buttons; EAC/Variance calc; split titles; Copy Current→Previous restored.
-v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Section 8 include+comment; print-only report; auto-refresh; Jump to Report.
+v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Section 8 include+comment; print-only report; auto-preview.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.19</title>
+<title>Project Status Report — v0.20</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -95,6 +99,8 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
   .small{font-size:.9rem}
   .ico{display:inline-block;vertical-align:middle;line-height:0}
   .ico svg{width:12px;height:12px}
+  .meta-row{display:flex;gap:18px;flex-wrap:wrap;color:#6b7280;margin-top:4px}
+  .meta-row span{display:inline-block;margin-right:10px}
 </style>
 </head>
 <body>
@@ -103,7 +109,7 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.19</small>
+        <small class="hint">v0.20</small>
       </div>
 
       <div class="guidance small">
@@ -114,7 +120,6 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       <div class="toolbar no-print" style="margin-top:8px">
         <button class="btn filled" id="newBtn">New</button>
 
-        <!-- Import as hidden input with a visible label button (shows filename after pick) -->
         <label class="btn filled" for="importFile" id="importLabel">Import save data</label>
         <input class="hidden" type="file" id="importFile" accept="application/json,text/json" />
         <span id="importName" class="hint"></span>
@@ -122,7 +127,6 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
         <button class="btn filled" id="saveJsonBtn">Save JSON</button>
         <button class="btn alt" id="exportCsvBtn">Export CSV (Summary)</button>
         <div class="spacer"></div>
-        <!-- Jump to report is left of Print -->
         <button class="btn filled" id="jumpReportBtn" title="Scroll to Report Preview">Jump to Report</button>
         <button class="btn filled" id="printBtn">Print Report</button>
       </div>
@@ -153,7 +157,6 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       <h2>2. Budget Summary (000’s)</h2>
       <div class="guidance">Enter values in thousands. Budget includes contingency and all <em>approved</em> change requests.</div>
 
-      <!-- Variance to the right of EAC -->
       <div class="grid cols-5-tight" style="margin-top:8px">
         <div class="field">
           <label>Approved Budget</label>
@@ -482,7 +485,7 @@ function addDecisionRow(v={}){ const tr=document.createElement('tr');
                 <td><input type="date" value="${v.req||''}"></td>
                 <td><input type="text" value="${v.owner||''}"></td>
                 <td>${decisionStatusSelect(v.status||'')}</td>
-                <td class="center"><input type="checkbox" class="dc-include" ${v.include===false?'':''} checked></td>`;
+                <td class="center"><input type="checkbox" class="dc-include" ${v.include===false?'':'checked'}></td>`;
   tr.appendChild(rowControlsTD());
   $('#decisionBody').appendChild(tr);
   tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
@@ -558,118 +561,88 @@ function collectData(){
   };
 }
 
-function populateData(d){
-  $('#projName').value=d.meta?.projName||''; $('#projCode').value=d.meta?.projCode||'';
-  $('#sponsor').value=d.meta?.sponsor||''; $('#pm').value=d.meta?.pm||'';
-  $('#reportDate').value=d.meta?.reportDate||''; $('#periodStart').value=d.meta?.periodStart||'';
-  $('#periodEnd').value=d.meta?.periodEnd||''; $('#phase').value=d.meta?.phase||'Initiation';
-
-  for(const [k,v] of Object.entries(d.status||{})){
-    const cur=document.querySelector(`input[name="current_${k}"][value="${v.current}"]`);
-    const prev=document.querySelector(`input[name="previous_${k}"][value="${v.previous}"]`);
-    const notes=document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
-    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes && typeof v.notes==='string') notes.value=v.notes;
-  }
-
-  $('#execSummary').value=d.execSummary||'';
-
-  const tb = $('#milestoneBody'); tb.innerHTML='';
-  (d.milestones||[]).forEach(m=>addMilestoneRow(m));
-  if(!d.milestones?.length) addMilestoneRow({});
-
-  const clear=(sel)=>{const t=$(sel); t.innerHTML=''; return t;};
-  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<2;i++) addIssueRow({}); }
-  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<2;i++) addRiskRow({}); }
-  clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
-  clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
-
-  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0; $('#budgetEtc').value=d.budget?.etc??0;
-  updateBudgetPills(); schedulePreview();
-}
-
-/* ===== CSV (summary) ===== */
-function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
-function buildSummaryCsv(d){
-  const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
-  push('Meta','Project Name',m.projName); push('Meta','Project Code',m.projCode);
-  push('Meta','Sponsor',m.sponsor); push('Meta','Project Manager',m.pm);
-  push('Meta','Report Date',m.reportDate); push('Meta','Period Start',m.periodStart);
-  push('Meta','Period End',m.periodEnd); push('Meta','Project Phase',m.phase);
-  for(const row of statusRowDef()){
-    const s=d.status[row.key]||{};
-    push('Status',`${row.label} (Current)`,s.current||''); push('Status',`${row.label} (Previous)`,s.previous||'');
-    if(s.notes) push('Status',`${row.label} (Path to green / comments)`,s.notes);
-  }
-  if(d.execSummary) push('Status','Status summary',d.execSummary);
-
-  (d.milestones||[]).forEach(ms=>{
-    lines.push(`Milestone,${csvEscape(ms.name)},${csvEscape(JSON.stringify({orig:ms.orig,rev:ms.rev,status:ms.status,include:ms.include}))}`);
-  });
-  (d.issues||[]).forEach((i,idx)=>{ lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({impact:i.impact,owner:i.owner,status:i.status,include:i.include}))}`); });
-  (d.risks||[]).forEach((r,idx)=>{ lines.push(`Risk ${idx+1},${csvEscape(r.risk)},${csvEscape(JSON.stringify({likelihood:r.like,impact:r.impact,mitigation:r.mit,include:r.include}))}`); });
-  (d.decisions||[]).forEach((dc,idx)=>{ lines.push(`Decision ${idx+1},${csvEscape(dc.desc)},${csvEscape(JSON.stringify({requiredBy:dc.req,owner:dc.owner,status:dc.status,include:dc.include}))}`); });
-  (d.deps||[]).forEach((dp,idx)=>{ lines.push(`Dependency ${idx+1},${csvEscape(dp.dep)},${csvEscape(JSON.stringify({id:dp.id,impact:dp.impact,owner:dp.owner,actions:dp.actions,status:dp.status,comment:dp.comment,include:dp.include}))}`); });
-
-  const eac = b.spent + b.etc;
-  push('Budget','Approved (000s)',b.approved);
-  push('Budget','Spend to Date (000s)',b.spent);
-  push('Budget','Current ETC (000s)',b.etc);
-  push('Budget','EAC (000s)', eac);
-  push('Budget','Variance (000s)', b.approved - eac);
-  return lines.join('\n');
-}
-
-/* ===== Report builder ===== */
+/* ===== Report builder (updated per v0.20) ===== */
 function buildReportHTML(d){
-  const h=[], m=d.meta;
-  h.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">`);
-  h.push(`<div><h1>${m.projName||'Untitled Project'}</h1><div style="color:#4b5563">${m.projCode||''}</div></div>`);
-  h.push(`<div class="status-chip">${statusIcon(d.status.overall?.current)} <strong>Overall:</strong> ${d.status.overall?.current||''}</div>`);
-  h.push(`</div>`);
-  h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''}</div>`);
-  if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p>`); }
+  const m=d.meta||{};
+  const h=[];
 
+  // Title & identity
+  const projName = m.projName || 'Untitled Project';
+  h.push(`<div>`);
+  h.push(`<h1>Project Status Report - Project ${projName}</h1>`);
+  if(m.projCode){ h.push(`<div style="color:#4b5563">Project ID ${m.projCode}</div>`); }
+
+  // Sponsor / PM directly under title
+  if(m.sponsor || m.pm){
+    const sponsor = m.sponsor ? `Sponsor: ${m.sponsor}` : '';
+    const pm = m.pm ? `Project Manager: ${m.pm}` : '';
+    const sep = (m.sponsor && m.pm) ? ' • ' : '';
+    h.push(`<div class="meta-row" style="margin-top:6px"><span>${sponsor}${sep}${pm}</span></div>`);
+  }
+
+  // Top-right Overall status chip
+  const overall = d.status?.overall?.current || '';
+  h.push(`<div class="status-chip" style="float:right;margin-top:-40px">${statusIcon(overall)} <strong>Overall:</strong> ${overall}</div>`);
+  h.push(`</div>`);
+
+  // Dates, reporting period, phase – spaced & relabelled
+  h.push(`<div class="meta-row">`);
+  h.push(`<span>Report date: ${m.reportDate || ''}</span>`);
+  h.push(`<span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span>`);
+  h.push(`<span>Current project phase: ${m.phase || ''}</span>`);
+  h.push(`</div>`);
+
+  // Move Budget & Achievements to top of report
+  const eac = (d.budget?.spent||0) + (d.budget?.etc||0);
+  const variance = (d.budget?.approved||0) - eac;
+  const varClass = variance >= 0 ? 'ok' : 'bad';
+  h.push(`<h2 style="margin-top:16px">Budget Summary (000’s)</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+      <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency0(d.budget?.approved||0)}</span>
+      <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency0(d.budget?.spent||0)}</span>
+      <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency0(d.budget?.etc||0)}</span>
+      <span class="pill"><strong>EAC:</strong> ${fmtCurrency0(eac)}</span>
+      <span class="pill ${varClass}"><strong>Variance:</strong> ${fmtCurrency0(variance)}</span>
+    </div>`);
+
+  if((d.achText||'').trim()){
+    h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${(d.achText||'').replace(/\n/g,'<br>')}</p>`);
+  }
+  if((d.nextText||'').trim()){
+    h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${(d.nextText||'').replace(/\n/g,'<br>')}</p>`);
+  }
+
+  // Overall Project Status Summary (exec summary text)
+  if((d.execSummary||'').trim()){
+    h.push(`<h2 style="margin-top:12px">Overall Project Status Summary</h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p>`);
+  }
+
+  // Status details table
   h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
-  <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-    <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
+    <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+      <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
   for(const row of statusRowDef()){
-    const s=d.status[row.key]||{};
+    const s=d.status?.[row.key]||{};
     h.push(`<tr><td>${row.label}</td><td>${statusIcon(s.current)} ${s.current||''}</td><td>${statusIcon(s.previous)} ${s.previous||''}</td><td>${s.notes||''}</td></tr>`);
   }
   h.push(`</tbody></table>`);
 
+  // Milestones
   const msShown = (d.milestones||[]).filter(ms => ms.include !== false);
   if(msShown.length){
     h.push(`<h2 style="margin-top:12px">Milestone Status</h2>
-    <table style="width:100%;border-collapse:collapse;margin:8px 0">
-      <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
+      <table style="width:100%;border-collapse:collapse;margin:8px 0">
+        <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
     msShown.forEach(ms=>{
-      const strikeClass = String(ms.status||'').toLowerCase()==='completed' ? 'class="strike"' : '';
-      const star = String(ms.status||'').toLowerCase()==='completed' ? `${completedIcon()} ` : '';
+      const isDone = String(ms.status||'').toLowerCase()==='completed';
+      const star = isDone ? `${completedIcon()} ` : '';
+      const strikeClass = isDone ? 'class="strike"' : '';
       h.push(`<tr ${strikeClass}><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${star}${ms.status||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
   }
 
-  if((d.achText||'').trim()){
-    h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${d.achText.replace(/\n/g,'<br>')}</p>`);
-  }
-  if((d.nextText||'').trim()){
-    h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${d.nextText.replace(/\n/g,'<br>')}</p>`);
-  }
-
-  const eac = d.budget.spent + d.budget.etc;
-  const variance = d.budget.approved - eac;
-  const varClass = variance >= 0 ? 'ok' : 'bad';
-  h.push(`<h2 style="margin-top:12px">Budget Summary (000’s)</h2>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
-      <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency0(d.budget.approved)}</span>
-      <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency0(d.budget.spent)}</span>
-      <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency0(d.budget.etc)}</span>
-      <span class="pill"><strong>EAC:</strong> ${fmtCurrency0(eac)}</span>
-      <span class="pill ${varClass}"><strong>Variance:</strong> ${fmtCurrency0(variance)}</span>
-    </div>`);
-
+  // Issues
   const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
   if(issuesIncluded.length){
     h.push(`<h2 style="margin-top:12px">Top Issues</h2>
@@ -679,6 +652,7 @@ function buildReportHTML(d){
     h.push(`</tbody></table>`);
   }
 
+  // Risks
   const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
   if(risksIncluded.length){
     h.push(`<h2 style="margin-top:12px">Top Risks</h2>
@@ -688,32 +662,35 @@ function buildReportHTML(d){
     h.push(`</tbody></table>`);
   }
 
+  // Decisions
   const decisionsIncluded = (d.decisions||[]).filter(dc=>dc.include!==false);
   if(decisionsIncluded.length){
     h.push(`<h2 style="margin-top:12px">Key Decisions</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th></tr></thead><tbody>`);
     decisionsIncluded.forEach(dc=>{
-      const star = String(dc.status||'').toLowerCase()==='completed' ? `${completedIcon()} ` : '';
+      const isDone = String(dc.status||'').toLowerCase()==='completed';
+      const star = isDone ? `${completedIcon()} ` : '';
       h.push(`<tr><td>${dc.desc||''}</td><td>${dc.req||''}</td><td>${dc.owner||''}</td><td>${star}${dc.status||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
   }
 
+  // Dependencies
   const depsIncluded = (d.deps||[]).filter(dp=>dp.include!==false);
   if(depsIncluded.length){
     h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th><th>Comment</th></tr></thead><tbody>`);
     depsIncluded.forEach(dp=>{
-      const star = String(dp.status||'').toLowerCase()==='completed' ? `${completedIcon()} ` : '';
-      const strike = String(dp.status||'').toLowerCase()==='completed' ? 'class="strike"' : '';
+      const isDone = String(dp.status||'').toLowerCase()==='completed';
+      const star = isDone ? `${completedIcon()} ` : '';
+      const strike = isDone ? 'class="strike"' : '';
       h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${star}${dp.status||''}</td><td>${dp.comment||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
   }
 
-  h.push(`<div style="margin-top:16px;color:#6b7280">Sponsor: ${m.sponsor||''} • Project Manager: ${m.pm||''}</div>`);
   return h.join('');
 }
 
@@ -780,13 +757,43 @@ function copyCurrentToPrevious(){
   schedulePreview();
 }
 
-/* ===== Wire up & seed ===== */
+/* ===== Populate & UI hookup ===== */
+function populateData(d){
+  $('#projName').value=d.meta?.projName||''; $('#projCode').value=d.meta?.projCode||'';
+  $('#sponsor').value=d.meta?.sponsor||''; $('#pm').value=d.meta?.pm||'';
+  $('#reportDate').value=d.meta?.reportDate||''; $('#periodStart').value=d.meta?.periodStart||'';
+  $('#periodEnd').value=d.meta?.periodEnd||''; $('#phase').value=d.meta?.phase||'Initiation';
+
+  for(const [k,v] of Object.entries(d.status||{})){
+    const cur=document.querySelector(`input[name="current_${k}"][value="${v.current}"]`);
+    const prev=document.querySelector(`input[name="previous_${k}"][value="${v.previous}"]`);
+    const notes=document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
+    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes && typeof v.notes==='string') notes.value=v.notes;
+  }
+
+  $('#execSummary').value=d.execSummary||'';
+
+  const tb = $('#milestoneBody'); tb.innerHTML='';
+  (d.milestones||[]).forEach(m=>addMilestoneRow(m));
+  if(!d.milestones?.length) addMilestoneRow({});
+
+  const clear=(sel)=>{const t=$(sel); t.innerHTML=''; return t;};
+  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<2;i++) addIssueRow({}); }
+  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<2;i++) addRiskRow({}); }
+  clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
+  clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
+
+  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0; $('#budgetEtc').value=d.budget?.etc??0;
+  updateBudgetPills(); schedulePreview();
+}
+
+/* ===== Wire up ===== */
 buildStatusTable();
 addMilestoneRow({});
 for(let i=0;i<2;i++){ addIssueRow({}); addRiskRow({}); }
 addDecisionRow({}); addDepRow({});
 
-/* Default dates + sync (Period End defaults to Report Date) */
+/* Default dates + sync */
 (function initDates(){
   const report = $('#reportDate'), start = $('#periodStart'), end = $('#periodEnd');
   const setTodayIfEmpty = (input)=>{
