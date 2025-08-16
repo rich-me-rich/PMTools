@@ -1,9 +1,12 @@
 <!--
 Mini Change Log:
-v0.5 – Reworked 2.1 table to two sections (Current, Previous) with three columns each (Green, Amber, Red) and unlabeled radios aligned to headers. Added colgroup tinting for full-column color cues.
-v0.4 – Copy Current → Previous; moved 2.6 above table; status table used colored subcolumns; smaller radios; prompt for comments when Current ≠ Green.
-v0.3 – Swapped 1.6 Project Phase ahead of Reporting Period; removed 1.8 Version Number from UI (hidden, import-tolerant).
-v0.2 – White theme UI matching screenshot; pill selectors; CSV exports; print-friendly report.
+v0.6 – Section 3 renamed to "Milestone Status"; status is now a dropdown (On Track/Delayed/Not started);
+       removed comments column; added "Add to status report" checkbox (default yes);
+       milestones auto-strikethrough when completed; sections 4 & 5 placed side-by-side.
+v0.5 – Reworked 2.1 table into Current/Previous groups with 3 columns each (Green/Amber/Red); radios aligned to headers.
+v0.4 – Copy Current → Previous; 2.6 above table; coloured subcolumns; smaller radios; prompt comments when Current ≠ Green.
+v0.3 – Swapped 1.6 Phase ahead of Reporting Period; removed 1.8 Version Number from UI (hidden, import tolerant).
+v0.2 – White theme UI matching screenshot; CSV exports; print-friendly report.
 v0.1 – Initial functional build.
 -->
 <!DOCTYPE html>
@@ -11,7 +14,7 @@ v0.1 – Initial functional build.
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Status Report Generator — v0.5</title>
+  <title>Status Report Generator — v0.6</title>
   <style>
     :root{
       --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -30,6 +33,7 @@ v0.1 – Initial functional build.
     .container{max-width:1200px;margin:0 auto;padding:24px}
     .grid{display:grid;gap:16px}
     .cols-2{grid-template-columns:1fr 1fr}
+    .cols-2-slim{grid-template-columns:1fr 1fr}
     .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
     .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .toolbar .spacer{flex:1}
@@ -38,11 +42,12 @@ v0.1 – Initial functional build.
     input[type="text"],input[type="date"],input[type="number"],select,textarea{
       width:100%;border:1px solid var(--border);background:#fff;color:var(--text);padding:10px 12px;border-radius:10px;outline:none
     }
-    textarea{min-height:100px}
+    textarea{min-height:140px}
     .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .btn{background:#fff;border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:12px;cursor:pointer}
     .btn:hover{filter:brightness(1.03)}
     .btn.primary{background:linear-gradient(180deg,rgba(16,185,129,.12),rgba(16,185,129,.05));border-color:#1f4f2e}
+    .checkbox{display:inline-flex;align-items:center;gap:8px}
 
     /* Tables */
     table{width:100%;border-collapse:separate;border-spacing:0 8px}
@@ -50,17 +55,13 @@ v0.1 – Initial functional build.
     th:first-child,td:first-child{border-left:1px solid var(--border);border-top-left-radius:10px;border-bottom-left-radius:10px}
     th:last-child,td:last-child{border-right:1px solid var(--border);border-top-right-radius:10px;border-bottom-right-radius:10px}
     th{font-weight:600;color:#394150}
+    .center{text-align:center}
 
-    /* Full column tint via colgroup */
+    /* 2.1 table colours via colgroup */
     col.col-g{background:var(--g-tint)}
     col.col-a{background:var(--a-tint)}
     col.col-r{background:var(--r-tint)}
-
-    /* Status radio cells */
-    .center{text-align:center}
     .status-radio{width:18px;height:18px;transform:scale(.95);cursor:pointer}
-
-    /* Comment prompt when Current ≠ Green */
     .needs-comment{outline:2px dashed var(--r); outline-offset:2px; background:rgba(239,68,68,.05)}
     .hint{font-size:.85rem;color:#6b7280}
 
@@ -70,9 +71,9 @@ v0.1 – Initial functional build.
       .report{box-shadow:none;border:none}
       th,td{background:#fff;border-color:#ddd}
     }
-
     .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
     .status-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px}
+    .strike{ text-decoration: line-through; color:#6b7280}
   </style>
 </head>
 <body>
@@ -81,7 +82,7 @@ v0.1 – Initial functional build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.5</small>
+        <small class="hint">v0.6</small>
       </div>
       <div class="toolbar no-print" style="margin-top:8px">
         <button class="btn" id="newBtn">New</button>
@@ -119,18 +120,17 @@ v0.1 – Initial functional build.
         </div>
       </div>
 
-      <!-- 2.6 above the table -->
+      <!-- 2.6 above table -->
       <div class="field" style="margin:10px 0">
         <label>2.6 Status summary</label>
         <textarea id="execSummary" placeholder="2–3 sentences on outcomes, variances, and asks."></textarea>
       </div>
 
       <table id="statusTable">
-        <!-- Column tints span the entire column via colgroup -->
         <colgroup>
           <col class="col-item">
-          <col class="col-g"><col class="col-a"><col class="col-r">  <!-- Current -->
-          <col class="col-g"><col class="col-a"><col class="col-r">  <!-- Previous -->
+          <col class="col-g"><col class="col-a"><col class="col-r">
+          <col class="col-g"><col class="col-a"><col class="col-r">
           <col class="col-cmt">
         </colgroup>
         <thead>
@@ -150,28 +150,40 @@ v0.1 – Initial functional build.
       <div class="hint" style="margin-top:6px">If Current is Amber/Red, a short “path to green” is required.</div>
     </div>
 
-    <!-- 3. Milestones -->
+    <!-- 3. Milestone Status -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
-        <h2>3. Milestone Progress</h2>
+        <h2>3. Milestone Status</h2>
         <button class="btn" id="addMilestone">Add Milestone</button>
       </div>
       <table>
-        <thead><tr><th>Milestone</th><th>Original Date</th><th>Revised Date</th><th>Status</th><th>Comments</th><th class="no-print">Actions</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>Original Date</th>
+            <th>Revised Date</th>
+            <th>Status</th> <!-- Dropdown -->
+            <th class="center">Add to report</th>
+            <th class="no-print">Actions</th>
+          </tr>
+        </thead>
         <tbody id="milestoneBody"></tbody>
       </table>
+      <div class="hint" style="margin-top:6px">“Completed” is inferred when the date is in the past and status is <em>On Track</em>; such milestones are shown with strikethrough.</div>
     </div>
 
-    <!-- 4. Achievements -->
+    <!-- 4 & 5 side by side -->
     <div class="card">
-      <h2>4. Key Achievements This Period</h2>
-      <div class="field"><textarea id="achText" placeholder="Free text…"></textarea></div>
-    </div>
-
-    <!-- 5. Next Period -->
-    <div class="card">
-      <h2>5. Key Activities Next Period</h2>
-      <div class="field"><textarea id="nextText" placeholder="Free text…"></textarea></div>
+      <div class="grid cols-2-slim">
+        <div class="field">
+          <h2>4. Key Achievements This Period</h2>
+          <textarea id="achText" style="min-height:180px" placeholder="Free text…"></textarea>
+        </div>
+        <div class="field">
+          <h2>5. Key Activities Next Period</h2>
+          <textarea id="nextText" style="min-height:180px" placeholder="Free text…"></textarea>
+        </div>
+      </div>
     </div>
 
     <!-- 6. Issues & Risks -->
@@ -214,7 +226,7 @@ v0.1 – Initial functional build.
         <div class="field"><label>8.1 Approved Budget</label><input id="budgetApproved" type="number" min="0" step="0.01" placeholder="0.00" /></div>
         <div class="field"><label>8.2 Spend to Date</label><input id="budgetSpent" type="number" min="0" step="0.01" placeholder="0.00" /></div>
         <div class="field"><label>8.3 Current ETC</label><input id="budgetEtc" type="number" min="0" step="0.01" placeholder="0.00" /></div>
-        <div class="field"><label>8.4 Budget Commentary</label><textarea id="budgetNotes"></textarea></div>
+        <div class="field"><label>8.4 Budget Commentary</label><textarea id="budgetNotes" style="min-height:120px"></textarea></div>
       </div>
       <div class="row" style="margin-top:8px">
         <span class="btn">Variance to Budget: <strong id="varianceText" style="margin-left:8px">$0.00</strong></span>
@@ -278,283 +290,3 @@ function buildStatusTable(){
   for(const row of statusRowDef()){
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${row.label}</td>
-      ${radioTd(row.key,'current','G')}
-      ${radioTd(row.key,'current','A')}
-      ${radioTd(row.key,'current','R')}
-      ${radioTd(row.key,'previous','G')}
-      ${radioTd(row.key,'previous','A')}
-      ${radioTd(row.key,'previous','R')}
-      <td><input data-skey="${row.key}" data-field="notes" type="text" placeholder="Path to green / comments" /></td>
-    `;
-    body.appendChild(tr);
-  }
-
-  // Prompt for comments when current ≠ Green
-  body.addEventListener('change', (e)=>{
-    const el = e.target;
-    if(el.type === 'radio' && el.name.startsWith('current_')){
-      const key = el.name.replace('current_','');
-      const notes = document.querySelector(`input[data-skey="${key}"][data-field="notes"]`);
-      if(el.value !== 'G'){
-        notes.classList.add('needs-comment');
-        if(!notes.value.trim()) notes.placeholder = 'Please add path to green';
-        notes.focus();
-      }else{
-        notes.classList.remove('needs-comment');
-      }
-    }
-  });
-}
-function radioTd(key, section, val){
-  // Radios have no text; alignment is by column headers
-  const name = `${section}_${key}`;
-  const aria = `${section} ${key} ${val}`;
-  return `<td class="center"><input class="status-radio" type="radio" name="${name}" value="${val}" aria-label="${aria}"></td>`;
-}
-
-/* ===== Dynamic tables ===== */
-function rowControlsTD(){
-  const td=document.createElement('td'); td.className='no-print';
-  const del=document.createElement('button'); del.className='btn'; del.textContent='Delete';
-  del.onclick=(e)=>e.target.closest('tr').remove(); td.appendChild(del); return td;
-}
-function addMilestoneRow(v={}){
-  const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.name||''}" placeholder="Milestone"></td>
-                <td><input type="date" value="${v.orig||''}"></td>
-                <td><input type="date" value="${v.rev||''}"></td>
-                <td><input type="text" value="${v.status||''}" placeholder="On Track/Delayed/Completed"></td>
-                <td><input type="text" value="${v.notes||''}"></td>`;
-  tr.appendChild(rowControlsTD()); $('#milestoneBody').appendChild(tr);
-}
-function addIssueRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.issue||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.owner||''}"></td><td><input type="text" value="${v.status||''}"></td>`;
-  $('#issueBody').appendChild(tr);
-}
-function addRiskRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.risk||''}"></td><td><input type="text" value="${v.like||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.mit||''}"></td>`;
-  $('#riskBody').appendChild(tr);
-}
-function addDecisionRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td><td><input type="date" value="${v.req||''}"></td><td><input type="text" value="${v.owner||''}"></td><td><input type="text" value="${v.status||''}"></td>`;
-  tr.appendChild(rowControlsTD()); $('#decisionBody').appendChild(tr);
-}
-function addDepRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.dep||''}"></td><td><input type="text" value="${v.impact||''}"></td><td><input type="text" value="${v.owner||''}"></td>`;
-  tr.appendChild(rowControlsTD()); $('#depBody').appendChild(tr);
-}
-
-/* ===== Data extraction / injection ===== */
-function getTableRows(tbody){ const rows=[]; tbody.querySelectorAll('tr').forEach(tr=>{
-  const inputs=[...tr.querySelectorAll('input')]; rows.push(inputs.map(i=>i.value)); }); return rows; }
-
-function collectData(){
-  const status = {};
-  for(const row of statusRowDef()){
-    const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
-    const prev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
-    const notes= document.querySelector(`input[data-skey="${row.key}"][data-field="notes"]`).value.trim();
-    status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
-  }
-  return {
-    meta:{
-      projName:$('#projName').value, projCode:$('#projCode').value, sponsor:$('#sponsor').value, pm:$('#pm').value,
-      reportDate:$('#reportDate').value, periodStart:$('#periodStart').value, periodEnd:$('#periodEnd').value, phase:$('#phase').value
-    },
-    status,
-    execSummary:$('#execSummary').value,
-    milestones:getTableRows($('#milestoneBody')).map(r=>({name:r[0],orig:r[1],rev:r[2],status:r[3],notes:r[4]})),
-    achText:$('#achText')?.value||'', nextText:$('#nextText')?.value||'',
-    issues:getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3]})),
-    risks:getTableRows($('#riskBody')).map(r=>({risk:r[0],like:r[1],impact:r[2],mit:r[3]})),
-    decisions:getTableRows($('#decisionBody')).map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3]})),
-    deps:getTableRows($('#depBody')).map(r=>({dep:r[0],impact:r[1],owner:r[2]})),
-    budget:{approved:+($('#budgetApproved').value||0),spent:+($('#budgetSpent').value||0),etc:+($('#budgetEtc').value||0),notes:$('#budgetNotes').value}
-  };
-}
-
-function populateData(d){
-  $('#projName').value=d.meta?.projName||''; $('#projCode').value=d.meta?.projCode||'';
-  $('#sponsor').value=d.meta?.sponsor||''; $('#pm').value=d.meta?.pm||'';
-  $('#reportDate').value=d.meta?.reportDate||''; $('#periodStart').value=d.meta?.periodStart||'';
-  $('#periodEnd').value=d.meta?.periodEnd||''; $('#phase').value=d.meta?.phase||'Initiation';
-
-  for(const [k,v] of Object.entries(d.status||{})){
-    const cur=document.querySelector(`input[name="current_${k}"][value="${v.current}"]`);
-    const prev=document.querySelector(`input[name="previous_${k}"][value="${v.previous}"]`);
-    const notes=document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
-    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes) notes.value=v.notes||'';
-  }
-  $('#execSummary').value=d.execSummary||'';
-
-  const clear=(sel)=>{const tb=$(sel); tb.innerHTML=''; return tb;};
-  clear('#milestoneBody'); (d.milestones||[]).forEach(m=>addMilestoneRow(m)); if(!d.milestones?.length) addMilestoneRow({});
-  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); while(document.querySelectorAll('#issueBody tr').length<5) addIssueRow({});
-  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); while(document.querySelectorAll('#riskBody tr').length<5) addRiskRow({});
-  clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
-  clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
-
-  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0;
-  $('#budgetEtc').value=d.budget?.etc??0; $('#budgetNotes').value=d.budget?.notes||'';
-  updateVariance();
-}
-
-/* ===== CSV / Preview / Import-Export ===== */
-function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
-function buildSummaryCsv(d){
-  const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
-  push('Meta','Project Name',m.projName); push('Meta','Project Code',m.projCode);
-  push('Meta','Sponsor',m.sponsor); push('Meta','Project Manager',m.pm);
-  push('Meta','Report Date',m.reportDate); push('Meta','Period Start',m.periodStart);
-  push('Meta','Period End',m.periodEnd); push('Meta','Project Phase',m.phase);
-  for(const row of statusRowDef()){
-    const s=d.status[row.key]||{};
-    push('Status',`${row.label} (Current)`,s.current||''); push('Status',`${row.label} (Previous)`,s.previous||'');
-    if(s.notes) push('Status',`${row.label} (Path to green / comments)`,s.notes);
-  }
-  if(d.execSummary) push('Status','Status summary',d.execSummary);
-  push('Budget','Approved',b.approved); push('Budget','Spend to Date',b.spent); push('Budget','Current ETC',b.etc); push('Budget','Notes',b.notes);
-  return lines.join('\n');
-}
-function buildTableCsv(name, headers, rows){
-  const lines=[headers.join(',')]; rows.forEach(r=>lines.push(r.map(csvEscape).join(',')));
-  download(`${name}.csv`, lines.join('\n'), 'text/csv');
-}
-
-function statusDot(color){ const map={G:'#10b981',A:'#f59e0b',R:'#ef4444',B:'#2563eb'}; const bg=map[color?.toUpperCase?.()]||'#9ca3af';
-  return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bg}"></span>`;}
-function buildReportHTML(d){
-  const h=[], m=d.meta;
-  h.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">`);
-  h.push(`<div><h1>${m.projName||'Untitled Project'}</h1><div style="color:#4b5563">${m.projCode||''}</div></div>`);
-  h.push(`<div class="status-chip">${statusDot(d.status.overall?.current)} <strong>Overall:</strong> ${d.status.overall?.current||''}</div>`);
-  h.push(`</div>`);
-  h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''}</div>`);
-  if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${d.execSummary.replace(/\n/g,'<br>')}</p>`); }
-  h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
-  <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-    <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
-  for(const row of statusRowDef()){
-    const s=d.status[row.key]||{};
-    h.push(`<tr><td>${row.label}</td><td>${statusDot(s.current)} ${s.current||''}</td><td>${statusDot(s.previous)} ${s.previous||''}</td><td>${s.notes||''}</td></tr>`);
-  }
-  h.push(`</tbody></table>`);
-  if((d.milestones||[]).length){
-    h.push(`<h2 style="margin-top:12px">Milestone Progress</h2><table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th><th>Comments</th></tr></thead><tbody>`);
-    (d.milestones||[]).forEach(ms=>h.push(`<tr><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${ms.status||''}</td><td>${ms.notes||''}</td></tr>`));
-    h.push(`</tbody></table>`);
-  }
-  if((d.achText||'').trim()){ h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${d.achText.replace(/\n/g,'<br>')}</p>`); }
-  if((d.nextText||'').trim()){ h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${d.nextText.replace(/\n/g,'<br>')}</p>`); }
-  if((d.issues||[]).length){
-    h.push(`<h2 style="margin-top:12px">Top 5 Issues</h2><table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead><tbody>`);
-    (d.issues||[]).slice(0,5).forEach(i=>h.push(`<tr><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
-    h.push(`</tbody></table>`);
-  }
-  if((d.risks||[]).length){
-    h.push(`<h2 style="margin-top:12px">Top 5 Risks</h2><table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead><tbody>`);
-    (d.risks||[]).slice(0,5).forEach(r=>h.push(`<tr><td>${r.risk||''}</td><td>${r.like||''}</td><td>${r.impact||''}</td><td>${r.mit||''}</td></tr>`));
-    h.push(`</tbody></table>`);
-  }
-  const variance = d.budget.approved - (d.budget.spent + d.budget.etc);
-  h.push(`<h2 style="margin-top:12px">Budget Summary</h2>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
-    <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency(d.budget.approved)}</span>
-    <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency(d.budget.spent)}</span>
-    <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency(d.budget.etc)}</span>
-    <span class="status-chip"><strong>Variance:</strong> ${fmtCurrency(variance)}</span></div>`);
-  if(d.budget.notes){ h.push(`<p>${d.budget.notes.replace(/\n/g,'<br>')}</p>`); }
-  if((d.deps||[]).length){
-    h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2><table style="width:100%;border-collapse:collapse;margin:8px 0"><thead><tr><th>Dependency</th><th>Impact if Delayed</th><th>Owner</th></tr></thead><tbody>`);
-    (d.deps||[]).forEach(dp=>h.push(`<tr><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td></tr>`)); h.push(`</tbody></table>`);
-  }
-  h.push(`<div style="margin-top:16px;color:#6b7280">Sponsor: ${m.sponsor||''} • Project Manager: ${m.pm||''}</div>`);
-  return h.join('');
-}
-function refreshPreview(){ $('#reportPreview').innerHTML = buildReportHTML(collectData()); }
-function updateVariance(){
-  const a=+($('#budgetApproved').value||0), s=+($('#budgetSpent').value||0), e=+($('#budgetEtc').value||0);
-  $('#varianceText').textContent = fmtCurrency(a-(s+e));
-}
-
-/* ===== Import / Export ===== */
-function saveJSON(){
-  const data=collectData();
-  download(`${(data.meta.projCode||'project')}_status_${data.meta.reportDate||'undated'}.json`,
-           JSON.stringify(data,null,2), 'application/json');
-}
-function importJSON(file){
-  const reader=new FileReader();
-  reader.onload=(e)=>{
-    try{
-      const d=JSON.parse(e.target.result);
-      if(d?.status){
-        for(const [k,v] of Object.entries(d.status)){
-          d.status[k].previous = v.current || v.previous || '';
-          d.status[k].current = '';
-        }
-      }
-      populateData(d); refreshPreview();
-    }catch(err){ alert('Failed to parse JSON: '+err.message); }
-  };
-  reader.readAsText(file);
-}
-function buildTableCsv(name, headers, rows){
-  const lines=[headers.join(',')]; rows.forEach(r=>lines.push(r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')));
-  download(`${name}.csv`, lines.join('\n'), 'text/csv');
-}
-function exportTablesCsv(){
-  const d=collectData();
-  buildTableCsv('milestones', ['Milestone','Original Date','Revised Date','Status','Comments'],
-    d.milestones.map(ms=>[ms.name,ms.orig,ms.rev,ms.status,ms.notes]));
-  buildTableCsv('issues', ['Issue','Impact','Owner','Status / Next Steps'],
-    d.issues.slice(0,5).map(i=>[i.issue,i.impact,i.owner,i.status]));
-  buildTableCsv('risks', ['Risk','Likelihood','Impact','Mitigation'],
-    d.risks.slice(0,5).map(r=>[r.risk,r.like,r.impact,r.mit]));
-  buildTableCsv('decisions', ['Decision','Required By','Owner','Status'],
-    d.decisions.map(dc=>[dc.desc,dc.req,dc.owner,dc.status]));
-  buildTableCsv('dependencies', ['Dependency','Impact if Delayed','Owner'],
-    d.deps.map(dp=>[dp.dep,dp.impact,dp.owner]));
-}
-
-/* ===== Copy Current → Previous ===== */
-function copyCurrentToPrevious(){
-  for(const row of statusRowDef()){
-    const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
-    const prevVal = cur ? cur.value : '';
-    const prevRadio = prevVal ? document.querySelector(`input[name="previous_${row.key}"][value="${prevVal}"]`) : null;
-    if(prevRadio) prevRadio.checked = true;
-    if(!prevVal){
-      const checkedPrev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
-      if(checkedPrev) checkedPrev.checked = false;
-    }
-  }
-}
-
-/* ===== Wire up & seed ===== */
-buildStatusTable();
-addMilestoneRow({});
-for(let i=0;i<5;i++){ addIssueRow({}); addRiskRow({}); }
-addDecisionRow({}); addDepRow({});
-if(!$('#reportDate').value){ const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0'); $('#reportDate').value=`${t.getFullYear()}-${m}-${d}`; }
-updateVariance(); refreshPreview();
-
-$('#addMilestone').onclick=()=>addMilestoneRow({});
-$('#addDecision').onclick=()=>addDecisionRow({});
-$('#addDep').onclick=()=>addDepRow({});
-$('#budgetApproved').addEventListener('input', updateVariance);
-$('#budgetSpent').addEventListener('input', updateVariance);
-$('#budgetEtc').addEventListener('input', updateVariance);
-$('#refreshPreview').onclick=refreshPreview;
-$('#refreshPreview2').onclick=refreshPreview;
-$('#printBtn').onclick=()=>window.print();
-$('#printBtn2').onclick=()=>window.print();
-$('#saveJsonBtn').onclick=saveJSON;
-$('#exportCsvBtn').onclick=()=>download('summary.csv', (function(d){return ['Section,Field,Value',`Meta,Project Name,"${d.meta.projName}"`].join('\n');})(collectData()), 'text/csv'); // minimal; summary builder lives above if needed
-$('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f) importJSON(f); });
-$('#copyCurrentToPrev').onclick=copyCurrentToPrevious;
-
-</script>
-</body>
-</html>
