@@ -1,18 +1,17 @@
 <!--
 Mini Change Log:
-v0.18 – General: change import button text to "Import save data";
-        General: move "Jump to Report" to the left of "Print Report" in the main toolbar;
-        Section 1: ensure Reporting Period (End) defaults to Report Date;
-        Section 2: place Variance to the right of EAC (same row).
-v0.17 – Fix JS crash (buttons working); EAC/Variance calc; split titles; Copy Current→Previous works.
-v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Section 8 include+comment; print-only report; auto-refresh.
+v0.19 – Import: show chosen filename on button; Save JSON requires Project Name and uses it in filename;
+        Print/Preview: status icons = G circle (green), A triangle (amber), R square (red); "Completed" rows show blue star.
+v0.18 – Import button text; Jump left of Print; Period End default; Variance to right of EAC.
+v0.17 – Fixed dead buttons; EAC/Variance calc; split titles; Copy Current→Previous restored.
+v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Section 8 include+comment; print-only report; auto-refresh; Jump to Report.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.18</title>
+<title>Project Status Report — v0.19</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -94,6 +93,8 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
   .status-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px}
   .strike{ text-decoration: line-through; color:#6b7280}
   .small{font-size:.9rem}
+  .ico{display:inline-block;vertical-align:middle;line-height:0}
+  .ico svg{width:12px;height:12px}
 </style>
 </head>
 <body>
@@ -102,7 +103,7 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.18</small>
+        <small class="hint">v0.19</small>
       </div>
 
       <div class="guidance small">
@@ -112,13 +113,16 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
 
       <div class="toolbar no-print" style="margin-top:8px">
         <button class="btn filled" id="newBtn">New</button>
-        <!-- Import as hidden input with a visible label button -->
-        <label class="btn filled" for="importFile">Import save data</label>
+
+        <!-- Import as hidden input with a visible label button (shows filename after pick) -->
+        <label class="btn filled" for="importFile" id="importLabel">Import save data</label>
         <input class="hidden" type="file" id="importFile" accept="application/json,text/json" />
+        <span id="importName" class="hint"></span>
+
         <button class="btn filled" id="saveJsonBtn">Save JSON</button>
         <button class="btn alt" id="exportCsvBtn">Export CSV (Summary)</button>
         <div class="spacer"></div>
-        <!-- Jump to report is now immediately left of Print -->
+        <!-- Jump to report is left of Print -->
         <button class="btn filled" id="jumpReportBtn" title="Scroll to Report Preview">Jump to Report</button>
         <button class="btn filled" id="printBtn">Print Report</button>
       </div>
@@ -149,7 +153,7 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       <h2>2. Budget Summary (000’s)</h2>
       <div class="guidance">Enter values in thousands. Budget includes contingency and all <em>approved</em> change requests.</div>
 
-      <!-- Put Variance to the right of EAC, same row -->
+      <!-- Variance to the right of EAC -->
       <div class="grid cols-5-tight" style="margin-top:8px">
         <div class="field">
           <label>Approved Budget</label>
@@ -327,6 +331,7 @@ const download = (filename, text, mime='text/plain') => {
   a.href = URL.createObjectURL(new Blob([text], {type:mime}));
   a.download = filename; a.click(); URL.revokeObjectURL(a.href);
 };
+const sanitizeFilename = (s) => String(s||'').trim().replace(/[\\\/:*?"<>|]+/g,'').replace(/\s+/g,'_').slice(0,120);
 
 /* ===== Status rows ===== */
 function statusRowDef(){
@@ -340,6 +345,22 @@ function statusRowDef(){
     {key:'stake',   label:'4.7 Stakeholder Status'},
   ];
 }
+
+/* ===== Icons (SVG) ===== */
+const SVG = {
+  circle: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="${fill}"/></svg></span>`,
+  triangle: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><polygon points="8,3 14,13 2,13" fill="${fill}"/></svg></span>`,
+  square: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" fill="${fill}"/></svg></span>`,
+  star: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l2 4 4.5.6-3.3 3.1.9 4.6L8 11.7 3.9 13.8l.9-4.6L1.5 6.1 6 5.5l2-4z" fill="${fill}"/></svg></span>`
+};
+function statusIcon(code){
+  const c = (code||'').toUpperCase();
+  if(c==='G') return SVG.circle('#10b981');
+  if(c==='A') return SVG.triangle('#f59e0b');
+  if(c==='R') return SVG.square('#ef4444');
+  return SVG.square('#9ca3af');
+}
+function completedIcon(){ return SVG.star('#2563eb'); }
 
 /* ===== Section 4 table (classic) ===== */
 function buildStatusTable(){
@@ -397,7 +418,8 @@ function updateMilestoneStrike(tr){
   const nameInput = tr.querySelector('td:nth-child(1) input[type="text"]');
   const statusSel = tr.querySelector('.ms-status');
   if(!nameInput || !statusSel) return;
-  if(sel.value === 'Completed'){ nameInput.classList.add('strike'); }
+  if(statusSel.value === 'Completed'){ nameInput.classList.add('strike'); }
+  else { nameInput.classList.remove('strike'); }
 }
 function addMilestoneRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`
@@ -417,12 +439,8 @@ function addMilestoneRow(v={}){ const tr=document.createElement('tr');
   });
 
   tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
-  const sel = tr.querySelector('.ms-status');
-  sel.addEventListener('change', ()=>{ 
-    const nameInput = tr.querySelector('td:nth-child(1) input[type="text"]');
-    if(sel.value === 'Completed'){ nameInput.classList.add('strike'); } else { nameInput.classList.remove('strike'); }
-    schedulePreview(); 
-  });
+  updateMilestoneStrike(tr);
+  tr.querySelector('.ms-status').addEventListener('change', ()=>{ updateMilestoneStrike(tr); schedulePreview(); });
 }
 
 /* Issues */
@@ -452,21 +470,37 @@ function decisionStatusSelect(value){
   const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
   return `<select class="dc-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
 }
+function updateDecisionStrike(tr){
+  const desc = tr.querySelector('td:nth-child(1) input[type="text"]');
+  const sel  = tr.querySelector('.dc-status');
+  if(!desc || !sel) return;
+  if(sel.value === 'Completed'){ desc.classList.add('strike'); }
+  else { desc.classList.remove('strike'); }
+}
 function addDecisionRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td>
                 <td><input type="date" value="${v.req||''}"></td>
                 <td><input type="text" value="${v.owner||''}"></td>
                 <td>${decisionStatusSelect(v.status||'')}</td>
-                <td class="center"><input type="checkbox" class="dc-include" ${v.include===false?'':'checked'}></td>`;
+                <td class="center"><input type="checkbox" class="dc-include" ${v.include===false?'':''} checked></td>`;
   tr.appendChild(rowControlsTD());
   $('#decisionBody').appendChild(tr);
   tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
+  updateDecisionStrike(tr);
+  tr.querySelector('.dc-status').addEventListener('change', ()=>{ updateDecisionStrike(tr); schedulePreview(); });
 }
 
 /* Dependencies */
 function depStatusSelect(value){
   const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
   return `<select class="dep-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
+}
+function updateDepStrike(tr){
+  const depTxt = tr.querySelector('td:nth-child(2) input[type="text"]');
+  const sel = tr.querySelector('.dep-status');
+  if(!depTxt || !sel) return;
+  if(sel.value === 'Completed'){ depTxt.classList.add('strike'); }
+  else { depTxt.classList.remove('strike'); }
 }
 function addDepRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID / REF"></td>
@@ -480,6 +514,8 @@ function addDepRow(v={}){ const tr=document.createElement('tr');
   tr.appendChild(rowControlsTD());
   $('#depBody').appendChild(tr);
   tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
+  updateDepStrike(tr);
+  tr.querySelector('.dep-status').addEventListener('change', ()=>{ updateDepStrike(tr); schedulePreview(); });
 }
 
 /* ===== Data extraction / injection ===== */
@@ -551,7 +587,7 @@ function populateData(d){
   updateBudgetPills(); schedulePreview();
 }
 
-/* ===== CSV (summary) – unchanged ===== */
+/* ===== CSV (summary) ===== */
 function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
 function buildSummaryCsv(d){
   const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
@@ -584,26 +620,21 @@ function buildSummaryCsv(d){
 }
 
 /* ===== Report builder ===== */
-function statusDot(color){ const map={G:'#10b981',A:'#f59e0b',R:'#ef4444'}; const bg=map[color?.toUpperCase?.()]||'#9ca3af';
-  return `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${bg}"></span>`;}
-
-function isCompleted(val){ return String(val||'').toLowerCase()==='completed'; }
-
 function buildReportHTML(d){
   const h=[], m=d.meta;
   h.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px">`);
   h.push(`<div><h1>${m.projName||'Untitled Project'}</h1><div style="color:#4b5563">${m.projCode||''}</div></div>`);
-  h.push(`<div class="status-chip">${statusDot(d.status.overall?.current)} <strong>Overall:</strong> ${d.status.overall?.current||''}</div>`);
+  h.push(`<div class="status-chip">${statusIcon(d.status.overall?.current)} <strong>Overall:</strong> ${d.status.overall?.current||''}</div>`);
   h.push(`</div>`);
   h.push(`<div style="margin-top:4px;color:#6b7280">Report Date: ${m.reportDate||''} • Period: ${m.periodStart||''} → ${m.periodEnd||''} • Phase: ${m.phase||''}</div>`);
-  if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${d.execSummary.replace(/\n/g,'<br>')}</p>`); }
+  if(d.execSummary){ h.push(`<h2 style="margin-top:16px">Status Summary</h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p>`); }
 
   h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
   <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
     <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
   for(const row of statusRowDef()){
     const s=d.status[row.key]||{};
-    h.push(`<tr><td>${row.label}</td><td>${statusDot(s.current)} ${s.current||''}</td><td>${statusDot(s.previous)} ${s.previous||''}</td><td>${s.notes||''}</td></tr>`);
+    h.push(`<tr><td>${row.label}</td><td>${statusIcon(s.current)} ${s.current||''}</td><td>${statusIcon(s.previous)} ${s.previous||''}</td><td>${s.notes||''}</td></tr>`);
   }
   h.push(`</tbody></table>`);
 
@@ -613,8 +644,9 @@ function buildReportHTML(d){
     <table style="width:100%;border-collapse:collapse;margin:8px 0">
       <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
     msShown.forEach(ms=>{
-      const strikeClass = isCompleted(ms.status) ? 'class="strike"' : '';
-      h.push(`<tr ${strikeClass}><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${ms.status||''}</td></tr>`);
+      const strikeClass = String(ms.status||'').toLowerCase()==='completed' ? 'class="strike"' : '';
+      const star = String(ms.status||'').toLowerCase()==='completed' ? `${completedIcon()} ` : '';
+      h.push(`<tr ${strikeClass}><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${star}${ms.status||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
   }
@@ -638,14 +670,45 @@ function buildReportHTML(d){
       <span class="pill ${varClass}"><strong>Variance:</strong> ${fmtCurrency0(variance)}</span>
     </div>`);
 
+  const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
+  if(issuesIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Top Issues</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead><tbody>`);
+    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
+  if(risksIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Top Risks</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead><tbody>`);
+    risksIncluded.forEach(r=>h.push(`<tr><td>${r.risk||''}</td><td>${r.like||''}</td><td>${r.impact||''}</td><td>${r.mit||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+
+  const decisionsIncluded = (d.decisions||[]).filter(dc=>dc.include!==false);
+  if(decisionsIncluded.length){
+    h.push(`<h2 style="margin-top:12px">Key Decisions</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th></tr></thead><tbody>`);
+    decisionsIncluded.forEach(dc=>{
+      const star = String(dc.status||'').toLowerCase()==='completed' ? `${completedIcon()} ` : '';
+      h.push(`<tr><td>${dc.desc||''}</td><td>${dc.req||''}</td><td>${dc.owner||''}</td><td>${star}${dc.status||''}</td></tr>`);
+    });
+    h.push(`</tbody></table>`);
+  }
+
   const depsIncluded = (d.deps||[]).filter(dp=>dp.include!==false);
   if(depsIncluded.length){
     h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th><th>Comment</th></tr></thead><tbody>`);
     depsIncluded.forEach(dp=>{
+      const star = String(dp.status||'').toLowerCase()==='completed' ? `${completedIcon()} ` : '';
       const strike = String(dp.status||'').toLowerCase()==='completed' ? 'class="strike"' : '';
-      h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${dp.status||''}</td><td>${dp.comment||''}</td></tr>`);
+      h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${star}${dp.status||''}</td><td>${dp.comment||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
   }
@@ -675,8 +738,16 @@ function updateBudgetPills(){
 /* ===== Import / Export ===== */
 function saveJSON(){
   const data=collectData();
-  download(`${(data.meta.projCode||'project')}_status_${data.meta.reportDate||'undated'}.json`,
-           JSON.stringify(data,null,2), 'application/json');
+  const projName = $('#projName').value.trim();
+  if(!projName){
+    alert('Please enter a Project Name before saving.');
+    $('#projName').focus();
+    return;
+  }
+  const safeName = sanitizeFilename(projName);
+  const datePart = data.meta.reportDate || 'undated';
+  const filename = `${safeName}_status_${datePart}.json`;
+  download(filename, JSON.stringify(data,null,2), 'application/json');
 }
 function importJSON(file){
   const reader=new FileReader();
@@ -715,7 +786,7 @@ addMilestoneRow({});
 for(let i=0;i<2;i++){ addIssueRow({}); addRiskRow({}); }
 addDecisionRow({}); addDepRow({});
 
-/* Default dates + sync (ensure Period End defaults to Report Date) */
+/* Default dates + sync (Period End defaults to Report Date) */
 (function initDates(){
   const report = $('#reportDate'), start = $('#periodStart'), end = $('#periodEnd');
   const setTodayIfEmpty = (input)=>{
@@ -726,10 +797,9 @@ addDecisionRow({}); addDepRow({});
   };
   setTodayIfEmpty(report);
   if(!start.value) start.value = report.value;
-  if(!end.value) end.value = report.value; // explicit default of End to Report Date
+  if(!end.value) end.value = report.value;
 
   report.addEventListener('change', ()=>{
-    // If start/end look unspecific/empty, keep them synced on first change
     if(!start.value || start.dataset.synced==='1'){ start.value = report.value; start.dataset.synced='1'; }
     if(!end.value || end.dataset.synced==='1'){ end.value = report.value; end.dataset.synced='1'; }
     schedulePreview();
@@ -742,8 +812,6 @@ addDecisionRow({}); addDepRow({});
 document.body.addEventListener('input', (e)=>{ if(e.target.closest('.card')) schedulePreview(); }, {passive:true});
 document.body.addEventListener('change', (e)=>{ if(e.target.closest('.card')) schedulePreview(); }, {passive:true});
 
-updateBudgetPills(); refreshPreview();
-
 /* Buttons */
 $('#addMilestone').onclick=()=>addMilestoneRow({});
 $('#addIssue').onclick=()=>addIssueRow({});
@@ -755,10 +823,13 @@ $('#printBtn').onclick=()=>{ refreshPreview(); window.print(); };
 $('#printBtn2').onclick=()=>{ refreshPreview(); window.print(); };
 $('#saveJsonBtn').onclick=saveJSON;
 $('#exportCsvBtn').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
-$('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f) importJSON(f); });
+$('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f){ $('#importName').textContent = f.name; importJSON(f); } });
 $('#newBtn').onclick=()=>{ if(confirm('Clear all fields and start a new report?')) location.reload(); };
 $('#copyCurrentToPrev').onclick=copyCurrentToPrevious;
 $('#jumpReportBtn').onclick=()=>{ document.getElementById('reportCard')?.scrollIntoView({behavior:'smooth', block:'start'}); };
+
+/* Initial calc + preview */
+updateBudgetPills(); refreshPreview();
 </script>
 </body>
 </html>
