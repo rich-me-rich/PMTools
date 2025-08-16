@@ -1,28 +1,18 @@
 <!--
-Change Log:
-v0.17 – Fix: all buttons dead due to JS crash (getTableRows called with selector strings);
-        Fix: Section 2 EAC/Variance calculations; UI: split into separate EAC and Variance fields with their own titles;
-        Fix: "Copy Current → Previous" now works (same root cause).
-v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Section 8 include+comment; print-only report; jump-to-report; auto-refresh.
-v0.10 – Guidance text added to all sections; Section 8: budget note (incl. contingency + CRs), added EAC (Spend+ETC),
-         5-field row, removed number input spinners; buttons styled with colour-filled look.
-v0.09  – Title + how-to; milestones: Revised auto-seed; Decisions include + status dropdown (+strike on Completed);
-         Budget (000’s) single-row with coloured variance; Dependencies: ID/Actions/Status (+strike).
-v0.08  – Remove 2.1 notes; milestones Completed + live strike; Issues/Risks add & Include.
-v0.07  – Reverted Section 2 grouped layout; comment prompt when Current ≠ Green.
-v0.06  – Milestone dropdown, include flag, completed strikethrough; sections 4&5 side-by-side.
-v0.05  – Section 2 grouped Current/Previous with G/A/R.
-v0.04  – Copy Current → Previous; 2.6 above table; prompt when Current ≠ Green.
-v0.03  – Swapped 1.6 & 1.7; removed 1.8.
-v0.02  – White theme baseline; CSV exports; print-friendly report.
-v0.01  – Initial functional build.
+Mini Change Log:
+v0.18 – General: change import button text to "Import save data";
+        General: move "Jump to Report" to the left of "Print Report" in the main toolbar;
+        Section 1: ensure Reporting Period (End) defaults to Report Date;
+        Section 2: place Variance to the right of EAC (same row).
+v0.17 – Fix JS crash (buttons working); EAC/Variance calc; split titles; Copy Current→Previous works.
+v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Section 8 include+comment; print-only report; auto-refresh.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.17</title>
+<title>Project Status Report — v0.18</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -58,6 +48,7 @@ v0.01  – Initial functional build.
   textarea{min-height:140px}
   .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
   .center{text-align:center}
+  .hidden{display:none}
 
   .btn{border:1px solid transparent;border-radius:12px;cursor:pointer;padding:10px 14px;font-weight:600}
   .btn.filled{background:var(--btn);color:var(--btn-text)}
@@ -111,8 +102,7 @@ v0.01  – Initial functional build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <button class="btn filled" id="jumpReportBtn" title="Scroll to Report Preview">Jump to Report</button>
-        <small class="hint">v0.17</small>
+        <small class="hint">v0.18</small>
       </div>
 
       <div class="guidance small">
@@ -121,11 +111,15 @@ v0.01  – Initial functional build.
       </div>
 
       <div class="toolbar no-print" style="margin-top:8px">
-        <button class="btn filled" id="newBtn">Clear data</button>
-        <input class="btn filled" type="file" id="importFile" accept="application/json,text/json" />
-        <button class="btn filled" id="saveJsonBtn">Save</button>
+        <button class="btn filled" id="newBtn">New</button>
+        <!-- Import as hidden input with a visible label button -->
+        <label class="btn filled" for="importFile">Import save data</label>
+        <input class="hidden" type="file" id="importFile" accept="application/json,text/json" />
+        <button class="btn filled" id="saveJsonBtn">Save JSON</button>
         <button class="btn alt" id="exportCsvBtn">Export CSV (Summary)</button>
         <div class="spacer"></div>
+        <!-- Jump to report is now immediately left of Print -->
+        <button class="btn filled" id="jumpReportBtn" title="Scroll to Report Preview">Jump to Report</button>
         <button class="btn filled" id="printBtn">Print Report</button>
       </div>
     </div>
@@ -133,7 +127,7 @@ v0.01  – Initial functional build.
     <!-- 1. Base Project Information -->
     <div class="card">
       <h2>1. Base Project Information</h2>
-      <div class="guidance">This toll will create a Project Status Report.  simply enter the key info and then print or extract.  you can save the file and re-import it next reporting cycle.</div>
+      <div class="guidance">Enter the key identifiers and reporting dates used to label the report and period covered.</div>
       <div class="grid cols-5-tight" style="align-items:end">
         <div class="field"><label>Project Name</label><input id="projName" type="text" /></div>
         <div class="field"><label>Project ID / Code</label><input id="projCode" type="text" /></div>
@@ -154,7 +148,9 @@ v0.01  – Initial functional build.
     <div class="card">
       <h2>2. Budget Summary (000’s)</h2>
       <div class="guidance">Enter values in thousands. Budget includes contingency and all <em>approved</em> change requests.</div>
-      <div class="grid cols-4" style="margin-top:8px">
+
+      <!-- Put Variance to the right of EAC, same row -->
+      <div class="grid cols-5-tight" style="margin-top:8px">
         <div class="field">
           <label>Approved Budget</label>
           <div class="money"><span>$</span><input id="budgetApproved" type="number" min="0" step="1" placeholder="0" /></div>
@@ -168,22 +164,21 @@ v0.01  – Initial functional build.
           <div class="money"><span>$</span><input id="budgetEtc" type="number" min="0" step="1" placeholder="0" /></div>
         </div>
         <div class="field">
-          <label>Estimate at Comp.(EAC)</label>
+          <label>Estimate at Completion (EAC)</label>
           <span class="pill" id="eacPill"><strong id="eacText">$0</strong></span>
         </div>
-      </div>
-      <div class="grid cols-4" style="margin-top:8px">
         <div class="field">
-          <label>Variance (Approved budget less ETC)</label>
+          <label>Variance (Approved – EAC)</label>
           <span class="pill" id="variancePill"><strong id="varianceText">$0</strong></span>
         </div>
       </div>
+
       <div class="guidance small">EAC = <strong>Spend to Date + Current ETC</strong>. Variance &ge; 0 shows as underrun, &lt; 0 as overrun.</div>
     </div>
 
-    <!-- 3. Achievements -->
+    <!-- 3. Narrative -->
     <div class="card">
-      <h2>3. Achievements</h2>
+      <h2>3. Narrative</h2>
       <div class="grid cols-2-slim">
         <div class="field">
           <h3>3.1 Key Achievements This Period</h3>
@@ -402,8 +397,7 @@ function updateMilestoneStrike(tr){
   const nameInput = tr.querySelector('td:nth-child(1) input[type="text"]');
   const statusSel = tr.querySelector('.ms-status');
   if(!nameInput || !statusSel) return;
-  if(statusSel.value === 'Completed'){ nameInput.classList.add('strike'); }
-  else { nameInput.classList.remove('strike'); }
+  if(sel.value === 'Completed'){ nameInput.classList.add('strike'); }
 }
 function addMilestoneRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`
@@ -423,8 +417,12 @@ function addMilestoneRow(v={}){ const tr=document.createElement('tr');
   });
 
   tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
-  updateMilestoneStrike(tr);
-  tr.querySelector('.ms-status').addEventListener('change', ()=>{ updateMilestoneStrike(tr); schedulePreview(); });
+  const sel = tr.querySelector('.ms-status');
+  sel.addEventListener('change', ()=>{ 
+    const nameInput = tr.querySelector('td:nth-child(1) input[type="text"]');
+    if(sel.value === 'Completed'){ nameInput.classList.add('strike'); } else { nameInput.classList.remove('strike'); }
+    schedulePreview(); 
+  });
 }
 
 /* Issues */
@@ -454,13 +452,6 @@ function decisionStatusSelect(value){
   const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
   return `<select class="dc-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
 }
-function updateDecisionStrike(tr){
-  const desc = tr.querySelector('td:nth-child(1) input[type="text"]');
-  const sel  = tr.querySelector('.dc-status');
-  if(!desc || !sel) return;
-  if(sel.value === 'Completed'){ desc.classList.add('strike'); }
-  else { desc.classList.remove('strike'); }
-}
 function addDecisionRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td>
                 <td><input type="date" value="${v.req||''}"></td>
@@ -470,21 +461,12 @@ function addDecisionRow(v={}){ const tr=document.createElement('tr');
   tr.appendChild(rowControlsTD());
   $('#decisionBody').appendChild(tr);
   tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
-  updateDecisionStrike(tr);
-  tr.querySelector('.dc-status').addEventListener('change', ()=>{ updateDecisionStrike(tr); schedulePreview(); });
 }
 
 /* Dependencies */
 function depStatusSelect(value){
   const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
   return `<select class="dep-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
-}
-function updateDepStrike(tr){
-  const depTxt = tr.querySelector('td:nth-child(2) input[type="text"]');
-  const sel = tr.querySelector('.dep-status');
-  if(!depTxt || !sel) return;
-  if(sel.value === 'Completed'){ depTxt.classList.add('strike'); }
-  else { depTxt.classList.remove('strike'); }
 }
 function addDepRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID / REF"></td>
@@ -498,8 +480,6 @@ function addDepRow(v={}){ const tr=document.createElement('tr');
   tr.appendChild(rowControlsTD());
   $('#depBody').appendChild(tr);
   tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
-  updateDepStrike(tr);
-  tr.querySelector('.dep-status').addEventListener('change', ()=>{ updateDepStrike(tr); schedulePreview(); });
 }
 
 /* ===== Data extraction / injection ===== */
@@ -516,7 +496,6 @@ function collectData(){
     status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
   }
 
-  // FIXED: pass TBODY ELEMENTS (not selector strings)
   const msRows = getTableRows($('#milestoneBody')).map(r=>({
     name:r[0], orig:r[1], rev:r[2], status:r[3], include:r[4]
   }));
@@ -572,7 +551,7 @@ function populateData(d){
   updateBudgetPills(); schedulePreview();
 }
 
-/* ===== CSV (summary) ===== */
+/* ===== CSV (summary) – unchanged ===== */
 function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
 function buildSummaryCsv(d){
   const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
@@ -665,7 +644,7 @@ function buildReportHTML(d){
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th><th>Comment</th></tr></thead><tbody>`);
     depsIncluded.forEach(dp=>{
-      const strike = isCompleted(dp.status) ? 'class="strike"' : '';
+      const strike = String(dp.status||'').toLowerCase()==='completed' ? 'class="strike"' : '';
       h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${dp.status||''}</td><td>${dp.comment||''}</td></tr>`);
     });
     h.push(`</tbody></table>`);
@@ -736,17 +715,21 @@ addMilestoneRow({});
 for(let i=0;i<2;i++){ addIssueRow({}); addRiskRow({}); }
 addDecisionRow({}); addDepRow({});
 
-/* Default dates + sync */
+/* Default dates + sync (ensure Period End defaults to Report Date) */
 (function initDates(){
   const report = $('#reportDate'), start = $('#periodStart'), end = $('#periodEnd');
-  if(!report.value){
-    const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0');
-    report.value=`${t.getFullYear()}-${m}-${d}`;
-  }
+  const setTodayIfEmpty = (input)=>{
+    if(!input.value){
+      const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0');
+      input.value=`${t.getFullYear()}-${m}-${d}`;
+    }
+  };
+  setTodayIfEmpty(report);
   if(!start.value) start.value = report.value;
-  if(!end.value) end.value = report.value;
+  if(!end.value) end.value = report.value; // explicit default of End to Report Date
 
   report.addEventListener('change', ()=>{
+    // If start/end look unspecific/empty, keep them synced on first change
     if(!start.value || start.dataset.synced==='1'){ start.value = report.value; start.dataset.synced='1'; }
     if(!end.value || end.dataset.synced==='1'){ end.value = report.value; end.dataset.synced='1'; }
     schedulePreview();
@@ -779,4 +762,3 @@ $('#jumpReportBtn').onclick=()=>{ document.getElementById('reportCard')?.scrollI
 </script>
 </body>
 </html>
-
