@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PM Tools Hub</title>
+  <style>
+    /* ---------------------------------------------------------
+       PM Tools Hub (vanilla) – v0.13
+       Changes in this set (kept in code, not shown on page):
+       - Add smooth fade when toggling theme
+       - Add subtle fade when switching status filters / searching
+       - Remove on-page changelog and Getting Started section
+       --------------------------------------------------------- */
+
+    /* --- Minimal Design System (self‑contained, no external deps) --- */
+    :root { --bg:#0b0d10; --panel:#111318; --panel-2:#151922; --text:#e7e9ee; --muted:#a8b0bf; --border:#232835; --accent:#5b8cff; --accent-2:#3dd9b6; --warn:#f59e0b; --ok:#22c55e; --planned:#7c8599; --badge:#1b2030; --shadow:0 6px 24px rgba(0,0,0,.35);} 
+    html.light { --bg:#f6f7fb; --panel:#ffffff; --panel-2:#f3f6ff; --text:#0b0d10; --muted:#4b5566; --border:#e7e9ee; --badge:#eef2ff; --shadow:0 10px 30px rgba(19,32,64,.08);} 
+
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:var(--bg);color:var(--text)}
+    a{color:inherit;text-decoration:none}
+
+    /* Smooth theme transitions (enabled briefly by toggling .smooth on <html>) */
+    html.smooth body,
+    html.smooth .card,
+    html.smooth .tabs,
+    html.smooth .btn,
+    html.smooth .chip,
+    html.smooth .footer-card,
+    html.smooth .search input {
+      transition: background-color .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+
+    .container{max-width:1120px;margin:0 auto;padding:24px}
+    .header{display:flex;flex-wrap:wrap;gap:16px;align-items:end;justify-content:space-between}
+    .title{font-size:clamp(24px,4vw,34px);font-weight:800;letter-spacing:-.02em}
+    .subtitle{margin-top:6px;color:var(--muted)}
+    .chiprow{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
+    .chip{display:inline-flex;align-items:center;gap:8px;background:var(--badge);color:var(--text);padding:6px 10px;border:1px solid var(--border);border-radius:999px;font-size:12px}
+
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);cursor:pointer;box-shadow:var(--shadow);font-weight:600}
+    .btn.primary{background:var(--accent);border-color:transparent;color:#fff}
+    .btn.ghost{background:transparent;box-shadow:none}
+    .btn[disabled]{opacity:.6;cursor:not-allowed}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+    .controls{margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+    .search{position:relative;flex:1 1 320px;max-width:400px}
+    .search input{width:100%;padding:12px 14px 12px 38px;border-radius:12px;border:1px solid var(--border);background:var(--panel);color:var(--text)}
+    .search .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.6;font-size:14px}
+
+    .tabs{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+    .tabs button{padding:10px 14px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-weight:600}
+    .tabs button.active{background:var(--panel-2);color:var(--text)}
+
+    .sep{height:1px;background:var(--border);margin:18px 0 14px}
+
+    .grid{display:grid;gap:16px;grid-template-columns:repeat(1,minmax(0,1fr));transition:opacity .18s ease}
+    .grid.fading{opacity:.08}
+    @media (min-width:768px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media (min-width:1024px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+    .card-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .card-tt{font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
+    .card-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:var(--badge);border:1px solid var(--border);font-size:16px}
+    .card-bd{padding:14px 16px 18px}
+    .muted{color:var(--muted)}
+    .badge{font-size:12px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:var(--badge)}
+    .status.ready{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.22)}
+    .status.progress{background:rgba(245,158,11,.12);color:#fcd34d;border-color:rgba(245,158,11,.22)}
+    .status.planned{background:rgba(124,133,153,.12);color:#c8cfde;border-color:rgba(124,133,153,.22)}
+
+    .copyright{text-align:center;font-size:12px;color:var(--muted);margin:12px 0 0}
+  </style>
+  <script>(function(){
+    // Theme boot before paint
+    const pref=localStorage.getItem('pmhub-dark');
+    const dark=pref===null?true:JSON.parse(pref);
+    document.documentElement.classList.toggle('light',!dark);
+    document.documentElement.classList.toggle('dark',!!dark);
+  })();</script>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div>
+        <div class="title">PM Tools Hub</div>
+        <div class="subtitle">Jump into reporting, risk, workshops, and (soon) budgeting.</div>
+        <div class="chiprow">
+          <span class="chip">Workspace</span>
+          <span class="chip" id="versionChip">v0.13 (vanilla)</span>
+          <span class="chip" id="lastUpdated">Last updated: —</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="zipBtn" title="Download all tools as ZIP">Download ZIP</button>
+        <button class="btn" id="themeBtn" title="Toggle light/dark">Toggle theme</button>
+      </div>
+    </header>
+
+    <!-- Controls -->
+    <section class="controls">
+      <div class="search"><span class="icon">🔎</span><input id="searchInput" type="search" placeholder="Search tools, features, tags…" /></div>
+      <div class="tabs"><button class="active" data-tab="all">All</button><button data-tab="ready">Ready</button><button data-tab="inprogress">In progress</button><button data-tab="planned">Planned</button></div>
+    </section>
+
+    <div class="sep"></div>
+    <main id="cards" class="grid"></main>
+
+    <div class="copyright">© <span id="year"></span> PM Tools – Workspace</div>
+  </div>
+
+  <script>
+    // ---- Data (prewired to your current filenames) ----
+    const TOOLS = [
+      { id: 'psr', name: 'Project Status Report (PSR)', summary: 'Create, export and print structured weekly/fortnightly PSRs.', href: 'psr-tool.html', downloadHref: 'psr-tool.html', icon: '📘', status: 'Ready', tags: ['reporting','csv','print'], version: 'v1.0', notes: 'Aligned numbers; CSV includes Issue/Risk IDs & ratings; print layout improvements.' },
+      { id: 'risk', name: 'Project Risk Analysis', summary: 'Capture risks, auto-rate, plot matrices + category heatmaps, export CSV.', href: 'risk-analysis.html', downloadHref: 'risk-analysis.html', icon: '⚠️', status: 'Ready', tags: ['risk','matrix','heatmap','csv'], version: 'v2.0', notes: 'Dot de-overlap, category heatmap, tooltips, print-friendly tables.' },
+      { id: 'lessons', name: 'Lessons Learnt Workshop', summary: 'Facilitate end-of-project workshop, export results to CSV for archiving.', href: 'lessons-learnt.html', downloadHref: 'lessons-learnt.html', icon: '🧩', status: 'In Progress', tags: ['retro','workshop','csv'], version: 'v0.9', notes: '1–5 scale with 6-NA, jump-to-bottom, duplicate export controls, category heatmap summary.' },
+      { id: 'budget', name: 'PM Budget & Actuals', summary: 'Plan base budget, record weekly/monthly actuals, track change requests.', href: '', downloadHref: '', icon: '💲', status: 'Planned', tags: ['budget','actuals','cr'], version: 'v0.1 (planned)', notes: 'Placeholder – will integrate once PSR reaches steady state.' }
+    ];
+
+    // ---- Utilities ----
+    const esc = (s) => (s+"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+    function statusClass(s){ if(s==='Ready') return 'badge status ready'; if(s==='In Progress') return 'badge status progress'; return 'badge status planned'; }
+    function renderCard(t){
+      const tags = (t.tags||[]).map(tag => `<span class="tag">${esc(tag)}</span>`).join('');
+      const openBtn = t.href ? `<a class="btn" href="${esc(t.href)}">Open</a>` : `<button class="btn" disabled>Building…</button>`;
+      const dlBtn = t.downloadHref ? `<a class="btn ghost" href="${esc(t.downloadHref)}">Download</a>` : '';
+      const version = t.version ? `<span class="badge">${esc(t.version)}</span>` : '';
+      return `<article class="card"><header class="card-hd"><div class="card-tt"><span class="card-ic">${esc(t.icon)}</span>${esc(t.name)}</div><div style="display:flex;gap:8px;align-items:center;"><span class="${statusClass(t.status)}">${esc(t.status)}</span>${version}</div></header><div class="card-bd"><p class="muted">${esc(t.summary)}</p>${t.notes?`<p class=\"muted\" style=\"font-size:12px;margin-top:8px;\">${esc(t.notes)}</p>`:''}<div class="tagrow">${tags}</div><div class="btnrow">${openBtn}${dlBtn}</div></div></article>`;
+    }
+
+    // Fade-assisted render: briefly lower opacity, then update
+    const gridEl = document.getElementById('cards');
+    function render(list){
+      gridEl.classList.add('fading');
+      setTimeout(()=>{ gridEl.innerHTML=list.map(renderCard).join(''); gridEl.classList.remove('fading'); }, 120);
+    }
+
+    // Initial render
+    render(TOOLS);
+
+    // Search + Tabs (trigger re-render with fade)
+    const searchInput=document.getElementById('searchInput'); let activeTab='all';
+    function applyFilters(){ const q=(searchInput.value||'').toLowerCase(); const out=TOOLS.filter(t=>{ const matches=!q||`${t.name} ${t.summary} ${(t.tags||[]).join(' ')} ${(t.notes||'')}`.toLowerCase().includes(q); const key=t.status==='Ready'?'ready':(t.status==='In Progress'?'inprogress':'planned'); return matches&&(activeTab==='all'||activeTab===key);}); render(out);} 
+    searchInput.addEventListener('input',applyFilters);
+    document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeTab=btn.getAttribute('data-tab');applyFilters();}));
+
+    // Theme toggle + last updated (enable smooth class briefly)
+    const htmlEl = document.documentElement;
+    document.getElementById('themeBtn').addEventListener('click',()=>{
+      htmlEl.classList.add('smooth');
+      const isDark=htmlEl.classList.contains('dark');
+      htmlEl.classList.toggle('dark',!isDark);
+      htmlEl.classList.toggle('light',isDark);
+      localStorage.setItem('pmhub-dark',JSON.stringify(!isDark));
+      setTimeout(()=>htmlEl.classList.remove('smooth'), 300);
+    });
+
+    document.getElementById('lastUpdated').textContent = 'Last updated: ' + new Date().toLocaleString();
+    document.getElementById('year').textContent=new Date().getFullYear();
+
+    // ---- ZIP Builder (store only, no compression) ----
+    // Creates a valid ZIP file in-browser without external libraries.
+    // Limitations: uses no compression ("store"); files are fetched via relative URLs.
+    async function downloadZip(){
+      const files = [];
+      // Include this hub and any tool with an href ending in .html
+      const hubName = 'pm-tools-hub.html';
+      const hubHtml = document.documentElement.outerHTML; // current DOM state
+      files.push({name: hubName, data: new TextEncoder().encode(hubHtml)});
+      for (const t of TOOLS){
+        const path = t.downloadHref || t.href; if(!path) continue; if(!/\.html?(#|\?|$)/i.test(path)) continue;
+        try { const res = await fetch(path); const buf = new Uint8Array(await res.arrayBuffer()); files.push({name: path, data: buf}); }
+        catch(e){ console.warn('Fetch failed for', path, e); }
+      }
+      const blob = buildZip(files);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+      a.href = url; a.download = `pm-tools-${stamp}.zip`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    // Minimal ZIP (store) implementation
+    function buildZip(files){
+      const records = []; const central = [];
+      let offset = 0; const chunks = [];
+      for (const f of files){
+        const nameBytes = new TextEncoder().encode(f.name);
+        const crc = crc32(f.data);
+        const comp = f.data; // store
+        const dos = dosDateTime(new Date());
+        const lh = new Uint8Array(30 + nameBytes.length);
+        const dv = new DataView(lh.buffer);
+        dv.setUint32(0, 0x04034b50, true); // local header sig
+        dv.setUint16(4, 20, true); // version needed
+        dv.setUint16(6, 0, true); // flags
+        dv.setUint16(8, 0, true); // method 0 = store
+        dv.setUint16(10, dos.time, true);
+        dv.setUint16(12, dos.date, true);
+        dv.setUint32(14, crc, true);
+        dv.setUint32(18, comp.length, true);
+        dv.setUint32(22, comp.length, true);
+        dv.setUint16(26, nameBytes.length, true);
+        dv.setUint16(28, 0, true); // extra len
+        lh.set(nameBytes, 30);
+        chunks.push(lh, comp);
+        // Central directory header
+        const cd = new Uint8Array(46 + nameBytes.length);
+        const cdv = new DataView(cd.buffer);
+        cdv.setUint32(0, 0x02014b50, true);
+        cdv.setUint16(4, 20, true); // version made by
+        cdv.setUint16(6, 20, true); // version needed
+        cdv.setUint16(8, 0, true); // flags
+        cdv.setUint16(10, 0, true); // method
+        cdv.setUint16(12, dos.time, true);
+        cdv.setUint16(14, dos.date, true);
+        cdv.setUint32(16, crc, true);
+        cdv.setUint32(20, comp.length, true);
+        cdv.setUint32(24, comp.length, true);
+        cdv.setUint16(28, nameBytes.length, true);
+        cdv.setUint16(30, 0, true); // extra
+        cdv.setUint16(32, 0, true); // comment
+        cdv.setUint16(34, 0, true); // disk
+        cdv.setUint16(36, 0, true); // internal attrs
+        cdv.setUint32(38, 0, true); // external attrs
+        cdv.setUint32(42, offset, true); // local header offset
+        cd.set(nameBytes, 46);
+        central.push(cd);
+        offset += lh.length + comp.length;
+      }
+      const centralSize = central.reduce((a,c)=>a+c.length,0);
+      const centralOffset = offset;
+      const eocd = new Uint8Array(22);
+      const e = new DataView(eocd.buffer);
+      e.setUint32(0, 0x06054b50, true);
+      e.setUint16(4, 0, true); // disk
+      e.setUint16(6, 0, true); // start disk
+      e.setUint16(8, TOOLS.length, true);
+      e.setUint16(10, TOOLS.length, true);
+      e.setUint32(12, centralSize, true);
+      e.setUint32(16, centralOffset, true);
+      e.setUint16(20, 0, true); // comment len
+      const all = [...chunks, ...central, eocd];
+      const size = all.reduce((a,c)=>a+c.length,0);
+      const out = new Uint8Array(size);
+      let p = 0; for (const part of all){ out.set(part, p); p += part.length; }
+      return new Blob([out], {type:'application/zip'});
+    }
+
+    // CRC32
+    const CRC_TABLE = (()=>{ let c, table = new Uint32Array(256); for (let n=0;n<256;n++){ c=n; for (let k=0;k<8;k++){ c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);} table[n]=c>>>0;} return table; })();
+    function crc32(buf){ let c = 0 ^ (-1); for (let i=0;i<buf.length;i++){ c = (c >>> 8) ^ CRC_TABLE[(c ^ buf[i]) & 0xFF]; } return (c ^ (-1)) >>> 0; }
+
+    // DOS date/time from JS Date
+    function dosDateTime(d){
+      const year = d.getFullYear();
+      const dosYear = Math.max(0, year - 1980);
+      const date = (dosYear << 9) | ((d.getMonth()+1) << 5) | d.getDate();
+      const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() / 2 | 0);
+      return {date, time};
+    }
+
+    // Bind ZIP button
+    document.getElementById('zipBtn').addEventListener('click', downloadZip);
+  </script>
+</body>
+</html>
