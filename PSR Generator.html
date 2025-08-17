@@ -1,5 +1,6 @@
 <!--
 Mini Change Log:
+v0.23 – Section 6: Issue Impact & Status now dropdowns; Risk Rating dropdown added. Section 8: removed Comment column; Status options set to G/A/R/B. Print: added Jump-to-Top button; Sponsor & PM moved after Project ID; Overall status chip moved to the summary heading, color-coded with full names; Status & Milestones now equal width. Version bump.
 v0.22 – General: right-align numeric fields (inputs & report) with tabular lining. CSV export now includes Issue ID / Risk ID / Risk rating. Section 5 (report) shows overall commentary only. Section 6 title changed to "Next steps". Print layout: clearer section boxes; Achievements (left) & Next (right); Status (narrow) & Milestones (right); Issues (left) & Risks (right). Icons for RAG + completed in report. Import label text updated. Save filename uses Project Name.
 v0.21 – Issues/Risks IDs + rating; larger icons; wider Item col; emphasize Overall status; removed per-item comments in report.
 v0.20 – Report wording/ordering updates; jump-to-report; print-only shows report.
@@ -10,7 +11,7 @@ v0.19 – Initial canvas build.
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.22</title>
+<title>Project Status Report — v0.23</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -93,9 +94,13 @@ v0.19 – Initial canvas build.
   .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
   .report-section{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
   .split-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .status-milestones{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+  .status-milestones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .issues-risks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .status-chip{display:inline-flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:999px;padding:10px 14px;font-weight:700;font-size:1.05rem}
+  .chip-g{background:rgba(16,185,129,.12);border-color:#10b981;color:#065f46}
+  .chip-a{background:rgba(245,158,11,.12);border-color:#f59e0b;color:#7c2d12}
+  .chip-r{background:rgba(239,68,68,.12);border-color:#ef4444;color:#7f1d1d}
+  .chip-b{background:rgba(37,99,235,.12);border-color:#2563eb;color:#1e3a8a}
   .strike{text-decoration:line-through;color:#6b7280}
   .small{font-size:.9rem}
 
@@ -115,7 +120,7 @@ v0.19 – Initial canvas build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.22</small>
+        <small class="hint">v0.23</small>
       </div>
 
       <div class="guidance small">
@@ -268,6 +273,7 @@ v0.19 – Initial canvas build.
                 <th>Issue description</th>
                 <th>Impact</th>
                 <th>Owner</th>
+                <th>Status</th>
                 <th>Next steps</th>
                 <th class="center">Include</th>
               </tr>
@@ -325,7 +331,6 @@ v0.19 – Initial canvas build.
             <th>Owner</th>
             <th>Actions</th>
             <th>Status</th>
-            <th>Comment</th>
             <th class="center">Include</th>
             <th class="no-print">Controls</th>
           </tr>
@@ -339,6 +344,7 @@ v0.19 – Initial canvas build.
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>Report Preview</h2>
         <div class="row no-print">
+          <button class="btn filled" id="jumpTopBtn">Jump to Top</button>
           <button class="btn filled" id="printBtn2">Print Report</button>
         </div>
       </div>
@@ -349,7 +355,7 @@ v0.19 – Initial canvas build.
 
 <script>
 /* =========================
-   PSR Generator — v0.22 JS
+   PSR Generator — v0.23 JS
    ========================= */
 
 /* ===== Utilities ===== */
@@ -388,6 +394,7 @@ function statusIcon(code){
   if(c==='G') return SVG.circle('#10b981');
   if(c==='A') return SVG.triangle('#f59e0b');
   if(c==='R') return SVG.square('#ef4444');
+  if(c==='B') return SVG.star('#2563eb');
   return SVG.square('#9ca3af');
 }
 function completedIcon(){ return SVG.star('#2563eb'); }
@@ -475,25 +482,29 @@ function addMilestoneRow(v={}){ const tr=document.createElement('tr');
 
 /* Issues */
 function addIssueRow(v={}){ const tr=document.createElement('tr');
+  const impactSel = (val)=>`<select class="iss-impact">${['Schedule','Budget','Scope','Quality'].map(o=>`<option${o===(val||'')?' selected':''}>${o}</option>`).join('')}</select>`;
+  const statusSel = (val)=>`<select class="iss-status">${[['G','Green'],['A','Amber'],['R','Red'],['B','Complete']].map(([k,l])=>`<option value="${k}"${k===(val||'')?' selected':''}>${l}</option>`).join('')}</select>`;
   tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
                 <td><input type="text" value="${v.issue||v.desc||''}" placeholder="Issue description"></td>
-                <td><input type="text" value="${v.impact||''}" placeholder="Impact"></td>
+                <td>${impactSel(v.impact||'')}</td>
                 <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
-                <td><input type="text" value="${v.status||''}" placeholder="Next steps"></td>
+                <td>${statusSel(v.status||'')}</td>
+                <td><input type="text" value="${v.next||v['next steps']||v.notes||''}" placeholder="Next steps"></td>
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#issueBody').appendChild(tr);
-  tr.querySelectorAll('input').forEach(el=>el.addEventListener('input', schedulePreview));
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 
 /* Risks */
 function addRiskRow(v={}){ const tr=document.createElement('tr');
+  const ratingSel = (val)=>`<select class="risk-rating">${['Critical','High','Medium','Low','Very Low'].map(o=>`<option${o===(val||'')?' selected':''}>${o}</option>`).join('')}</select>`;
   tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
                 <td><input type="text" value="${v.risk||v.desc||''}" placeholder="Risk description"></td>
-                <td><input type="text" value="${v.rating||v.like||v.impact||''}" placeholder="Risk rating"></td>
+                <td>${ratingSel(v.rating||'')}</td>
                 <td><input type="text" value="${v.mit||''}" placeholder="Mitigation"></td>
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#riskBody').appendChild(tr);
-  tr.querySelectorAll('input').forEach(el=>el.addEventListener('input', schedulePreview));
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 
 /* Decisions */
@@ -523,14 +534,14 @@ function addDecisionRow(v={}){ const tr=document.createElement('tr');
 
 /* Dependencies */
 function depStatusSelect(value){
-  const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
-  return `<select class="dep-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
+  const opts = [['G','Green'],['A','Amber'],['R','Red'],['B','Blue/Complete']];
+  return `<select class="dep-status">${opts.map(([k,l])=>`<option value="${k}"${k===(value||'')?' selected':''}>${l}</option>`).join('')}</select>`;
 }
 function updateDepStrike(tr){
   const depTxt = tr.querySelector('td:nth-child(2) input[type="text"]');
   const sel = tr.querySelector('.dep-status');
   if(!depTxt || !sel) return;
-  if(sel.value === 'Completed'){ depTxt.classList.add('strike'); }
+  if(sel.value === 'B'){ depTxt.classList.add('strike'); }
   else { depTxt.classList.remove('strike'); }
 }
 function addDepRow(v={}){ const tr=document.createElement('tr');
@@ -540,7 +551,6 @@ function addDepRow(v={}){ const tr=document.createElement('tr');
                 <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
                 <td><input type="text" value="${v.actions||''}" placeholder="Actions"></td>
                 <td>${depStatusSelect(v.status||'')}</td>
-                <td><input type="text" value="${v.comment||''}" placeholder="Comment"></td>
                 <td class="center"><input type="checkbox" class="dep-include" ${v.include===false?'':'checked'}></td>`;
   tr.appendChild(rowControlsTD());
   $('#depBody').appendChild(tr);
@@ -574,7 +584,7 @@ function collectData(){
   }));
 
   const issueRows = getTableRows($('#issueBody')).map(r=>({
-    id:r[0], issue:r[1], impact:r[2], owner:r[3], status:r[4], include:r[5]
+    id:r[0], issue:r[1], impact:r[2], owner:r[3], status:r[4], next:r[5], include:r[6]
   }));
 
   const riskRows  = getTableRows($('#riskBody')).map(r=>({
@@ -586,7 +596,7 @@ function collectData(){
   }));
 
   const depRows = getTableRows($('#depBody')).map(r=>({
-    id:r[0], dep:r[1], impact:r[2], owner:r[3], actions:r[4], status:r[5], comment:r[6], include:r[7]
+    id:r[0], dep:r[1], impact:r[2], owner:r[3], actions:r[4], status:r[5], include:r[6]
   }));
 
   return {
@@ -636,7 +646,7 @@ function populateData(d){
   updateBudgetPills(); schedulePreview();
 }
 
-/* ===== CSV (summary) – includes new ID / rating fields ===== */
+/* ===== CSV (summary) – includes new fields ===== */
 function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
 function buildSummaryCsv(d){
   const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
@@ -656,13 +666,13 @@ function buildSummaryCsv(d){
     lines.push(`Milestone,${csvEscape(ms.name)},${csvEscape(JSON.stringify({orig:ms.orig,rev:ms.rev,status:ms.status,include:ms.include}))}`);
   });
   (d.issues||[]).forEach((i,idx)=>{
-    lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({id:i.id,impact:i.impact,owner:i.owner,next:i.status,include:i.include}))}`);
+    lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({id:i.id,impact:i.impact,owner:i.owner,status:i.status,next:i.next,include:i.include}))}`);
   });
   (d.risks||[]).forEach((r,idx)=>{
     lines.push(`Risk ${idx+1},${csvEscape(r.risk)},${csvEscape(JSON.stringify({id:r.id,rating:r.rating,mitigation:r.mit,include:r.include}))}`);
   });
   (d.decisions||[]).forEach((dc,idx)=>{ lines.push(`Decision ${idx+1},${csvEscape(dc.desc)},${csvEscape(JSON.stringify({requiredBy:dc.req,owner:dc.owner,status:dc.status,include:dc.include}))}`); });
-  (d.deps||[]).forEach((dp,idx)=>{ lines.push(`Dependency ${idx+1},${csvEscape(dp.dep)},${csvEscape(JSON.stringify({id:dp.id,impact:dp.impact,owner:dp.owner,actions:dp.actions,status:dp.status,comment:dp.comment,include:dp.include}))}`); });
+  (d.deps||[]).forEach((dp,idx)=>{ lines.push(`Dependency ${idx+1},${csvEscape(dp.dep)},${csvEscape(JSON.stringify({id:dp.id,impact:dp.impact,owner:dp.owner,actions:dp.actions,status:dp.status,include:dp.include}))}`); });
 
   const eac = (b.spent||0) + (b.etc||0);
   push('Budget','Approved (000s)',b.approved);
@@ -673,7 +683,7 @@ function buildSummaryCsv(d){
   return lines.join('\n');
 }
 
-/* ===== Report builder (segregated + two-column layout where requested) ===== */
+/* ===== Report builder ===== */
 function buildReportHTML(d){
   const m=d.meta||{};
   const h=[];
@@ -682,19 +692,10 @@ function buildReportHTML(d){
   const projName = m.projName || 'Untitled Project';
   h.push(`<div class="report-section">`);
   h.push(`<h1>Project Status Report - Project ${projName}</h1>`);
-  if(m.projCode){ h.push(`<div style="color:#4b5563">Project ID ${m.projCode}</div>`); }
-
-  // Sponsor / PM
-  if(m.sponsor || m.pm){
-    const sponsor = m.sponsor ? `Sponsor: ${m.sponsor}` : '';
-    const pm = m.pm ? `Project Manager: ${m.pm}` : '';
-    const sep = (m.sponsor && m.pm) ? ' • ' : '';
-    h.push(`<div class="meta-row" style="margin-top:6px"><span>${sponsor}${sep}${pm}</span></div>`);
-  }
-
-  // Overall chip
-  const overall = d.status?.overall?.current || '';
-  h.push(`<div class="status-chip" style="float:right;margin-top:-44px">${statusIcon(overall)} <strong>Overall:</strong> ${overall}</div>`);
+  // Meta row: ID + Sponsor + PM
+  const metaBits=[]; if(m.projCode) metaBits.push(`Project ID ${m.projCode}`); if(m.sponsor) metaBits.push(`Sponsor: ${m.sponsor}`); if(m.pm) metaBits.push(`Project Manager: ${m.pm}`);
+  if(metaBits.length){ h.push(`<div class="meta-row" style="margin-top:6px"><span>${metaBits.join('</span><span>')}</span></div>`); }
+  const overall = d.status?.overall?.current || ''; // moved chip to summary section
   h.push(`</div>`); // end header section
 
   // Dates/phase
@@ -729,14 +730,16 @@ function buildReportHTML(d){
     h.push(`</div>`);
   }
 
-  // Overall commentary (Section 5 simplified)
+  // Overall commentary (Section 5 simplified) with chip
   if((d.execSummary||'').trim()){
-    h.push(`<div class="report-section"><h2>Overall Project Status Summary</h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p></div>`);
+    const oc = (d.status?.overall?.current||'').toUpperCase();
+    const ocName = ({'G':'Green','A':'Amber','R':'Red','B':'Complete'})[oc] || oc || '';
+    const chipCls = ({'G':'chip-g','A':'chip-a','R':'chip-r','B':'chip-b'})[oc] || '';
+    h.push(`<div class="report-section"><h2 style="display:flex;align-items:center;gap:10px">Overall Project Status Summary <span class="status-chip ${chipCls}">${statusIcon(oc)} ${ocName}</span></h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p></div>`);
   }
 
-  // Status (left, narrower) + Milestones (right)
+  // Status (left) + Milestones (right) equal width
   h.push(`<div class="report-section status-milestones">`);
-  // Status detail (no comments column)
   h.push(`<div><h2>Status Summary (detail)</h2>
     <table style="width:100%;border-collapse:collapse;margin:8px 0">
       <colgroup><col style="width:55%"><col style="width:22.5%"><col style="width:22.5%"></colgroup>
@@ -747,7 +750,6 @@ function buildReportHTML(d){
   }
   h.push(`</tbody></table></div>`);
 
-  // Milestones
   const msShown = (d.milestones||[]).filter(ms => ms.include !== false);
   h.push(`<div>`);
   if(msShown.length){
@@ -763,7 +765,7 @@ function buildReportHTML(d){
     h.push(`</tbody></table>`);
   }
   h.push(`</div>`); // end milestones column
-  h.push(`</div>`); // end status-milestones grid
+  h.push(`</div>`); // end grid
 
   // Issues (left) & Risks (right)
   h.push(`<div class="report-section issues-risks">`);
@@ -773,7 +775,7 @@ function buildReportHTML(d){
     h.push(`<h2>Top Issues</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>Issue ID</th><th>Issue description</th><th>Impact</th><th>Owner</th><th>Next steps</th></tr></thead><tbody>`);
-    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.id||''}</td><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
+    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.id||''}</td><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.next||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
   h.push(`</div>`);
@@ -788,7 +790,7 @@ function buildReportHTML(d){
     h.push(`</tbody></table>`);
   }
   h.push(`</div>`);
-  h.push(`</div>`); // end issues-risks grid
+  h.push(`</div>`);
 
   // Decisions
   const decisionsIncluded = (d.decisions||[]).filter(dc=>dc.include!==false);
@@ -809,12 +811,12 @@ function buildReportHTML(d){
   if(depsIncluded.length){
     h.push(`<div class="report-section"><h2>Dependencies & Constraints</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-        <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th><th>Comment</th></tr></thead><tbody>`);
+        <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th></tr></thead><tbody>`);
     depsIncluded.forEach(dp=>{
-      const isDone = String(dp.status||'').toLowerCase()==='completed';
-      const star = isDone ? `${completedIcon()} ` : '';
-      const strike = isDone ? 'class="strike"' : '';
-      h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${star}${dp.status||''}</td><td>${dp.comment||''}</td></tr>`);
+      const isBlue = String(dp.status||'').toUpperCase()==='B';
+      const star = isBlue ? `${completedIcon()} ` : '';
+      const strike = isBlue ? 'class="strike"' : '';
+      h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${star}${dp.status||''}</td></tr>`);
     });
     h.push(`</tbody></table></div>`);
   }
@@ -926,6 +928,7 @@ $('#addDep').onclick=()=>addDepRow({});
 ['#budgetApproved','#budgetSpent','#budgetEtc'].forEach(id=>$(id).addEventListener('input', updateBudgetPills));
 $('#printBtn').onclick=()=>{ refreshPreview(); window.print(); };
 $('#printBtn2').onclick=()=>{ refreshPreview(); window.print(); };
+$('#jumpTopBtn').onclick=()=>{ window.scrollTo({top:0, behavior:'smooth'}); };
 $('#saveJsonBtn').onclick=saveJSON;
 $('#exportCsvBtn').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
 $('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f){ $('#importName').textContent = f.name; importJSON(f); } });
