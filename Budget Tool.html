@@ -1,0 +1,355 @@
+<!--
+PM Budget Sheet — Single File v0.1
+Author: PM Tools
+Date: 18 Aug 2025 (AEST)
+
+Change Log
+v0.1
+- Initial scaffold for stand-alone budget sheet (Summary, Timesheets, Invoices tabs)
+- Header with version, theme toggle (fade), reporting granularity toggle (Weekly/Monthly), As-of date
+- Summary tab: KPI placeholders, trend/chart placeholders, category table placeholder, PSR copy block
+- Timesheets tab: toolbar (Add Entry, Import CSV, Export, Rollback Batch), filters, raw table scaffold
+- Invoices tab: toolbar (Add Invoice, Import CSV, Export, Mark Paid), filters, table scaffold
+- Basic styles with light/dark themes; sticky header; responsive layout
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PM Budget Sheet v0.1</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #1e1e1e;
+      --muted: #6b7280;
+      --card: #f5f7fb;
+      --border: #e5e7eb;
+      --accent: #3b82f6;
+      --accent-2: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1115;
+      --fg: #e5e7eb;
+      --muted: #9ca3af;
+      --card: #151922;
+      --border: #252a34;
+      --accent: #60a5fa;
+      --accent-2: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--fg);
+      transition: background .25s ease, color .25s ease;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(6px);
+      background: color-mix(in oklab, var(--bg) 88%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+    .title { font-weight: 700; }
+    .spacer { flex: 1; }
+    .pill { border: 1px solid var(--border); background: var(--card); padding: 6px 10px; border-radius: 999px; font-size: 14px; }
+    button, .btn {
+      border: 1px solid var(--border); background: var(--card); color: var(--fg);
+      padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: transform .05s ease, background .2s ease;
+    }
+    button:hover { background: color-mix(in oklab, var(--card) 85%, var(--bg)); }
+    button:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: white; border-color: transparent; }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); padding: 0 16px; }
+    .tab { padding: 10px 14px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); }
+    .tab.active { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+    .grid { display: grid; gap: 12px; }
+    .kpis { grid-template-columns: repeat(6, minmax(0,1fr)); }
+    @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+    @media (max-width: 700px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px; }
+    .card h3 { margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: var(--muted); }
+    .card .value { font-size: 22px; font-weight: 700; }
+    .muted { color: var(--muted); }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .input, select { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--fg); }
+    .toolbar { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin: 12px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    tfoot td { font-weight: 700; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); font-size: 12px; }
+    .chip.green { background: color-mix(in oklab, var(--accent-2) 20%, var(--card)); }
+    .chip.amber { background: color-mix(in oklab, var(--warn) 20%, var(--card)); }
+    .chip.red { background: color-mix(in oklab, var(--danger) 20%, var(--card)); }
+    .section { display: none; padding: 16px; }
+    .section.active { display: block; }
+    .psr-copy { width: 100%; min-height: 74px; padding: 10px; border-radius: 10px; border: 1px dashed var(--border); background: var(--bg); color: var(--fg); }
+  </style>
+</head>
+<body data-theme="light">
+  <header>
+    <div class="header-inner">
+      <div class="title">PM Budget Sheet <span class="muted">v0.1</span></div>
+      <div class="pill">As of <input id="asOf" class="input" type="date" /></div>
+      <div class="pill">Granularity
+        <select id="granularity" class="input">
+          <option value="Weekly">Weekly</option>
+          <option value="Monthly" selected>Monthly</option>
+        </select>
+      </div>
+      <div class="spacer"></div>
+      <button id="themeToggle" class="btn">🌙 Theme</button>
+      <button class="btn" id="printBtn">🖨️ Print</button>
+      <button class="btn" id="exportBtn">⬇️ Export</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="summary">Summary</div>
+      <div class="tab" data-tab="timesheets">Timesheets</div>
+      <div class="tab" data-tab="invoices">Invoices</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- SUMMARY TAB -->
+    <section id="summary" class="section active">
+      <div class="grid kpis">
+        <div class="card"><h3>Approved Budget</h3><div class="value" id="kpiApproved">$0</div><div class="muted" id="kpiApprovedSub">Baseline v— • CRs ±$0</div></div>
+        <div class="card"><h3>Spent to Date</h3><div class="value" id="kpiSpent">$0</div><div class="muted" id="kpiSpentSub">This period: $0</div></div>
+        <div class="card"><h3>Forecast Remaining</h3><div class="value" id="kpiForecast">$0</div><div class="muted" id="kpiForecastSub">Manual</div></div>
+        <div class="card"><h3>EAC</h3><div class="value" id="kpiEAC">$0</div><div class="muted" id="kpiEACSub">Δ since last: $0</div></div>
+        <div class="card"><h3>Variance</h3><div class="value" id="kpiVar">$0</div><div class="muted" id="kpiVarSub">—</div></div>
+        <div class="card"><h3>RAG</h3><div class="value" id="kpiRAG"><span class="chip green">Green</span></div><div class="muted" id="kpiRAGSub">≤5%</div></div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <h3>Budget vs Actuals vs Forecast (placeholder)</h3>
+        <div id="chartPlaceholder" style="height:240px; border:1px dashed var(--border); border-radius:12px;"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px;">
+        <div class="toolbar">
+          <div class="row">
+            <label class="muted">Category</label>
+            <select id="summaryCategory" class="input">
+              <option>All</option>
+              <option>Labour</option>
+              <option>Software</option>
+              <option>Hardware</option>
+              <option>Travel</option>
+              <option>Other</option>
+              <option>Contingency</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="btn" id="copyPSR">Copy PSR Summary</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Approved</th>
+              <th>Spent to Date</th>
+              <th>Forecast Remaining</th>
+              <th>EAC</th>
+              <th>Variance</th>
+              <th>Var %</th>
+              <th>RAG</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTableBody">
+            <tr><td class="muted" colspan="8">No data yet. Add timesheets/invoices to see rollups.</td></tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>Total</td>
+              <td id="totApproved">$0</td>
+              <td id="totSpent">$0</td>
+              <td id="totForecast">$0</td>
+              <td id="totEAC">$0</td>
+              <td id="totVar">$0</td>
+              <td id="totVarPct">0%</td>
+              <td id="totRAG"><span class="chip green">Green</span></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div style="margin-top:12px;">
+          <textarea id="psrText" class="psr-copy" readonly>Budget: Approved $0; Spent to date $0; Forecast remaining $0; EAC $0 (Variance $0 / 0%, RAG: Green). Drivers: —. As‑of —.</textarea>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIMESHEETS TAB -->
+    <section id="timesheets" class="section">
+      <div class="toolbar">
+        <div class="row">
+          <button class="btn-primary" id="addTs">➕ Add Entry</button>
+          <button class="btn" id="importTs">📥 Import CSV</button>
+          <button class="btn" id="exportTs">⬇️ Export CSV</button>
+          <button class="btn" id="rollbackBatchTs" disabled>↩️ Rollback Batch</button>
+        </div>
+        <div class="row">
+          <label class="muted">View</label>
+          <select id="tsView" class="input">
+            <option>Raw</option>
+            <option>By Resource</option>
+            <option>By Period</option>
+          </select>
+          <input class="input" id="tsSearch" placeholder="Search resource/notes…" />
+        </div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Resource</th>
+              <th>Role</th>
+              <th>Hours</th>
+              <th>Rate</th>
+              <th>Cost</th>
+              <th>Source</th>
+              <th>Batch</th>
+              <th>Status</th>
+              <th>Notes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tsTableBody">
+            <tr><td class="muted" colspan="11">No timesheets yet. Use “Add Entry” or “Import CSV”.</td></tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">Totals</td>
+              <td id="tsTotHours">0</td>
+              <td></td>
+              <td id="tsTotCost">$0</td>
+              <td colspan="5"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- INVOICES TAB -->
+    <section id="invoices" class="section">
+      <div class="toolbar">
+        <div class="row">
+          <button class="btn-primary" id="addInv">➕ Add Invoice</button>
+          <button class="btn" id="importInv">📥 Import CSV</button>
+          <button class="btn" id="exportInv">⬇️ Export CSV</button>
+          <button class="btn" id="markPaid" disabled>✔️ Mark Paid</button>
+        </div>
+        <div class="row">
+          <select id="filterStatus" class="input">
+            <option>All</option>
+            <option>Pending</option>
+            <option>Paid</option>
+            <option>Disputed</option>
+          </select>
+          <input class="input" id="invSearch" placeholder="Search #, vendor, desc…" />
+        </div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Vendor</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Invoice Date</th>
+              <th>Received</th>
+              <th>Paid</th>
+              <th>Status</th>
+              <th>Accrual</th>
+              <th>Posted Period(s)</th>
+              <th>CR/PO Ref</th>
+              <th>Link</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="invTableBody">
+            <tr><td class="muted" colspan="14">No invoices yet. Click “Add Invoice”.</td></tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4">Totals</td>
+              <td id="invTotAmount">$0</td>
+              <td colspan="9"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // State (placeholder)
+    const state = {
+      theme: 'light',
+      granularity: 'Monthly',
+      asOf: new Date().toISOString().slice(0,10),
+    };
+
+    // Init controls
+    const asOf = document.getElementById('asOf');
+    const granularity = document.getElementById('granularity');
+    const themeToggle = document.getElementById('themeToggle');
+    asOf.value = state.asOf;
+    granularity.value = state.granularity;
+
+    themeToggle.addEventListener('click', () => {
+      state.theme = (state.theme === 'light') ? 'dark' : 'light';
+      document.body.setAttribute('data-theme', state.theme);
+      themeToggle.textContent = state.theme === 'dark' ? '☀️ Theme' : '🌙 Theme';
+    });
+
+    granularity.addEventListener('change', (e) => {
+      state.granularity = e.target.value;
+      // TODO: re-render charts/tables by granularity
+      console.log('Granularity set to', state.granularity);
+    });
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Copy PSR summary
+    const copyBtn = document.getElementById('copyPSR');
+    copyBtn?.addEventListener('click', async () => {
+      const txt = document.getElementById('psrText').value;
+      try { await navigator.clipboard.writeText(txt); copyBtn.textContent = '✅ Copied'; setTimeout(()=>copyBtn.textContent='Copy PSR Summary',1500); } catch(e) { alert('Copy failed'); }
+    });
+
+    // Placeholder print/export
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+    document.getElementById('exportBtn').addEventListener('click', () => alert('Export coming soon'));
+
+    // Set initial theme based on prefers
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      themeToggle.click();
+    }
+  </script>
+</body>
+</html>
+// end
