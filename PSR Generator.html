@@ -1,18 +1,16 @@
 <!--
 Mini Change Log:
-v0.21 – Section 5 (report): remove per-item status comments (keep overall commentary only).
-        Section 6–7: Issues table adds Issue ID; rename Issue→Issue description.
-                     Risks table adds Risk ID; rename Risk→Risk description; replace Likelihood+Impact with Risk rating.
-        Print/report: wider Item col in status detail; 2x larger RAG icons; emphasize Overall status chip.
-v0.20 – Report content & ordering tweaks (see previous log).
-v0.19 – Filenames, save guard, RAG icons + completed star.
+v0.22 – General: right-align numeric fields (inputs & report) with tabular lining. CSV export now includes Issue ID / Risk ID / Risk rating. Section 5 (report) shows overall commentary only. Section 6 title changed to "Next steps". Print layout: clearer section boxes; Achievements (left) & Next (right); Status (narrow) & Milestones (right); Issues (left) & Risks (right). Icons for RAG + completed in report. Import label text updated. Save filename uses Project Name.
+v0.21 – Issues/Risks IDs + rating; larger icons; wider Item col; emphasize Overall status; removed per-item comments in report.
+v0.20 – Report wording/ordering updates; jump-to-report; print-only shows report.
+v0.19 – Initial canvas build.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.21</title>
+<title>Project Status Report — v0.22</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -27,7 +25,7 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
     --btn-alt:#10b981; --btn-alt-hover:#059669;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+  body{margin:0;background:#f8fafc;color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
   h1,h2,h3{margin:0 0 .5rem}
   h2{font-size:1.1rem;font-weight:700}
   h3{font-size:1rem;color:var(--text-dim);font-weight:600}
@@ -69,9 +67,11 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
   .money > span{display:inline-block;padding:10px 10px;border-right:1px solid var(--border);color:#6b7280}
   .money > input{border:0;flex:1;padding-left:10px}
 
+  /* NUMBER ALIGNMENT (General) */
+  input[type=number]{ -moz-appearance:textfield; text-align:right; font-variant-numeric: tabular-nums; }
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-  input[type=number]{ -moz-appearance:textfield; }
+  .tnum{ font-variant-numeric: tabular-nums; }
 
   .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:var(--chip)}
   .pill.ok{border-color:#166534;background:rgba(22,101,52,.08);color:#166534;font-weight:700}
@@ -91,16 +91,22 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
   }
 
   .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
+  .report-section{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
+  .split-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .status-milestones{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+  .issues-risks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .status-chip{display:inline-flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:999px;padding:10px 14px;font-weight:700;font-size:1.05rem}
   .strike{text-decoration:line-through;color:#6b7280}
   .small{font-size:.9rem}
 
   .ico{display:inline-block;vertical-align:middle;line-height:0}
-  /* 2x larger icons */
-  .ico svg{width:24px;height:24px}
+  .ico svg{width:24px;height:24px} /* 2x icons */
 
   .meta-row{display:flex;gap:18px;flex-wrap:wrap;color:#6b7280;margin-top:4px}
   .meta-row span{display:inline-block;margin-right:10px}
+
+  .tight-table table{border-collapse:collapse;margin:8px 0}
+  .tight-table th,.tight-table td{border:1px solid #e5e7eb;background:#fff}
 </style>
 </head>
 <body>
@@ -109,7 +115,7 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.21</small>
+        <small class="hint">v0.22</small>
       </div>
 
       <div class="guidance small">
@@ -172,15 +178,15 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
         </div>
         <div class="field">
           <label>Estimate at Completion (EAC)</label>
-          <span class="pill" id="eacPill"><strong id="eacText">$0</strong></span>
+          <span class="pill" id="eacPill"><strong id="eacText" class="tnum">$0</strong></span>
         </div>
         <div class="field">
           <label>Variance (Approved – EAC)</label>
-          <span class="pill" id="variancePill"><strong id="varianceText">$0</strong></span>
+          <span class="pill" id="variancePill"><strong id="varianceText" class="tnum">$0</strong></span>
         </div>
       </div>
 
-      <div class="guidance small">EAC = <strong>Spend to Date + Current ETC</strong>. Variance &ge; 0 shows as underrun, &lt; 0 as overrun.</div>
+      <div class="guidance small">EAC = <strong>Spend to Date + Current ETC</strong>. Variance ≥ 0 shows as underrun, &lt; 0 as overrun.</div>
     </div>
 
     <!-- 3. Narrative -->
@@ -225,7 +231,7 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
       </div>
     </div>
 
-    <!-- 5. Milestones (unchanged structure) -->
+    <!-- 5. Milestones -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>5. Milestone Status</h2>
@@ -246,7 +252,7 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
       </table>
     </div>
 
-    <!-- 6–7. Issues & Risks (UPDATED) -->
+    <!-- 6–7. Issues & Risks -->
     <div class="card">
       <h2>6–7. Issues & Risks</h2>
       <div class="grid cols-2">
@@ -262,7 +268,7 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
                 <th>Issue description</th>
                 <th>Impact</th>
                 <th>Owner</th>
-                <th>Status / Next Steps</th>
+                <th>Next steps</th>
                 <th class="center">Include</th>
               </tr>
             </thead>
@@ -342,6 +348,10 @@ v0.19 – Filenames, save guard, RAG icons + completed star.
   </div>
 
 <script>
+/* =========================
+   PSR Generator — v0.22 JS
+   ========================= */
+
 /* ===== Utilities ===== */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
@@ -353,7 +363,7 @@ const download = (filename, text, mime='text/plain') => {
 };
 const sanitizeFilename = (s) => String(s||'').trim().replace(/[\\\/:*?"<>|]+/g,'').replace(/\s+/g,'_').slice(0,120);
 
-/* ===== Status rows (unchanged builder table) ===== */
+/* ===== Status rows ===== */
 function statusRowDef(){
   return [
     {key:'overall', label:'4.1 Overall Status'},
@@ -463,19 +473,19 @@ function addMilestoneRow(v={}){ const tr=document.createElement('tr');
   tr.querySelector('.ms-status').addEventListener('change', ()=>{ updateMilestoneStrike(tr); schedulePreview(); });
 }
 
-/* Issues (UPDATED) */
+/* Issues */
 function addIssueRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
                 <td><input type="text" value="${v.issue||v.desc||''}" placeholder="Issue description"></td>
                 <td><input type="text" value="${v.impact||''}" placeholder="Impact"></td>
                 <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
-                <td><input type="text" value="${v.status||''}" placeholder="Status / Next Steps"></td>
+                <td><input type="text" value="${v.status||''}" placeholder="Next steps"></td>
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#issueBody').appendChild(tr);
   tr.querySelectorAll('input').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 
-/* Risks (UPDATED) */
+/* Risks */
 function addRiskRow(v={}){ const tr=document.createElement('tr');
   tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
                 <td><input type="text" value="${v.risk||v.desc||''}" placeholder="Risk description"></td>
@@ -559,7 +569,6 @@ function collectData(){
     status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
   }
 
-  // indices reflect updated columns
   const msRows = getTableRows($('#milestoneBody')).map(r=>({
     name:r[0], orig:r[1], rev:r[2], status:r[3], include:r[4]
   }));
@@ -627,20 +636,55 @@ function populateData(d){
   updateBudgetPills(); schedulePreview();
 }
 
-/* ===== CSV (summary) unchanged except risks schema; not shown for brevity ===== */
+/* ===== CSV (summary) – includes new ID / rating fields ===== */
+function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
+function buildSummaryCsv(d){
+  const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
+  push('Meta','Project Name',m.projName); push('Meta','Project Code',m.projCode);
+  push('Meta','Sponsor',m.sponsor); push('Meta','Project Manager',m.pm);
+  push('Meta','Report Date',m.reportDate); push('Meta','Period Start',m.periodStart);
+  push('Meta','Period End',m.periodEnd); push('Meta','Project Phase',m.phase);
 
-/* ===== Report builder (updated) ===== */
+  for(const row of statusRowDef()){
+    const s=d.status[row.key]||{};
+    push('Status',`${row.label} (Current)`,s.current||'');
+    push('Status',`${row.label} (Previous)`,s.previous||'');
+  }
+  if(d.execSummary) push('Status','Overall Project Status Summary',d.execSummary);
+
+  (d.milestones||[]).forEach(ms=>{
+    lines.push(`Milestone,${csvEscape(ms.name)},${csvEscape(JSON.stringify({orig:ms.orig,rev:ms.rev,status:ms.status,include:ms.include}))}`);
+  });
+  (d.issues||[]).forEach((i,idx)=>{
+    lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({id:i.id,impact:i.impact,owner:i.owner,next:i.status,include:i.include}))}`);
+  });
+  (d.risks||[]).forEach((r,idx)=>{
+    lines.push(`Risk ${idx+1},${csvEscape(r.risk)},${csvEscape(JSON.stringify({id:r.id,rating:r.rating,mitigation:r.mit,include:r.include}))}`);
+  });
+  (d.decisions||[]).forEach((dc,idx)=>{ lines.push(`Decision ${idx+1},${csvEscape(dc.desc)},${csvEscape(JSON.stringify({requiredBy:dc.req,owner:dc.owner,status:dc.status,include:dc.include}))}`); });
+  (d.deps||[]).forEach((dp,idx)=>{ lines.push(`Dependency ${idx+1},${csvEscape(dp.dep)},${csvEscape(JSON.stringify({id:dp.id,impact:dp.impact,owner:dp.owner,actions:dp.actions,status:dp.status,comment:dp.comment,include:dp.include}))}`); });
+
+  const eac = (b.spent||0) + (b.etc||0);
+  push('Budget','Approved (000s)',b.approved);
+  push('Budget','Spend to Date (000s)',b.spent);
+  push('Budget','Current ETC (000s)',b.etc);
+  push('Budget','EAC (000s)', eac);
+  push('Budget','Variance (000s)', (b.approved||0) - eac);
+  return lines.join('\n');
+}
+
+/* ===== Report builder (segregated + two-column layout where requested) ===== */
 function buildReportHTML(d){
   const m=d.meta||{};
   const h=[];
 
   // Title & identity
   const projName = m.projName || 'Untitled Project';
-  h.push(`<div>`);
+  h.push(`<div class="report-section">`);
   h.push(`<h1>Project Status Report - Project ${projName}</h1>`);
   if(m.projCode){ h.push(`<div style="color:#4b5563">Project ID ${m.projCode}</div>`); }
 
-  // Sponsor / PM under title
+  // Sponsor / PM
   if(m.sponsor || m.pm){
     const sponsor = m.sponsor ? `Sponsor: ${m.sponsor}` : '';
     const pm = m.pm ? `Project Manager: ${m.pm}` : '';
@@ -648,65 +692,66 @@ function buildReportHTML(d){
     h.push(`<div class="meta-row" style="margin-top:6px"><span>${sponsor}${sep}${pm}</span></div>`);
   }
 
-  // Emphasized Overall chip (bigger; right-aligned)
+  // Overall chip
   const overall = d.status?.overall?.current || '';
   h.push(`<div class="status-chip" style="float:right;margin-top:-44px">${statusIcon(overall)} <strong>Overall:</strong> ${overall}</div>`);
-  h.push(`</div>`);
+  h.push(`</div>`); // end header section
 
-  // Dates/phase row
+  // Dates/phase
+  h.push(`<div class="report-section">`);
   h.push(`<div class="meta-row">`);
   h.push(`<span>Report date: ${m.reportDate || ''}</span>`);
   h.push(`<span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span>`);
   h.push(`<span>Current project phase: ${m.phase || ''}</span>`);
   h.push(`</div>`);
+  h.push(`</div>`);
 
-  // Budget first
+  // Budget
   const eac = (d.budget?.spent||0) + (d.budget?.etc||0);
   const variance = (d.budget?.approved||0) - eac;
   const varClass = variance >= 0 ? 'ok' : 'bad';
-  h.push(`<h2 style="margin-top:16px">Budget Summary (000’s)</h2>
+  h.push(`<div class="report-section tight-table">`);
+  h.push(`<h2>Budget Summary (000’s)</h2>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
-      <span class="status-chip"><strong>Approved:</strong> ${fmtCurrency0(d.budget?.approved||0)}</span>
-      <span class="status-chip"><strong>Spend to Date:</strong> ${fmtCurrency0(d.budget?.spent||0)}</span>
-      <span class="status-chip"><strong>Current ETC:</strong> ${fmtCurrency0(d.budget?.etc||0)}</span>
-      <span class="pill"><strong>EAC:</strong> ${fmtCurrency0(eac)}</span>
-      <span class="pill ${varClass}"><strong>Variance:</strong> ${fmtCurrency0(variance)}</span>
+      <span class="status-chip"><strong>Approved:</strong> <span class="tnum">${fmtCurrency0(d.budget?.approved||0)}</span></span>
+      <span class="status-chip"><strong>Spend to Date:</strong> <span class="tnum">${fmtCurrency0(d.budget?.spent||0)}</span></span>
+      <span class="status-chip"><strong>Current ETC:</strong> <span class="tnum">${fmtCurrency0(d.budget?.etc||0)}</span></span>
+      <span class="pill"><strong>EAC:</strong> <span class="tnum">${fmtCurrency0(eac)}</span></span>
+      <span class="pill ${varClass}"><strong>Variance:</strong> <span class="tnum">${fmtCurrency0(variance)}</span></span>
     </div>`);
+  h.push(`</div>`);
 
-  // Achievements / next activities
-  if((d.achText||'').trim()){
-    h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${(d.achText||'').replace(/\n/g,'<br>')}</p>`);
-  }
-  if((d.nextText||'').trim()){
-    h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${(d.nextText||'').replace(/\n/g,'<br>')}</p>`);
+  // Achievements & Next (side-by-side)
+  if((d.achText||'').trim() || (d.nextText||'').trim()){
+    h.push(`<div class="report-section split-2">`);
+    h.push(`<div><h2>Key Achievements This Period</h2><p>${(d.achText||'').replace(/\n/g,'<br>')}</p></div>`);
+    h.push(`<div><h2>Key Activities Next Period</h2><p>${(d.nextText||'').replace(/\n/g,'<br>')}</p></div>`);
+    h.push(`</div>`);
   }
 
-  // Overall commentary
+  // Overall commentary (Section 5 simplified)
   if((d.execSummary||'').trim()){
-    h.push(`<h2 style="margin-top:12px">Overall Project Status Summary</h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p>`);
+    h.push(`<div class="report-section"><h2>Overall Project Status Summary</h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p></div>`);
   }
 
-  // Status details (REPORT: remove comments column & widen Item)
-  h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
+  // Status (left, narrower) + Milestones (right)
+  h.push(`<div class="report-section status-milestones">`);
+  // Status detail (no comments column)
+  h.push(`<div><h2>Status Summary (detail)</h2>
     <table style="width:100%;border-collapse:collapse;margin:8px 0">
-      <colgroup>
-        <col style="width:40%">
-        <col style="width:30%">
-        <col style="width:30%">
-      </colgroup>
-      <thead>
-        <tr><th>Item</th><th>Current</th><th>Previous</th></tr>
-      </thead><tbody>`);
+      <colgroup><col style="width:55%"><col style="width:22.5%"><col style="width:22.5%"></colgroup>
+      <thead><tr><th>Item</th><th>Current</th><th>Previous</th></tr></thead><tbody>`);
   for(const row of statusRowDef()){
     const s=d.status?.[row.key]||{};
-    h.push(`<tr><td>${row.label}</td><td>${statusIcon(s.current)} ${s.current||''}</td><td>${statusIcon(s.previous)} ${s.previous||''}</td></tr>`);
+    h.push(`<tr><td style="white-space:nowrap">${row.label}</td><td>${statusIcon(s.current)} ${s.current||''}</td><td>${statusIcon(s.previous)} ${s.previous||''}</td></tr>`);
   }
-  h.push(`</tbody></table>`);
+  h.push(`</tbody></table></div>`);
 
   // Milestones
   const msShown = (d.milestones||[]).filter(ms => ms.include !== false);
+  h.push(`<div>`);
   if(msShown.length){
-    h.push(`<h2 style="margin-top:12px">Milestone Status</h2>
+    h.push(`<h2>Milestone Status</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0">
         <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
     msShown.forEach(ms=>{
@@ -717,31 +762,38 @@ function buildReportHTML(d){
     });
     h.push(`</tbody></table>`);
   }
+  h.push(`</div>`); // end milestones column
+  h.push(`</div>`); // end status-milestones grid
 
-  // Issues (report with ID)
+  // Issues (left) & Risks (right)
+  h.push(`<div class="report-section issues-risks">`);
   const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
+  h.push(`<div>`);
   if(issuesIncluded.length){
-    h.push(`<h2 style="margin-top:12px">Top Issues</h2>
+    h.push(`<h2>Top Issues</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-        <tr><th>Issue ID</th><th>Issue description</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead><tbody>`);
+        <tr><th>Issue ID</th><th>Issue description</th><th>Impact</th><th>Owner</th><th>Next steps</th></tr></thead><tbody>`);
     issuesIncluded.forEach(i=>h.push(`<tr><td>${i.id||''}</td><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
+  h.push(`</div>`);
 
-  // Risks (report with ID + rating)
   const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
+  h.push(`<div>`);
   if(risksIncluded.length){
-    h.push(`<h2 style="margin-top:12px">Top Risks</h2>
+    h.push(`<h2>Top Risks</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>Risk ID</th><th>Risk description</th><th>Risk rating</th><th>Mitigation</th></tr></thead><tbody>`);
     risksIncluded.forEach(r=>h.push(`<tr><td>${r.id||''}</td><td>${r.risk||''}</td><td>${r.rating||''}</td><td>${r.mit||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
+  h.push(`</div>`);
+  h.push(`</div>`); // end issues-risks grid
 
   // Decisions
   const decisionsIncluded = (d.decisions||[]).filter(dc=>dc.include!==false);
   if(decisionsIncluded.length){
-    h.push(`<h2 style="margin-top:12px">Key Decisions</h2>
+    h.push(`<div class="report-section"><h2>Key Decisions</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th></tr></thead><tbody>`);
     decisionsIncluded.forEach(dc=>{
@@ -749,13 +801,13 @@ function buildReportHTML(d){
       const star = isDone ? `${completedIcon()} ` : '';
       h.push(`<tr><td>${dc.desc||''}</td><td>${dc.req||''}</td><td>${dc.owner||''}</td><td>${star}${dc.status||''}</td></tr>`);
     });
-    h.push(`</tbody></table>`);
+    h.push(`</tbody></table></div>`);
   }
 
   // Dependencies
   const depsIncluded = (d.deps||[]).filter(dp=>dp.include!==false);
   if(depsIncluded.length){
-    h.push(`<h2 style="margin-top:12px">Dependencies & Constraints</h2>
+    h.push(`<div class="report-section"><h2>Dependencies & Constraints</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
         <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th><th>Comment</th></tr></thead><tbody>`);
     depsIncluded.forEach(dp=>{
@@ -764,7 +816,7 @@ function buildReportHTML(d){
       const strike = isDone ? 'class="strike"' : '';
       h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${star}${dp.status||''}</td><td>${dp.comment||''}</td></tr>`);
     });
-    h.push(`</tbody></table>`);
+    h.push(`</tbody></table></div>`);
   }
 
   return h.join('');
@@ -875,7 +927,7 @@ $('#addDep').onclick=()=>addDepRow({});
 $('#printBtn').onclick=()=>{ refreshPreview(); window.print(); };
 $('#printBtn2').onclick=()=>{ refreshPreview(); window.print(); };
 $('#saveJsonBtn').onclick=saveJSON;
-$('#exportCsvBtn').onclick=()=>download('summary.csv', 'TODO: regenerate CSV builder for new risk schema', 'text/csv');
+$('#exportCsvBtn').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
 $('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f){ $('#importName').textContent = f.name; importJSON(f); } });
 $('#newBtn').onclick=()=>{ if(confirm('Clear all fields and start a new report?')) location.reload(); };
 $('#copyCurrentToPrev').onclick=copyCurrentToPrevious;
