@@ -1,21 +1,18 @@
 <!--
 Mini Change Log:
-v0.20 – Report: Title "Project Status Report - Project [Name]"; add "Project ID [ID]";
-        move Sponsor & Project Manager above date row; rename "Status Summary" to
-        "Overall Project Status Summary"; relabel/space meta row
-        (Report date / Reporting period / Current project phase);
-        reorder sections so Budget & Achievements are near the top of the report.
-v0.19 – Import filename display; Save requires Project Name in filename; RAG icons + blue star for completed.
-v0.18 – Import button text; Jump left of Print; Period End default; Variance to right of EAC.
-v0.17 – Fixed dead buttons; EAC/Variance calc; split titles; Copy Current→Previous restored.
-v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Section 8 include+comment; print-only report; auto-preview.
+v0.21 – Section 5 (report): remove per-item status comments (keep overall commentary only).
+        Section 6–7: Issues table adds Issue ID; rename Issue→Issue description.
+                     Risks table adds Risk ID; rename Risk→Risk description; replace Likelihood+Impact with Risk rating.
+        Print/report: wider Item col in status detail; 2x larger RAG icons; emphasize Overall status chip.
+v0.20 – Report content & ordering tweaks (see previous log).
+v0.19 – Filenames, save guard, RAG icons + completed star.
 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.20</title>
+<title>Project Status Report — v0.21</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -73,8 +70,8 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
   .money > input{border:0;flex:1;padding-left:10px}
 
   input[type=number]::-webkit-outer-spin-button,
-  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number]{ -moz-appearance: textfield; }
+  input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  input[type=number]{ -moz-appearance:textfield; }
 
   .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:var(--chip)}
   .pill.ok{border-color:#166534;background:rgba(22,101,52,.08);color:#166534;font-weight:700}
@@ -94,11 +91,14 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
   }
 
   .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
-  .status-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px}
-  .strike{ text-decoration: line-through; color:#6b7280}
+  .status-chip{display:inline-flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:999px;padding:10px 14px;font-weight:700;font-size:1.05rem}
+  .strike{text-decoration:line-through;color:#6b7280}
   .small{font-size:.9rem}
+
   .ico{display:inline-block;vertical-align:middle;line-height:0}
-  .ico svg{width:12px;height:12px}
+  /* 2x larger icons */
+  .ico svg{width:24px;height:24px}
+
   .meta-row{display:flex;gap:18px;flex-wrap:wrap;color:#6b7280;margin-top:4px}
   .meta-row span{display:inline-block;margin-right:10px}
 </style>
@@ -109,7 +109,7 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.20</small>
+        <small class="hint">v0.21</small>
       </div>
 
       <div class="guidance small">
@@ -225,7 +225,7 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       </div>
     </div>
 
-    <!-- 5. Milestones -->
+    <!-- 5. Milestones (unchanged structure) -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>5. Milestone Status</h2>
@@ -246,7 +246,7 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       </table>
     </div>
 
-    <!-- 6–7. Issues & Risks -->
+    <!-- 6–7. Issues & Risks (UPDATED) -->
     <div class="card">
       <h2>6–7. Issues & Risks</h2>
       <div class="grid cols-2">
@@ -256,7 +256,16 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
             <button class="btn filled" id="addIssue">Add Issue</button>
           </div>
           <table>
-            <thead><tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th><th class="center">Include</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Issue ID</th>
+                <th>Issue description</th>
+                <th>Impact</th>
+                <th>Owner</th>
+                <th>Status / Next Steps</th>
+                <th class="center">Include</th>
+              </tr>
+            </thead>
             <tbody id="issueBody"></tbody>
           </table>
         </div>
@@ -266,7 +275,15 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
             <button class="btn filled" id="addRisk">Add Risk</button>
           </div>
           <table>
-            <thead><tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th><th class="center">Include</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Risk ID</th>
+                <th>Risk description</th>
+                <th>Risk rating</th>
+                <th>Mitigation</th>
+                <th class="center">Include</th>
+              </tr>
+            </thead>
             <tbody id="riskBody"></tbody>
           </table>
         </div>
@@ -311,7 +328,7 @@ v0.16 – Re-order & renumber; Section 1 two-row; coloured Status headings; Sect
       </table>
     </div>
 
-    <!-- Report Preview (PRINT-ONLY) -->
+    <!-- Report Preview -->
     <div class="card" id="reportCard">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>Report Preview</h2>
@@ -336,7 +353,7 @@ const download = (filename, text, mime='text/plain') => {
 };
 const sanitizeFilename = (s) => String(s||'').trim().replace(/[\\\/:*?"<>|]+/g,'').replace(/\s+/g,'_').slice(0,120);
 
-/* ===== Status rows ===== */
+/* ===== Status rows (unchanged builder table) ===== */
 function statusRowDef(){
   return [
     {key:'overall', label:'4.1 Overall Status'},
@@ -365,7 +382,7 @@ function statusIcon(code){
 }
 function completedIcon(){ return SVG.star('#2563eb'); }
 
-/* ===== Section 4 table (classic) ===== */
+/* ===== Section 4 table (builder) ===== */
 function buildStatusTable(){
   const body = $('#statusTableBody');
   body.innerHTML = '';
@@ -446,23 +463,24 @@ function addMilestoneRow(v={}){ const tr=document.createElement('tr');
   tr.querySelector('.ms-status').addEventListener('change', ()=>{ updateMilestoneStrike(tr); schedulePreview(); });
 }
 
-/* Issues */
+/* Issues (UPDATED) */
 function addIssueRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.issue||''}"></td>
-                <td><input type="text" value="${v.impact||''}"></td>
-                <td><input type="text" value="${v.owner||''}"></td>
-                <td><input type="text" value="${v.status||''}"></td>
+  tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
+                <td><input type="text" value="${v.issue||v.desc||''}" placeholder="Issue description"></td>
+                <td><input type="text" value="${v.impact||''}" placeholder="Impact"></td>
+                <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
+                <td><input type="text" value="${v.status||''}" placeholder="Status / Next Steps"></td>
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#issueBody').appendChild(tr);
   tr.querySelectorAll('input').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 
-/* Risks */
+/* Risks (UPDATED) */
 function addRiskRow(v={}){ const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input type="text" value="${v.risk||''}"></td>
-                <td><input type="text" value="${v.like||''}"></td>
-                <td><input type="text" value="${v.impact||''}"></td>
-                <td><input type="text" value="${v.mit||''}"></td>
+  tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
+                <td><input type="text" value="${v.risk||v.desc||''}" placeholder="Risk description"></td>
+                <td><input type="text" value="${v.rating||v.like||v.impact||''}" placeholder="Risk rating"></td>
+                <td><input type="text" value="${v.mit||''}" placeholder="Mitigation"></td>
                 <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
   $('#riskBody').appendChild(tr);
   tr.querySelectorAll('input').forEach(el=>el.addEventListener('input', schedulePreview));
@@ -522,8 +540,14 @@ function addDepRow(v={}){ const tr=document.createElement('tr');
 }
 
 /* ===== Data extraction / injection ===== */
-function getTableRows(tbody){ const rows=[]; tbody.querySelectorAll('tr').forEach(tr=>{
-  const inputs=[...tr.querySelectorAll('input,select')]; rows.push(inputs.map(i=>i.type==='checkbox'?i.checked:i.value)); }); return rows; }
+function getTableRows(tbody){
+  const rows=[];
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const inputs=[...tr.querySelectorAll('input,select')];
+    rows.push(inputs.map(i=>i.type==='checkbox'?i.checked:i.value));
+  });
+  return rows;
+}
 
 function collectData(){
   const status = {};
@@ -535,13 +559,26 @@ function collectData(){
     status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
   }
 
+  // indices reflect updated columns
   const msRows = getTableRows($('#milestoneBody')).map(r=>({
     name:r[0], orig:r[1], rev:r[2], status:r[3], include:r[4]
   }));
-  const issueRows = getTableRows($('#issueBody')).map(r=>({issue:r[0],impact:r[1],owner:r[2],status:r[3],include:r[4]}));
-  const riskRows  = getTableRows($('#riskBody')).map(r=>({risk:r[0],like:r[1],impact:r[2],mit:r[3],include:r[4]}));
-  const decisionRows = getTableRows($('#decisionBody')).map(r=>({desc:r[0],req:r[1],owner:r[2],status:r[3],include:r[4]}));
-  const depRows = getTableRows($('#depBody')).map(r=>({id:r[0],dep:r[1],impact:r[2],owner:r[3],actions:r[4],status:r[5],comment:r[6],include:r[7]}));
+
+  const issueRows = getTableRows($('#issueBody')).map(r=>({
+    id:r[0], issue:r[1], impact:r[2], owner:r[3], status:r[4], include:r[5]
+  }));
+
+  const riskRows  = getTableRows($('#riskBody')).map(r=>({
+    id:r[0], risk:r[1], rating:r[2], mit:r[3], include:r[4]
+  }));
+
+  const decisionRows = getTableRows($('#decisionBody')).map(r=>({
+    desc:r[0], req:r[1], owner:r[2], status:r[3], include:r[4]
+  }));
+
+  const depRows = getTableRows($('#depBody')).map(r=>({
+    id:r[0], dep:r[1], impact:r[2], owner:r[3], actions:r[4], status:r[5], comment:r[6], include:r[7]
+  }));
 
   return {
     meta:{
@@ -561,7 +598,38 @@ function collectData(){
   };
 }
 
-/* ===== Report builder (updated per v0.20) ===== */
+function populateData(d){
+  $('#projName').value=d.meta?.projName||''; $('#projCode').value=d.meta?.projCode||'';
+  $('#sponsor').value=d.meta?.sponsor||''; $('#pm').value=d.meta?.pm||'';
+  $('#reportDate').value=d.meta?.reportDate||''; $('#periodStart').value=d.meta?.periodStart||'';
+  $('#periodEnd').value=d.meta?.periodEnd||''; $('#phase').value=d.meta?.phase||'Initiation';
+
+  for(const [k,v] of Object.entries(d.status||{})){
+    const cur=document.querySelector(`input[name="current_${k}"][value="${v.current}"]`);
+    const prev=document.querySelector(`input[name="previous_${k}"][value="${v.previous}"]`);
+    const notes=document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
+    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes && typeof v.notes==='string') notes.value=v.notes;
+  }
+
+  $('#execSummary').value=d.execSummary||'';
+
+  const tb = $('#milestoneBody'); tb.innerHTML='';
+  (d.milestones||[]).forEach(m=>addMilestoneRow(m));
+  if(!d.milestones?.length) addMilestoneRow({});
+
+  const clear=(sel)=>{const t=$(sel); t.innerHTML=''; return t;};
+  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<2;i++) addIssueRow({}); }
+  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<2;i++) addRiskRow({}); }
+  clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
+  clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
+
+  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0; $('#budgetEtc').value=d.budget?.etc??0;
+  updateBudgetPills(); schedulePreview();
+}
+
+/* ===== CSV (summary) unchanged except risks schema; not shown for brevity ===== */
+
+/* ===== Report builder (updated) ===== */
 function buildReportHTML(d){
   const m=d.meta||{};
   const h=[];
@@ -572,7 +640,7 @@ function buildReportHTML(d){
   h.push(`<h1>Project Status Report - Project ${projName}</h1>`);
   if(m.projCode){ h.push(`<div style="color:#4b5563">Project ID ${m.projCode}</div>`); }
 
-  // Sponsor / PM directly under title
+  // Sponsor / PM under title
   if(m.sponsor || m.pm){
     const sponsor = m.sponsor ? `Sponsor: ${m.sponsor}` : '';
     const pm = m.pm ? `Project Manager: ${m.pm}` : '';
@@ -580,19 +648,19 @@ function buildReportHTML(d){
     h.push(`<div class="meta-row" style="margin-top:6px"><span>${sponsor}${sep}${pm}</span></div>`);
   }
 
-  // Top-right Overall status chip
+  // Emphasized Overall chip (bigger; right-aligned)
   const overall = d.status?.overall?.current || '';
-  h.push(`<div class="status-chip" style="float:right;margin-top:-40px">${statusIcon(overall)} <strong>Overall:</strong> ${overall}</div>`);
+  h.push(`<div class="status-chip" style="float:right;margin-top:-44px">${statusIcon(overall)} <strong>Overall:</strong> ${overall}</div>`);
   h.push(`</div>`);
 
-  // Dates, reporting period, phase – spaced & relabelled
+  // Dates/phase row
   h.push(`<div class="meta-row">`);
   h.push(`<span>Report date: ${m.reportDate || ''}</span>`);
   h.push(`<span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span>`);
   h.push(`<span>Current project phase: ${m.phase || ''}</span>`);
   h.push(`</div>`);
 
-  // Move Budget & Achievements to top of report
+  // Budget first
   const eac = (d.budget?.spent||0) + (d.budget?.etc||0);
   const variance = (d.budget?.approved||0) - eac;
   const varClass = variance >= 0 ? 'ok' : 'bad';
@@ -605,6 +673,7 @@ function buildReportHTML(d){
       <span class="pill ${varClass}"><strong>Variance:</strong> ${fmtCurrency0(variance)}</span>
     </div>`);
 
+  // Achievements / next activities
   if((d.achText||'').trim()){
     h.push(`<h2 style="margin-top:12px">Key Achievements This Period</h2><p>${(d.achText||'').replace(/\n/g,'<br>')}</p>`);
   }
@@ -612,18 +681,25 @@ function buildReportHTML(d){
     h.push(`<h2 style="margin-top:12px">Key Activities Next Period</h2><p>${(d.nextText||'').replace(/\n/g,'<br>')}</p>`);
   }
 
-  // Overall Project Status Summary (exec summary text)
+  // Overall commentary
   if((d.execSummary||'').trim()){
     h.push(`<h2 style="margin-top:12px">Overall Project Status Summary</h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p>`);
   }
 
-  // Status details table
+  // Status details (REPORT: remove comments column & widen Item)
   h.push(`<h2 style="margin-top:12px">Status Summary (detail)</h2>
-    <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-      <tr><th>Item</th><th>Current</th><th>Previous</th><th>Path to green / comments</th></tr></thead><tbody>`);
+    <table style="width:100%;border-collapse:collapse;margin:8px 0">
+      <colgroup>
+        <col style="width:40%">
+        <col style="width:30%">
+        <col style="width:30%">
+      </colgroup>
+      <thead>
+        <tr><th>Item</th><th>Current</th><th>Previous</th></tr>
+      </thead><tbody>`);
   for(const row of statusRowDef()){
     const s=d.status?.[row.key]||{};
-    h.push(`<tr><td>${row.label}</td><td>${statusIcon(s.current)} ${s.current||''}</td><td>${statusIcon(s.previous)} ${s.previous||''}</td><td>${s.notes||''}</td></tr>`);
+    h.push(`<tr><td>${row.label}</td><td>${statusIcon(s.current)} ${s.current||''}</td><td>${statusIcon(s.previous)} ${s.previous||''}</td></tr>`);
   }
   h.push(`</tbody></table>`);
 
@@ -642,23 +718,23 @@ function buildReportHTML(d){
     h.push(`</tbody></table>`);
   }
 
-  // Issues
+  // Issues (report with ID)
   const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
   if(issuesIncluded.length){
     h.push(`<h2 style="margin-top:12px">Top Issues</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-        <tr><th>Issue</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead><tbody>`);
-    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
+        <tr><th>Issue ID</th><th>Issue description</th><th>Impact</th><th>Owner</th><th>Status / Next Steps</th></tr></thead><tbody>`);
+    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.id||''}</td><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.status||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
 
-  // Risks
+  // Risks (report with ID + rating)
   const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
   if(risksIncluded.length){
     h.push(`<h2 style="margin-top:12px">Top Risks</h2>
       <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
-        <tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr></thead><tbody>`);
-    risksIncluded.forEach(r=>h.push(`<tr><td>${r.risk||''}</td><td>${r.like||''}</td><td>${r.impact||''}</td><td>${r.mit||''}</td></tr>`));
+        <tr><th>Risk ID</th><th>Risk description</th><th>Risk rating</th><th>Mitigation</th></tr></thead><tbody>`);
+    risksIncluded.forEach(r=>h.push(`<tr><td>${r.id||''}</td><td>${r.risk||''}</td><td>${r.rating||''}</td><td>${r.mit||''}</td></tr>`));
     h.push(`</tbody></table>`);
   }
 
@@ -757,36 +833,6 @@ function copyCurrentToPrevious(){
   schedulePreview();
 }
 
-/* ===== Populate & UI hookup ===== */
-function populateData(d){
-  $('#projName').value=d.meta?.projName||''; $('#projCode').value=d.meta?.projCode||'';
-  $('#sponsor').value=d.meta?.sponsor||''; $('#pm').value=d.meta?.pm||'';
-  $('#reportDate').value=d.meta?.reportDate||''; $('#periodStart').value=d.meta?.periodStart||'';
-  $('#periodEnd').value=d.meta?.periodEnd||''; $('#phase').value=d.meta?.phase||'Initiation';
-
-  for(const [k,v] of Object.entries(d.status||{})){
-    const cur=document.querySelector(`input[name="current_${k}"][value="${v.current}"]`);
-    const prev=document.querySelector(`input[name="previous_${k}"][value="${v.previous}"]`);
-    const notes=document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
-    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes && typeof v.notes==='string') notes.value=v.notes;
-  }
-
-  $('#execSummary').value=d.execSummary||'';
-
-  const tb = $('#milestoneBody'); tb.innerHTML='';
-  (d.milestones||[]).forEach(m=>addMilestoneRow(m));
-  if(!d.milestones?.length) addMilestoneRow({});
-
-  const clear=(sel)=>{const t=$(sel); t.innerHTML=''; return t;};
-  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<2;i++) addIssueRow({}); }
-  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<2;i++) addRiskRow({}); }
-  clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
-  clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
-
-  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0; $('#budgetEtc').value=d.budget?.etc??0;
-  updateBudgetPills(); schedulePreview();
-}
-
 /* ===== Wire up ===== */
 buildStatusTable();
 addMilestoneRow({});
@@ -829,7 +875,7 @@ $('#addDep').onclick=()=>addDepRow({});
 $('#printBtn').onclick=()=>{ refreshPreview(); window.print(); };
 $('#printBtn2').onclick=()=>{ refreshPreview(); window.print(); };
 $('#saveJsonBtn').onclick=saveJSON;
-$('#exportCsvBtn').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
+$('#exportCsvBtn').onclick=()=>download('summary.csv', 'TODO: regenerate CSV builder for new risk schema', 'text/csv');
 $('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f){ $('#importName').textContent = f.name; importJSON(f); } });
 $('#newBtn').onclick=()=>{ if(confirm('Clear all fields and start a new report?')) location.reload(); };
 $('#copyCurrentToPrev').onclick=copyCurrentToPrevious;
@@ -840,4 +886,3 @@ updateBudgetPills(); refreshPreview();
 </script>
 </body>
 </html>
-
