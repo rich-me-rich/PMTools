@@ -1,5 +1,6 @@
 <!--
 Mini Change Log:
+v0.24 – Print: keep Budget Variance on one line; removed preview guidance from print; moved Report Date/Period/Phase under Project ID row; removed 4.x numbering from Status labels. Version bump.
 v0.23 – Section 6: Issue Impact & Status now dropdowns; Risk Rating dropdown added. Section 8: removed Comment column; Status options set to G/A/R/B. Print: added Jump-to-Top button; Sponsor & PM moved after Project ID; Overall status chip moved to the summary heading, color-coded with full names; Status & Milestones now equal width. Version bump.
 v0.22 – General: right-align numeric fields (inputs & report) with tabular lining. CSV export now includes Issue ID / Risk ID / Risk rating. Section 5 (report) shows overall commentary only. Section 6 title changed to "Next steps". Print layout: clearer section boxes; Achievements (left) & Next (right); Status (narrow) & Milestones (right); Issues (left) & Risks (right). Icons for RAG + completed in report. Import label text updated. Save filename uses Project Name.
 v0.21 – Issues/Risks IDs + rating; larger icons; wider Item col; emphasize Overall status; removed per-item comments in report.
@@ -11,7 +12,7 @@ v0.19 – Initial canvas build.
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report — v0.23</title>
+<title>Project Status Report — v0.24</title>
 <style>
   :root{
     --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
@@ -89,6 +90,7 @@ v0.19 – Initial canvas build.
     #reportCard .report{box-shadow:none;border:none}
     .container{padding:0}
     th,td{background:#fff;border-color:#ddd}
+    .budget-row{flex-wrap:nowrap} /* keep in one row on print */
   }
 
   .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
@@ -108,10 +110,12 @@ v0.19 – Initial canvas build.
   .ico svg{width:24px;height:24px} /* 2x icons */
 
   .meta-row{display:flex;gap:18px;flex-wrap:wrap;color:#6b7280;margin-top:4px}
-  .meta-row span{display:inline-block;margin-right:10px}
+  .meta-row span{display:inline-block;margin-right:10px;white-space:nowrap}
 
   .tight-table table{border-collapse:collapse;margin:8px 0}
   .tight-table th,.tight-table td{border:1px solid #e5e7eb;background:#fff}
+
+  .budget-row .status-chip, .budget-row .pill{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -120,7 +124,7 @@ v0.19 – Initial canvas build.
       <div class="toolbar">
         <h1>Project Status Report — Builder</h1>
         <div class="spacer"></div>
-        <small class="hint">v0.23</small>
+        <small class="hint">v0.24</small>
       </div>
 
       <div class="guidance small">
@@ -348,14 +352,14 @@ v0.19 – Initial canvas build.
           <button class="btn filled" id="printBtn2">Print Report</button>
         </div>
       </div>
-      <div class="guidance">The preview mirrors what will print. Use the include checkboxes to curate items.</div>
+      <div class="guidance no-print">The preview mirrors what will print. Use the include checkboxes to curate items.</div>
       <div id="reportPreview" class="report"></div>
     </div>
   </div>
 
 <script>
 /* =========================
-   PSR Generator — v0.23 JS
+   PSR Generator — v0.24 JS
    ========================= */
 
 /* ===== Utilities ===== */
@@ -372,13 +376,13 @@ const sanitizeFilename = (s) => String(s||'').trim().replace(/[\\\/:*?"<>|]+/g,'
 /* ===== Status rows ===== */
 function statusRowDef(){
   return [
-    {key:'overall', label:'4.1 Overall Status'},
-    {key:'scope',   label:'4.2 Scope Status'},
-    {key:'schedule',label:'4.3 Schedule Status'},
-    {key:'budget',  label:'4.4 Budget Status'},
-    {key:'quality', label:'4.5 Quality Status'},
-    {key:'risk',    label:'4.6 Risk Status'},
-    {key:'stake',   label:'4.7 Stakeholder Status'},
+    {key:'overall', label:'Overall Status'},
+    {key:'scope',   label:'Scope Status'},
+    {key:'schedule',label:'Schedule Status'},
+    {key:'budget',  label:'Budget Status'},
+    {key:'quality', label:'Quality Status'},
+    {key:'risk',    label:'Risk Status'},
+    {key:'stake',   label:'Stakeholder Status'},
   ];
 }
 
@@ -695,17 +699,10 @@ function buildReportHTML(d){
   // Meta row: ID + Sponsor + PM
   const metaBits=[]; if(m.projCode) metaBits.push(`Project ID ${m.projCode}`); if(m.sponsor) metaBits.push(`Sponsor: ${m.sponsor}`); if(m.pm) metaBits.push(`Project Manager: ${m.pm}`);
   if(metaBits.length){ h.push(`<div class="meta-row" style="margin-top:6px"><span>${metaBits.join('</span><span>')}</span></div>`); }
-  const overall = d.status?.overall?.current || ''; // moved chip to summary section
+  // Dates/phase directly under ID row
+  h.push(`<div class="meta-row"><span>Report date: ${m.reportDate || ''}</span><span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span><span>Current project phase: ${m.phase || ''}</span></div>`);
+  const overall = d.status?.overall?.current || '';
   h.push(`</div>`); // end header section
-
-  // Dates/phase
-  h.push(`<div class="report-section">`);
-  h.push(`<div class="meta-row">`);
-  h.push(`<span>Report date: ${m.reportDate || ''}</span>`);
-  h.push(`<span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span>`);
-  h.push(`<span>Current project phase: ${m.phase || ''}</span>`);
-  h.push(`</div>`);
-  h.push(`</div>`);
 
   // Budget
   const eac = (d.budget?.spent||0) + (d.budget?.etc||0);
@@ -713,7 +710,7 @@ function buildReportHTML(d){
   const varClass = variance >= 0 ? 'ok' : 'bad';
   h.push(`<div class="report-section tight-table">`);
   h.push(`<h2>Budget Summary (000’s)</h2>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+    <div class="budget-row" style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
       <span class="status-chip"><strong>Approved:</strong> <span class="tnum">${fmtCurrency0(d.budget?.approved||0)}</span></span>
       <span class="status-chip"><strong>Spend to Date:</strong> <span class="tnum">${fmtCurrency0(d.budget?.spent||0)}</span></span>
       <span class="status-chip"><strong>Current ETC:</strong> <span class="tnum">${fmtCurrency0(d.budget?.etc||0)}</span></span>
