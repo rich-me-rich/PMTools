@@ -1,0 +1,1286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Risk Identification Assistant v2.2</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --b:#0b67d0;--bg:#f7f9fb;--card:#fff;--br:#e6eef6;--text:#111;
+    --chip:#ffefc2;--chipText:#7a5d00;--unsureRow:#fff9ea;
+    --ok:#1a7f37;--muted:#566;
+  }
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Arial,Helvetica,sans-serif}
+  .wrap{max-width:1200px;margin:24px auto;padding:0 16px}
+  .card{background:var(--card);border-radius:10px;box-shadow:0 8px 26px rgba(20,30,50,.08);padding:18px}
+  h1{margin:0 0 4px;font-size:24px}
+  .ver{color:#566;font-size:12px;margin-bottom:8px}
+  .howto{margin:10px 0 14px;color:#234}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
+  input[type="text"],input[type="search"],select{border:1px solid var(--br);border-radius:8px;padding:8px 10px}
+  button{border:0;border-radius:8px;padding:10px 14px;font-weight:600;cursor:pointer}
+  .btn{background:#eef3f8;color:var(--b)}
+  .btn.primary{background:var(--b);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid var(--br);color:#123}
+  details{border:1px solid var(--br);border-radius:8px;margin:10px 0;background:#fff;overflow:hidden}
+  summary{padding:12px 14px;background:#eef6ff;font-weight:700;cursor:pointer}
+  .qs{display:grid;grid-template-columns:1fr;gap:12px;padding:12px 14px}
+  @media(min-width:900px){.qs{grid-template-columns:repeat(2,1fr)}}
+  .q{border:1px solid var(--br);border-radius:8px;padding:10px;background:#fff}
+  .q p{margin:0 6px 8px 0;font-weight:700}
+  .trigger{margin:0 0 8px;color:#445;font-size:12.5px}
+  .answers label{margin-right:12px}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--br);padding:8px;vertical-align:top;text-align:left}
+  th{background:#f0f8ff}
+  .results{margin-top:14px;display:block}
+  .results .tableWrap{margin-top:4px;overflow:auto;max-height:480px;border:1px solid var(--br);border-radius:8px;background:#fff;padding:0}
+  #resultsTable thead th{position:sticky;top:0;z-index:1;background:#f0f8ff}
+  .note{color:var(--muted);font-size:12px}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
+  .chip.unsure{background:var(--chip);color:var(--chipText);border:1px solid #ffe598;margin-left:6px}
+  tr.unsure{background:var(--unsureRow)}
+.matrix{
+  margin-top:12px;
+  width:100%;
+}
+.matrix .plot{
+  border:1px solid var(--br);
+  border-radius:8px;
+  background:#fff;
+  overflow:hidden;
+  padding:10px;
+}
+.matrix svg{
+  width:100%;
+  height:420px;
+  display:block;
+}
+.matrix .axisLabel{
+  font-size:12px;
+  fill:#345;
+}
+.matrix .tick{
+  stroke:#e6eef6;
+}
+.matrix .dot{
+  fill:#d00;
+  stroke:#fff;
+  stroke-width:1.5px;
+}
+.matrix .dotLabel{
+  font-size:9px;
+  fill:#111;
+  paint-order:stroke;
+  stroke:#fff;
+  stroke-width:2px;
+}
+/* ===== Matrix dot color classes (by rating) ===== */
+.matrix .dot.vlow{ fill:#2e7d32; }     /* Very Low - green */
+.matrix .dot.low{  fill:#66bb6a; }     /* Low - light green */
+.matrix .dot.med{  fill:#f9a825; }     /* Medium - amber */
+.matrix .dot.high{ fill:#ef6c00; }     /* High - orange */
+.matrix .dot.crit{ fill:#c62828; }     /* Critical - red */
+/* ===== Matrix title & legend ===== */
+.matrixTitle{
+  font-size: 14px;       /* slightly larger than axis labels */
+  fill: #345;            /* matches .matrix .axisLabel color */
+  font-weight: 700;
+}
+.matrix .legendLabel{
+  font-size: 11px;       /* matches .matrix .axisLabel font size */
+  fill: #345;
+}
+/* Base style for band-coloured heat cells */
+.band-Very, .band-Low, .band-Medium, .band-High, .band-Critical,
+.band-Low, .band-Medium, .band-High, .band-Critical {
+  text-align:center;
+  font-weight:600;
+}
+
+/* ===== Heatmap band colors (by rating) ===== */
+.band-Very\ Low { background:#e6f4ea; }  /* green-ish */
+.band-Low       { background:#e8f5e9; }
+.band-Medium    { background:#fff3cd; }  /* amber */
+.band-High      { background:#ffe0b2; }  /* orange */
+.band-Critical  { background:#ffebee; }  /* red */
+
+/* ===== Rating filter bar ===== */
+.ratingFilter{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+.ratingFilter label{ display:inline-flex; align-items:center; gap:4px; }
+
+  .legend{font-size:12px;color:#345;margin:6px 0}
+  .badge{font-weight:600;border-radius:6px;padding:2px 6px;display:inline-block}
+  .rate-Very\ Low{background:#eef7ff}
+  .rate-Low{background:#e9f7ef}
+  .rate-Medium{background:#fff7e6}
+  .rate-High{background:#ffefe6}
+  .rate-Critical{background:#ffe6e6}
+  .titleLabel{font-weight:700;margin-right:6px}
+  .importBox{margin-top:16px}
+  .importBox .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .muted{color:#566}
+  .stickyTopButtons{display:flex;gap:10px;flex-wrap:wrap;align-items:center;position: sticky;top: 0;background: #fff;padding: 8px 0;z-index: 100}
+  .tip{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#e6f0ff;color:#114;margin-left:4px;font-size:11px;font-weight:700;cursor:help}
+  .bulkBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  .selCol{width:24px;text-align:center}
+  .heat{margin-top:12px}
+  .heat table{border:1px solid var(--br);border-radius:8px}
+  .heat td,.heat th{border:1px solid var(--br);padding:6px 8px;text-align:center}
+  .h0{background:#f2f6fb}.h1{background:#e6f0ff}.h2{background:#d8e8ff}.h3{background:#c9dfff}.h4{background:#bad5ff}.h5{background:#aacaff}
+  .printOnly{display:none}
+  @media print{
+    body{background:#fff}
+    .row,.howto,.importBox,#accordion,.stickyTopButtons,.legend .note,.noPrint{display:none !important}
+    .results{display:block}
+    .printOnly{display:block}
+    .wrap{max-width:none;margin:0;padding:0}
+    #resultsTable{font-size:11px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Risk Identification Assistant</h1>
+    <div class="ver">Version: <b>2.2</b></div>
+
+    <div class="purpose">
+      <b>Purpose:</b> Rapidly identify, prioritise, and export project risks using a curated set of 100 trigger questions. 
+      As you assess each item, the tool builds a <em>Matched Risks</em> and exports a ready‑to‑use risk register (including guidance text and mitigation suggestions).    </div>
+
+    <div class="howto">
+      <b>How to use:</b> Review each question and choose <b>Yes</b>, <b>Not sure</b>, <b>No</b>, or <b>N/A</b>. Any item marked <b>Yes</b> or <b>Not sure</b> is added to <b>Matched Risks</b> at the bottom of the page. Questions marked <b>No</b>, <b>N/A</b> or are <b>unanswered</b> are not added. In the Matched Risks table, set the <b>Inherent Likelihood</b> and <b>Inherent Impact</b> (5×5 scale). The tool calculates the <b>Risk rating</b> and suggests a default <b>Risk review priority</b> (editable). Use <b>Export to XLS</b> to download your risk register.
+      <div class="note">Keyboard shortcuts: <b>1</b>=Yes, <b>2</b>=Not sure, <b>3</b>=No, <b>4</b>=N/A</div>
+    </div>
+
+    <!-- Project Name row -->
+    <div class="row">
+      <span class="titleLabel">Project Name:</span>
+      <input id="projectName" type="text" placeholder="e.g., Phoenix Modernisation" style="min-width:280px">
+    </div>
+
+    <!-- Controls row -->
+    <div class="row stickyTopButtons">
+      <input id="searchBox" type="search" placeholder="Search question text">
+      <select id="categoryFilter"><option value="">All categories</option></select>
+      <button class="btn" id="resetBtn">Reset answers</button>
+      <button class="btn primary" id="showResultsBtnTop">Apply Results</button>
+      <button class="btn" id="jumpBtn">Jump to matched results</button>
+      <button class="btn" id="exportBtnTop">Export to XLS</button>
+      <button class="btn ghost noPrint" id="printBtn" title="Print matched risks only">Print Matched</button>
+    </div>
+
+    <div id="accordion"></div>
+
+    <div class="results" id="resultsBlock">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <h3 style="margin:0 0 4px">Matched Risks</h3>
+          <div class="note" id="resultsMeta"></div>
+        </div>
+        <div>
+          <button class="btn primary" id="showResultsBtnBottom">Apply Results</button>
+          <button class="btn" id="exportBtnBottom">Export to XLS</button>
+          <button class="btn ghost noPrint" id="printBtn2">Print Matched</button>
+        </div>
+      </div>
+
+      <div class="note" style="margin:6px 0 10px">
+        Set <b>Inherent Likelihood</b><span class="tip" title="Chance of the risk occurring before any treatment.">i</span> and <b>Inherent Impact</b><span class="tip" title="Expected consequence if the risk occurs, before any treatment.">i</span> to auto-calc <b>Risk rating</b><span class="tip" title="Calculated from Likelihood × Impact using the 5×5 matrix.">i</span>. “Not sure” items are highlighted for follow‑up.
+      </div>
+
+      <!-- Bulk edit -->
+      <div class="bulkBar">
+        <span class="titleLabel">Bulk edit (selected rows or all if none selected):</span>
+        <label>Likelihood <select id="bulkLike"></select></label>
+        <label>Impact <select id="bulkImp"></select></label>
+        <label>Priority <select id="bulkPrio">
+          <option value=""></option>
+          <option>Not sure</option>
+          <option>Low</option>
+          <option>Medium</option>
+          <option>High</option>
+        </select></label>
+        <button class="btn" id="bulkApply">Apply</button>
+        <span class="note">Tip: Use the left column checkboxes to target specific rows.</span>
+      </div>
+
+      <div class="tableWrap">
+        <table id="resultsTable">
+          <thead>
+  <tr>
+    <th class="selCol">
+      <input type="checkbox" id="selAll">
+      <span class="tip" title="Tick to select all rows for bulk edits.">i</span>
+    </th>
+
+    <th>
+      Risk ID
+      <span class="tip" title="Sequential ID for this matched list (not a permanent register ID).">i</span>
+    </th>
+
+    <th>
+      Category
+      <span class="tip" title="The thematic area the trigger question belongs to (e.g., Governance, Delivery, Security).">i</span>
+    </th>
+
+    <th>
+      Trigger Question
+      <span class="tip" title="The Yes/Not sure trigger that matched. Clarify or rewrite in your register if needed.">i</span>
+    </th>
+
+    <th>
+      Risk description
+      <span class="tip" title="‘There is a risk that…’ statement describing the uncertainty or condition. Refine to your project context.">i</span>
+    </th>
+
+    <th>
+      Impact
+      <span class="tip" title="If… then… — the primary consequence if this risk materialises (business, customer, technical, regulatory).">i</span>
+    </th>
+
+    <th>
+      Suggested Mitigation (Guidance)
+      <span class="tip" title="Default treatment ideas to start from. Replace with concrete actions, owners, and timelines.">i</span>
+    </th>
+
+    <th>
+      Inherent Likelihood
+      <span class="tip" title="Before treatments. Scale: Rare, Unlikely, Possible, Likely, Almost Certain.">i</span>
+    </th>
+
+    <th>
+      Inherent Impact
+      <span class="tip" title="Before treatments. Scale: Insignificant, Minor, Moderate, Major, Severe.">i</span>
+    </th>
+
+    <th>
+      Risk rating
+      <span class="tip" title="Auto-calculated from the 5×5 matrix (Likelihood × Impact): Very Low, Low, Medium, High, Critical.">i</span>
+    </th>
+
+    <th>
+      Risk review priority
+      <span class="tip" title="Default suggested from rating; you can override (Not sure / Low / Medium / High).">i</span>
+    </th>
+  </tr>
+</thead>
+          <tbody></tbody>
+        </table>
+      </div>
+<!-- Rating filter -->
+<div id="ratingFilterBar" class="ratingFilter">
+  <span class="titleLabel">Show ratings:</span>
+  <label><input type="checkbox" value="Very Low" checked> Very Low</label>
+  <label><input type="checkbox" value="Low" checked> Low</label>
+  <label><input type="checkbox" value="Medium" checked> Medium</label>
+  <label><input type="checkbox" value="High" checked> High</label>
+  <label><input type="checkbox" value="Critical" checked> Critical</label>
+  <span class="note">Uncheck to hide ratings on the matrix.</span>
+</div>
+
+      <!-- Risk Matrix Reference -->
+<h3 style="margin:16px 0 6px">Risk Matrix</h3>
+<div class="matrix">
+  <div id="matrixHost" class="plot"><!-- SVG populated by JS --></div>
+  <div class="legend" style="margin-top:6px">
+    Likelihood (left → right) × Impact (bottom → top). Dots are coloured by rating; labels show Risk ID.
+  </div>
+</div>
+
+<!-- Category Heatmap -->
+<h3 style="margin:18px 0 6px">Category Heatmap</h3>
+<div class="heat">
+  <div class="legend">Count of matched risks by rating and category (for triage and focus).</div>
+  <div class="tableWrap" style="max-height:none">
+    <table id="heatTable" aria-label="Category heatmap"></table>
+  </div>
+</div>
+
+      <div class="printOnly note" style="margin-top:8px">Printed from Risk Identification Assistant v2.2</div>
+    </div>
+
+    <div class="card importBox">
+      <h3 style="margin:0 0 6px">Risk question import</h3>
+      <div class="muted">
+        Import a CSV to <b>override</b> the built-in questions for this session. Reload the page to restore defaults.
+      </div>
+      <div class="actions">
+        <input id="csvFile" type="file" accept=".csv" style="display:none">
+        <button class="btn primary" id="importBtn">Import CSV</button>
+        <button class="btn" id="templateBtn">Download CSV template</button>
+        <span class="note">Columns: Risk ID, Category, Revised Question, There is a risk that…, If… then…, Suggested Mitigation (Guidance)</span>
+      </div>
+      <div id="importStatus" class="note" style="margin-top:6px"></div>
+    </div>
+
+  </div>
+</div>
+<script>
+/* ========= Helpers ========= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const todayStamp = () => { const d = new Date(); const pad=n=> (n<10?'0':'')+n; return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`; };
+const norm = s => (s||'').toString().trim();
+function escapeHtml(s){ return (s||'').replace(/[&<>"]/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function normaliseHeader(s){ return norm(s).toLowerCase().replaceAll(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' '); }
+
+const LIKE_OPTS = ["", "Rare", "Unlikely", "Possible", "Likely", "Almost Certain"];
+const IMPACT_OPTS = ["", "Insignificant", "Minor", "Moderate", "Major", "Severe"];
+const LIKE_SCORE = { "rare":1, "unlikely":2, "possible":3, "likely":4, "almost certain":5 };
+const IMP_SCORE  = { "insignificant":1, "minor":2, "moderate":3, "major":4, "severe":5 };
+const SCALE5 = ['Very Low','Low','Medium','High','Critical'];
+/* ===== 5×5 parsing (bands, Likelihood/Impact labels, or numeric) ===== */
+function parse5(v){
+  if (!v) return null;
+  const s = String(v).trim();
+
+  // Rating band names (Very Low..Critical)
+  const bandIdx = SCALE5.indexOf(s);
+  if (bandIdx >= 0) return bandIdx + 1;
+
+  // Likelihood / Impact labels (Rare..Almost Certain / Insignificant..Severe)
+  const lk = LIKE_SCORE[s.toLowerCase()];
+  if (lk) return lk;
+  const ip = IMP_SCORE[s.toLowerCase()];
+  if (ip) return ip;
+
+  // Numeric 1..5
+  const num = Number(s);
+  if (!Number.isNaN(num) && num >= 1 && num <= 5) return num;
+
+  return null;
+}
+/* ===== Rating filter helpers ===== */
+function getActiveRatings(){
+  const bar = $('#ratingFilterBar');
+  if(!bar) return new Set(SCALE5);
+  const vals = Array.from(bar.querySelectorAll('input[type="checkbox"]'))
+    .filter(cb=>cb.checked)
+    .map(cb=>cb.value);
+  return new Set(vals.length ? vals : SCALE5);
+}
+
+function scoreRating(likeLabel, impLabel){
+  const l = LIKE_SCORE[(likeLabel||"").toLowerCase()]||0;
+  const i = IMP_SCORE[(impLabel||"").toLowerCase()]||0;
+  if(!l || !i) return { score:0, label:"" };
+  const s = l*i;
+  let label = "";
+  if(s <= 4) label="Very Low";
+  else if(s <= 8) label="Low";
+  else if(s <= 12) label="Medium";
+  else if(s <= 16) label="High";
+  else label="Critical";
+  return { score:s, label };
+}
+function priorityFromRating(label){
+  if(!label) return "High";
+  if(label==="Medium") return "Medium";
+  if(label==="High"||label==="Critical") return "High";
+  return "Low";
+}
+
+/***** Preloaded risks — 100 items (same content as v2.0) *****/
+let risks = [
+  /* Governance & Stakeholder Engagement */
+  { id:"G-001",category:"Governance & Stakeholder Engagement",question:"Are there multiple stakeholder groups with potentially conflicting priorities?",risk:"There is a risk that key stakeholder priorities conflict or are misaligned.",consequence:"If stakeholder priorities conflict or are not aligned early, then the project may deliver outputs that don't meet business needs, causing rework or rejection.",mitigation:"Create stakeholder map & RACI; schedule monthly steerco; define decision rights & quorum; run alignment workshops;" },
+  { id:"G-002",category:"Governance & Stakeholder Engagement",question:"Is governance or steering committee cadence irregular or undefined?",risk:"There is a risk that governance oversight is insufficient or inconsistent.",consequence:"If governance meetings are irregular or unclear, then decisions may be delayed, scope may drift, and accountability will be weak.",mitigation:"Create stakeholder map & RACI; schedule monthly steerco; define decision rights & quorum; run alignment workshops;" },
+  { id:"G-003",category:"Governance & Stakeholder Engagement",question:"Are primary sponsors not committed or frequently unavailable?",risk:"There is a risk that executive sponsorship is weak or absent.",consequence:"If sponsors are not committed or available, then escalation paths and strategic support may fail, risking project cancellation or deprioritisation.",mitigation:"Clear project biref or engagment document approved by sponsors to ensure initial alignment: Ongoing review and validation of scope and benifits;" },
+  { id:"G-004",category:"Governance & Stakeholder Engagement",question:"Is the project's decision authority unclear or distributed across many parties?",risk:"There is a risk that role and decision authority are unclear.",consequence:"If decision authority is ambiguous, then approvals will be delayed and the project will lose momentum and clarity on deliverables.",mitigation:"Define governance calendar; clarify roles (RACI); run alignment forums; keep decision & action logs." },
+  { id:"G-005",category:"Governance & Stakeholder Engagement",question:"Does the project lack a clearly defined benefits owner or business end-to-end owner?",risk:"There is a risk that no owner is accountable for realising benefits.",consequence:"If benefits ownership is missing, then business value may not be realised and handover to operations will be weak.",mitigation:"Assign named benefits owner; define benefit KPIs & measurement plan; include benefits realisation in stage gates & handover criteria." },
+  { id:"G-006",category:"Governance & Stakeholder Engagement",question:"Are external or regulatory stakeholders engaged late?",risk:"There is a risk that external stakeholder or regulator requirements are missed.",consequence:"If regulators are engaged late, then compliance work may cause schedule slips or rework.",mitigation:"Create stakeholder map & RACI; Identify regulators and external parties and validate timelines/dependencies; Establish working group to ensure work on track;" },
+  { id:"G-007",category:"Governance & Stakeholder Engagement",question:"Is funding approval dependent on multiple vendor or programme decisions?",risk:"There is a risk that funding is conditional or uncertain.",consequence:"If funding is not secured or is conditional upon other approvals, then the project may pause or resource hiring may be delayed.",mitigation:"Build detailed cost model; add contingency;" },
+  { id:"G-008",category:"Governance & Stakeholder Engagement",question:"Are stakeholder expectations undocumented?",risk:"There is a risk that stakeholder expectations are unrealistic or unmanaged.",consequence:"If expectations are not agreed, then deliverables may be rejected or perceived as failures despite meeting scope.",mitigation:"Clear project biref or engagment document approved by sponsors to ensure initial alignment; ongoing review and validation of scope and benefits;" },
+  { id:"G-009",category:"Governance & Stakeholder Engagement",question:"Is there frequent change at sponsor or steering committee membership?",risk:"There is a risk that frequent sponsor changes disrupt continuity.",consequence:"If sponsor or steering membership churns, then strategic direction may shift, causing rework and delay.",mitigation:"Establish clear governance charters; maintain decision/action logs; onboarding pack for new sponsors/committee members." },
+  { id:"G-010",category:"Governance & Stakeholder Engagement",question:"Is there poor communication between project and business units?",risk:"There is a risk that communication channels are inadequate.",consequence:"If communication is poor, then misinterpretation of requirements and missed dependencies will occur.",mitigation:"Structured comms plan; dashboards/newsletters/stand-ups; liaison roles; regular alignment sessions." },
+
+  /* Scope & Requirements */
+  { id:"S-011",category:"Scope & Requirements",question:"Are requirements poorly defined or studied superficially?",risk:"There is a risk that scope and requirements are unclear or incomplete.",consequence:"If requirements are not well-defined, then development will produce rework, scope creep, and cost overruns.",mitigation:"Structured elicitation; NFRs; acceptance criteria; traceability; sign-off workshops." },
+  { id:"S-012",category:"Scope & Requirements",question:"Is there a tendency for business stakeholders to add requirements after approval?",risk:"There is a risk of uncontrolled scope creep.",consequence:"If new requirements are added ad-hoc, then schedule and budget will be impacted.",mitigation:"Baseline scope; change control with impact assessment; timebox discovery; public change log." },
+  { id:"S-013",category:"Scope & Requirements",question:"Are non-functional requirements (performance, scalability) undocumented?",risk:"There is a risk that non-functional requirements are overlooked.",consequence:"If NFRs are missing, then delivered systems may fail under load or not meet operational needs.",mitigation:"Document NFRs and sign-off; acceptance criteria; traceability; sign-off workshops." },
+  { id:"S-014",category:"Scope & Requirements",question:"Is there limited business availability for requirement validation?",risk:"There is a risk that business cannot validate requirements timely.",consequence:"If validation is delayed, then testing and acceptance will be compressed and defects will be found late.",mitigation:"Validate approval lead times; proactive engagement; start early to absorb slippage." },
+  { id:"S-015",category:"Scope & Requirements",question:"Are assumptions undocumented or unvalidated?",risk:"There is a risk that critical assumptions are untested or invalid.",consequence:"If an assumption proves false, then architectural choices or schedules may become untenable.",mitigation:"Capture assumptions; validate early; enforce change control." },
+  { id:"S-016",category:"Scope & Requirements",question:"Is there overlap with other programmes or projects?",risk:"There is a risk of duplicated or conflicting scope across initiatives.",consequence:"If scope overlaps, then resources may be wasted and integration issues will occur.",mitigation:"Identify overlap and demarcation; add dependencies and track delivery." },
+  { id:"S-017",category:"Scope & Requirements",question:"Is the project built on legacy processes without re-engineering?",risk:"There is a risk that legacy process constraints are embedded.",consequence:"If legacy processes aren’t redesigned, the solution may replicate inefficiencies.",mitigation:"Assess legacy dependencies; target high‑value processes; secure approvals." },
+  { id:"S-018",category:"Scope & Requirements",question:"Are acceptance criteria for deliverables missing or vague?",risk:"There is a risk that acceptance criteria are unclear or absent.",consequence:"If acceptance criteria are vague, then handover and sign-off will be contentious and delayed.",mitigation:"Document acceptance criteria; delivery team review and approve." },
+  { id:"S-019",category:"Scope & Requirements",question:"Is significant future change expected but not accommodated?",risk:"There is a risk that extensibility and change are not designed in.",consequence:"If future changes are likely but not planned, retrofit costs will be high.",mitigation:"Document in/out of scope; align with PO (RACI)." },
+  { id:"S-020",category:"Scope & Requirements",question:"Do requirements rely heavily on a single SME who may be unavailable?",risk:"There is a risk of knowledge concentration in a single person.",consequence:"If the SME becomes unavailable, validation will be impossible or delayed.",mitigation:"Validate approval lead times; proactive engagement; start early." },
+
+  /* Schedule & Delivery */
+  { id:"T-021",category:"Schedule & Delivery",question:"Is the schedule based on optimistic estimates with little contingency?",risk:"There is a risk that schedule estimates are overly optimistic.",consequence:"If estimates are optimistic, any delay will cascade causing missed milestones.",mitigation:"Re-estimate critical path; add contingency; track SPI; burn-up charts; escalate >10%." },
+  { id:"T-022",category:"Schedule & Delivery",question:"Are there critical dependencies outside the team's control?",risk:"There is a risk of external dependency delays affecting schedule.",consequence:"If external dependencies are delayed, integration points and go-live dates will slip.",mitigation:"Dependency register; weekly cross-team sync; buffers; fallback options; call out in governance." },
+  { id:"T-023",category:"Schedule & Delivery",question:"Are supplier/vendor plans insufficiently detailed?",risk:"There is a risk that vendor delivery timelines are opaque.",consequence:"If vendor timelines are unclear, coordination/contingency planning will be ineffective.",mitigation:"Lock milestones in contract; require plan & weekly status; SLAs/penalties; alternate supplier path." },
+  { id:"T-024",category:"Schedule & Delivery",question:"Does the project have a hard regulatory or market deadline?",risk:"There is a risk of missing hard external deadlines.",consequence:"If a fixed deadline is missed, fines or lost market opportunity may occur.",mitigation:"Re-estimate; add contingency; track SPI; MVP first for regulatory needs." },
+  { id:"T-025",category:"Schedule & Delivery",question:"Are parallel workstreams poorly coordinated?",risk:"There is a risk that parallel streams cause integration bottlenecks.",consequence:"If not coordinated, integration defects and late rework will cause delays.",mitigation:"Interface contracts; mock services; early E2E tests; synthetic checks." },
+  { id:"T-026",category:"Schedule & Delivery",question:"Are testing cycles under-planned or too short?",risk:"There is a risk that testing time is insufficient.",consequence:"If testing is compressed, defects will reach production.",mitigation:"Test strategy; automate regression; defect SLAs & triage; augment QA capacity." },
+  { id:"T-027",category:"Schedule & Delivery",question:"Is environment provisioning slow or dependent on third parties?",risk:"There is a risk that environments won't be available when needed.",consequence:"If environments are late, development/testing will be blocked.",mitigation:"Add buffers; monitor SPI; escalate variances." },
+  { id:"T-028",category:"Schedule & Delivery",question:"Is the rollback or cutover plan complex/high risk?",risk:"There is a risk that deployment and rollback are not planned.",consequence:"If deployment fails without rollback, production will be unstable.",mitigation:"Cutover plan; practice rollback; freeze windows; command centre & comms." },
+  { id:"T-029",category:"Schedule & Delivery",question:"Are milestones not tied to measurable outputs?",risk:"There is a risk milestones don’t reflect real progress.",consequence:"If milestones are vague, tracking will be misleading and risks hidden.",mitigation:"Re-estimate critical path; contingency; SPI; burn-up; escalate >10%." },
+  { id:"T-030",category:"Schedule & Delivery",question:"Does the schedule assume full-time availability of shared staff?",risk:"There is a risk that resource availability is overallocated.",consequence:"If staff are shared, effort available will be lower and deadlines missed.",mitigation:"Validate allocations; adjust schedule/estimates; rebalance resources." },
+
+  /* Resources & Skills */
+  { id:"R-031",category:"Resources & Skills",question:"Is there a shortage of required technical skills within the team?",risk:"There is a risk of delivery team skills gaps.",consequence:"If gaps aren’t filled, quality suffers and delivery is delayed.",mitigation:"Skills gap analysis; training/backfills; succession plan." },
+  { id:"R-032",category:"Resources & Skills",question:"Are key roles reliant on contractors with short contracts?",risk:"There is a risk of contractor turnover mid-delivery.",consequence:"If contractors leave before knowledge transfer, continuity and speed drop.",mitigation:"Plan KT; extend key contracts; overlap periods." },
+  { id:"R-033",category:"Resources & Skills",question:"Is there insufficient training budget or plan for BAU adoption?",risk:"There is a risk users will not be trained adequately.",consequence:"If users aren’t trained, adoption will be poor.",mitigation:"Training plan; agree with business owner; schedule early." },
+  { id:"R-034",category:"Resources & Skills",question:"Is hiring or procurement historically lengthy?",risk:"There is a risk of delayed hire/procurement.",consequence:"If resources cannot onboard in time, planned work cannot start.",mitigation:"Map onboarding timelines; short-term options; escalate for decision." },
+  { id:"R-035",category:"Resources & Skills",question:"Are cross-functional skills (process + tech) limited?",risk:"There is a risk of inadequate cross-functional capability.",consequence:"If integrated knowledge is low, handoffs fail and rework increases.",mitigation:"Cross-train; paired work; joint problem solving; add hybrid-skilled SMEs." },
+  { id:"R-036",category:"Resources & Skills",question:"Are SMEs overloaded with BAU work?",risk:"There is a risk SMEs cannot allocate time.",consequence:"If SMEs are overloaded, decisions/reviews will be delayed.",mitigation:"Validate allocation; adjust plans; relieve BAU load where possible." },
+  { id:"R-037",category:"Resources & Skills",question:"Is backup/succession for key roles absent?",risk:"There is a risk that loss of staff derails critical tasks.",consequence:"If key staff depart without backups, knowledge and progress are lost.",mitigation:"Add backups; onboarding kits; balance load." },
+  { id:"R-038",category:"Resources & Skills",question:"Is team cohesion poor or conflict high?",risk:"There is a risk of dysfunctional team dynamics.",consequence:"If conflict is unresolved, productivity and focus drop.",mitigation:"Team agreements; retro facilitation; conflict resolution support." },
+  { id:"R-039",category:"Resources & Skills",question:"Are tools and licenses not budgeted or unavailable?",risk:"There is a risk required tools/licenses are unavailable.",consequence:"If tools are missing, workarounds cause delay/quality issues.",mitigation:"Validate licensing; forecast cloud; set budget alerts; review usage." },
+  { id:"R-040",category:"Resources & Skills",question:"Is capacity limited in internal support teams (ops, security, infra)?",risk:"There is a risk internal teams cannot support delivery.",consequence:"If internal teams can’t support, integration and stabilisation delay.",mitigation:"Contractors/vendors; escalate for prioritisation." },
+
+  /* Technology & Infrastructure */
+  { id:"I-041",category:"Technology & Infrastructure",question:"Is the architecture unproven or experimental for production?",risk:"There is a risk chosen architecture is immature.",consequence:"If unsuitable, rework/migration costs and instability occur.",mitigation:"POCs; standardised envs; CI/CD; rollback plan." },
+  { id:"I-042",category:"Technology & Infrastructure",question:"Do you depend on legacy systems with limited integration?",risk:"There is a risk legacy systems limit integration/data flow.",consequence:"If constraints exist, brittle integrations limit functionality.",mitigation:"Interface contracts; mocks; early end‑to‑end testing; synthetic checks." },
+  { id:"I-043",category:"Technology & Infrastructure",question:"Is infrastructure capacity unvalidated for expected load?",risk:"There is a risk capacity is inadequate.",consequence:"If insufficient, performance degrades and outages occur.",mitigation:"Performance modeling/testing; right‑size infra; autoscale; monitoring." },
+  { id:"I-044",category:"Technology & Infrastructure",question:"Are environments (dev/test/prod) inconsistent or non-mirrored?",risk:"There is a risk environment differences cause prod-only defects.",consequence:"If inconsistent, bugs escape detection and incidents occur.",mitigation:"Assess gaps; align envs; automate regression; dress rehearsal/rollback." },
+  { id:"I-045",category:"Technology & Infrastructure",question:"Is there vendor lock-in or proprietary tech with low portability?",risk:"There is a risk lock‑in raises future cost/complexity.",consequence:"If lock‑in exists, migrations or multi‑vendor are costly.",mitigation:"Contract milestones; SLAs; alt supplier/insource path." },
+  { id:"I-046",category:"Technology & Infrastructure",question:"Is data migration required from many sources with variable quality?",risk:"There is a risk migration complexity is underestimated.",consequence:"If data issues are underestimated, migration will fail/remediate heavily.",mitigation:"Profile data; mapping & reconcile; dry runs; checksums; rollback." },
+  { id:"I-047",category:"Technology & Infrastructure",question:"Are third-party integrations poorly documented or brittle?",risk:"There is a risk integrations break or are unstable.",consequence:"If third-party fails, key functionality/timelines are impacted.",mitigation:"Contracts; mocks; early E2E tests; synthetic checks." },
+  { id:"I-048",category:"Technology & Infrastructure",question:"Is automated build/test/deploy pipeline absent?",risk:"There is a risk delivery is manual and error-prone.",consequence:"If automation is lacking, deployments are slow and risky.",mitigation:"Standardise CI/CD; automation; rollback plan." },
+  { id:"I-049",category:"Technology & Infrastructure",question:"Are software licenses/subscriptions/cloud budgets uncertain?",risk:"There is a risk of under‑budgeting for cloud/licenses.",consequence:"If costs are higher than expected, budget exceed/scope cuts.",mitigation:"Cost model; 10–20% contingency; CPI monitoring; stage funding." },
+  { id:"I-050",category:"Technology & Infrastructure",question:"Is monitoring/observability for post‑go‑live poor?",risk:"There is a risk production monitoring is insufficient.",consequence:"If observability is weak, incidents are harder to detect/resolve.",mitigation:"Logs/metrics/tracing; SLOs; key journey alerts; runbooks." },
+
+  /* Security & Compliance */
+  { id:"C-051",category:"Security & Compliance",question:"Are security requirements undefined early in the lifecycle?",risk:"There is a risk security is an afterthought.",consequence:"If security is not embedded early, remediation will be costly.",mitigation:"Threat model; encryption in transit/at rest; least privilege; pen test." },
+  { id:"C-052",category:"Security & Compliance",question:"Does the solution handle sensitive data without clear controls?",risk:"There is a risk of exposing sensitive/personal data.",consequence:"If PII is mishandled, legal/reputational penalties may follow.",mitigation:"Define controls; supplier assessments; evidence compliance; PIA." },
+  { id:"C-053",category:"Security & Compliance",question:"Are compliance/regulatory requirements unclear?",risk:"There is a risk of non‑compliance.",consequence:"If compliance is not met, fines/remediation/delays can occur.",mitigation:"Elicit requirements; acceptance criteria; traceability; sign‑offs." },
+  { id:"C-054",category:"Security & Compliance",question:"Is security testing (pen tests/code scanning) limited?",risk:"There is a risk vulnerabilities go undetected.",consequence:"If testing is insufficient, severe vulns may reach production.",mitigation:"SRA/PIA; define controls; evidence compliance; security tests." },
+  { id:"C-055",category:"Security & Compliance",question:"Are third‑party suppliers not assessed for security posture?",risk:"There is a risk of supply chain weaknesses.",consequence:"If suppliers are insecure, compromise can affect the project.",mitigation:"Supplier assessments; encryption; privileged access; pen test." },
+  { id:"C-056",category:"Security & Compliance",question:"Is encryption in transit/at rest unaddressed?",risk:"There is a risk data is not adequately protected.",consequence:"If encryption is missing, breaches can expose information.",mitigation:"SRA/PIA; mandate encryption; test controls." },
+  { id:"C-057",category:"Security & Compliance",question:"Are access controls and privileged access lax?",risk:"There is a risk permissions are excessive or mismanaged.",consequence:"If controls are weak, misuse can cause data loss/impact.",mitigation:"Least privilege; MFA; privileged access reviews; pen test." },
+  { id:"C-058",category:"Security & Compliance",question:"Is the privacy impact assessment expected to be complex?",risk:"There is a risk privacy risks are unmanaged.",consequence:"If assessments are skipped, regulatory/reputational damage may occur.",mitigation:"PIA early; design for privacy; document & evidence controls." },
+  { id:"C-059",category:"Security & Compliance",question:"Is incident response and breach notification unplanned?",risk:"There is a risk incidents are not managed promptly.",consequence:"If response plans are absent, containment will be slower and reporting missed.",mitigation:"IR plan; roles/escalations; tabletop exercises; notification timelines; integrate with monitoring." },
+  { id:"C-060",category:"Security & Compliance",question:"Are data retention and deletion policies undefined?",risk:"There is a risk of retaining data longer than permitted.",consequence:"If policies are unclear, legal exposure and costs may rise.",mitigation:"Legal/compliance alignment; retention schedule; automate deletion; audits; staff training." },
+
+  /* Finance & Budget */
+  { id:"F-061",category:"Finance & Budget",question:"Is the budget based on high‑level estimates without detailed breakdown?",risk:"There is a risk budget estimates are inaccurate.",consequence:"If budgets aren’t grounded, overruns likely and scope cuts needed.",mitigation:"Cost model; contingency; CPI monitoring." },
+  { id:"F-062",category:"Finance & Budget",question:"Is contingency insufficient or absent?",risk:"There is a risk contingency planning is inadequate.",consequence:"If unexpected costs arise, project needs more funding or scope cuts.",mitigation:"Review historical needs; ensure contingency covers schedule/resources/budget." },
+  { id:"F-063",category:"Finance & Budget",question:"Do budgets rely on future cost reductions/efficiencies?",risk:"There is a risk expected efficiencies won’t materialise.",consequence:"If savings fail, costs exceed targets or ROI fails.",mitigation:"Make savings out‑of‑scope; contingency; frequent reporting." },
+  { id:"F-064",category:"Finance & Budget",question:"Is vendor pricing or contracts not fixed/clear?",risk:"There is a risk of variable vendor costs/charges.",consequence:"If costs change, budget may exceed or disputes may arise.",mitigation:"Lock milestones; delivery plan & weekly status; SLAs/penalties; alt supplier path." },
+  { id:"F-065",category:"Finance & Budget",question:"Is financial governance weak or reporting lacking?",risk:"There is a risk of oversight gaps.",consequence:"If controls are weak, overspend can go unnoticed.",mitigation:"Cost model; contingency; CPI monitoring; staged funding." },
+  { id:"F-066",category:"Finance & Budget",question:"Are approvals for budget releases slow or uncertain?",risk:"There is a risk funding delays stall progress.",consequence:"If funds aren’t released, hiring/procurement are delayed.",mitigation:"Validate release timelines; cover with contingency; staged releases." },
+  { id:"F-067",category:"Finance & Budget",question:"Do multiple departmental budgets lack alignment?",risk:"There is a risk fragmented budget ownership.",consequence:"If fragmented, costs shift between owners; accountability unclear.",mitigation:"Name benefits owner; KPIs & measurement plan; include in stage gates." },
+  { id:"F-068",category:"Finance & Budget",question:"Are post‑go‑live operating costs not estimated?",risk:"There is a risk ongoing costs underestimated.",consequence:"If higher than budgeted, business may refuse to sustain service.",mitigation:"Cost model; contingency; staged funding." },
+  { id:"F-069",category:"Finance & Budget",question:"Is FX/tax/cross‑border exposure not considered?",risk:"There is a risk of unforeseen FX/tax costs.",consequence:"If ignored, budgets hit by currency/tax impacts.",mitigation:"Add to dependency schedule; sponsor visibility; contingency; staged funding." },
+  { id:"F-070",category:"Finance & Budget",question:"Is contingency limited for contract variations/scope changes?",risk:"There is a risk variation costs are unplanned.",consequence:"If variations claimed, absorb unbudgeted spend.",mitigation:"Cost model; contingency; staged funding." },
+
+  /* External & Environmental Factors */
+  { id:"E-071",category:"External & Environmental Factors",question:"Is there geopolitical/economic/market volatility affecting the project?",risk:"There is a risk external factors disrupt the project.",consequence:"If conditions change rapidly, supply/budgets/priorities shift.",mitigation:"Track indicators; scenario‑plan; diversify suppliers; update risk register." },
+  { id:"E-072",category:"External & Environmental Factors",question:"Are suppliers/critical third parties unstable or single‑source?",risk:"There is a risk of supplier failure/interruption.",consequence:"If a critical supplier fails, replacement costly or causes delays.",mitigation:"Lock milestones; delivery plan & weekly status; SLAs/penalties; alt supplier path." },
+  { id:"E-073",category:"External & Environmental Factors",question:"Is regulatory change expected during timeline?",risk:"There is a risk new regulations impact scope/compliance.",consequence:"If regulation changes, rework or added compliance costs required.",mitigation:"Compliance matrix; engage legal early; scheduled reviews; evidence controls." },
+  { id:"E-074",category:"External & Environmental Factors",question:"Does the project rely on third‑party data sources with SLA risk?",risk:"There is a risk data availability/quality is unreliable.",consequence:"If data fails or is low quality, outputs/decisions are affected.",mitigation:"Contract SLAs; alternates; monitoring; remediation." },
+  { id:"E-075",category:"External & Environmental Factors",question:"Is there force majeure/natural disaster risk affecting teams/suppliers?",risk:"There is a risk natural events disrupt delivery.",consequence:"If events occur, timelines and availability are severely impacted.",mitigation:"Monitor; diversify; contingency plans." },
+  { id:"E-076",category:"External & Environmental Factors",question:"Are market pressures accelerating delivery beyond safe pace?",risk:"There is a risk of rushing due to market pressure.",consequence:"If compressed, quality and security are compromised.",mitigation:"Scenario‑plan; prioritise MVP; staged releases." },
+  { id:"E-077",category:"External & Environmental Factors",question:"Is there community/union/industrial action risk?",risk:"There is a risk labour disruptions impact delivery.",consequence:"If action occurs, staffing and procurement are disrupted.",mitigation:"Monitor; diversify; contingency." },
+  { id:"E-078",category:"External & Environmental Factors",question:"Is competitive/strategic change intense in the business area?",risk:"There is a risk the project’s rationale becomes obsolete.",consequence:"If context changes, the project may lose relevance or be cancelled.",mitigation:"Monitor; contingency; periodic strategy checks." },
+  { id:"E-079",category:"External & Environmental Factors",question:"Are there cross‑border legal/export control complexities?",risk:"There is a risk cross‑border legal matters restrict features/data.",consequence:"If restrictions exist, features may need modification or blocking.",mitigation:"Compliance matrix; legal early; audits; evidence controls." },
+  { id:"E-080",category:"External & Environmental Factors",question:"Is public perception or reputational risk high for the change?",risk:"There is a risk public/customer perception will be negative.",consequence:"If reaction is poor, adoption and brand value suffer.",mitigation:"Monitor sentiment; comms plan; contingency." },
+
+  /* Change Management & Adoption */
+  { id:"CH-081",category:"Change Management & Adoption",question:"Is stakeholder adoption/transition under‑resourced?",risk:"There is a risk adoption activities are under‑resourced.",consequence:"If not planned, uptake will be low and benefits unrealised.",mitigation:"Change plan; champions; training; hypercare." },
+  { id:"CH-082",category:"Change Management & Adoption",question:"Are cultural/organisational change aspects underestimated?",risk:"There is a risk resistance undermines change.",consequence:"If culture is ignored, rollouts will fail.",mitigation:"Role‑based comms; targeted training; feedback channels; hypercare." },
+  { id:"CH-083",category:"Change Management & Adoption",question:"Is training not tailored to user roles/contexts?",risk:"There is a risk training is ineffective.",consequence:"If generic, users won’t be competent and will revert.",mitigation:"Role‑based training; hands‑on labs; just‑in‑time content." },
+  { id:"CH-084",category:"Change Management & Adoption",question:"Is communication about benefits/timelines/impacts poor?",risk:"There is a risk messaging is inconsistent.",consequence:"If comms are poor, stakeholders will be confused/resistant.",mitigation:"Comms plan; cadence; measures of reach/understanding." },
+  { id:"CH-085",category:"Change Management & Adoption",question:"Is leadership not visibly supporting the change?",risk:"There is a risk leadership backing is absent.",consequence:"If leaders don’t support, adoption will falter.",mitigation:"Visible sponsorship; leader talking points; show‑and‑tell." },
+  { id:"CH-086",category:"Change Management & Adoption",question:"Are incentives and KPIs misaligned to new behaviours?",risk:"There is a risk performance measures don’t encourage adoption.",consequence:"If KPIs don’t reward new behaviours, users avoid adopting.",mitigation:"Align KPIs/incentives; recognise champions; HR alignment." },
+  { id:"CH-087",category:"Change Management & Adoption",question:"Is post‑go‑live support (hypercare) unplanned?",risk:"There is a risk users won’t get immediate support.",consequence:"If hypercare is absent, early issues escalate and reduce adoption.",mitigation:"Staffed hypercare; clear channels; SLA response." },
+  { id:"CH-088",category:"Change Management & Adoption",question:"Is a stakeholder feedback loop absent for iteration?",risk:"There is a risk early issues can’t be surfaced/resolved.",consequence:"If feedback isn’t captured, problems persist and trust drops.",mitigation:"Feedback channels; triage; visible backlog." },
+  { id:"CH-089",category:"Change Management & Adoption",question:"Will the change reduce headcount or significantly alter roles?",risk:"There is a risk morale/retention issues.",consequence:"If roles threatened sans HR strategy, attrition rises.",mitigation:"HR plan; transparent comms; reskilling pathways." },
+  { id:"CH-090",category:"Change Management & Adoption",question:"Are process owners not engaged to update processes/docs?",risk:"There is a risk operations won’t align to new solution.",consequence:"If not updated, operations become inconsistent/error‑prone.",mitigation:"Engage owners; update SOPs; governance checks." },
+
+  /* Testing & Quality Assurance */
+  { id:"Q-091",category:"Testing & Quality Assurance",question:"Is the test strategy incomplete or misaligned to requirements?",risk:"There is a risk testing won’t validate key requirements.",consequence:"If coverage is poor, defects/gaps reach production.",mitigation:"Traceability to requirements; reviews; sign‑offs." },
+  { id:"Q-092",category:"Testing & Quality Assurance",question:"Are test environments/data unrepresentative of production?",risk:"There is a risk testing won’t reveal production issues.",consequence:"If envs differ, defects occur only in production.",mitigation:"Prod‑like env/data; dress rehearsal; rollback test." },
+  { id:"Q-093",category:"Testing & Quality Assurance",question:"Is automated testing absent for regression/CI?",risk:"There is a risk regression is manual/inconsistent.",consequence:"If manual, releases become risky/slow.",mitigation:"Regression automation; quality gates; CI integration." },
+  { id:"Q-094",category:"Testing & Quality Assurance",question:"Are performance/load expectations aggressive or untestable?",risk:"There is a risk performance won’t meet expectations.",consequence:"If perf testing inadequate, system degrades/fails under load.",mitigation:"Perf modeling; thresholds; right‑size infra; autoscale." },
+  { id:"Q-095",category:"Testing & Quality Assurance",question:"Is UAT unplanned with real users?",risk:"There is a risk UAT won’t validate business behaviour.",consequence:"If UAT lacks real users, critical scenarios are missed.",mitigation:"Recruit real users; role‑based scripts; production‑like data." },
+  { id:"Q-096",category:"Testing & Quality Assurance",question:"Are defect triage and SLAs undefined?",risk:"There is a risk defects won’t be prioritised effectively.",consequence:"If triage is weak, high‑impact defects remain unresolved.",mitigation:"Triage board; SLAs by severity; daily standups in test phase." },
+  { id:"Q-097",category:"Testing & Quality Assurance",question:"Is data integrity validation for migration unplanned?",risk:"There is a risk migrated data will be flawed.",consequence:"If validation is weak, incorrect data will drive decisions.",mitigation:"Row counts; checksums; sampling; reconciliation scripts." },
+  { id:"Q-098",category:"Testing & Quality Assurance",question:"Is there limited time for end‑to‑end integration testing?",risk:"There is a risk integration defects discovered late.",consequence:"If insufficient, systems won’t work together at go‑live.",mitigation:"E2E test plan; staged integration; fix gates." },
+  { id:"Q-099",category:"Testing & Quality Assurance",question:"Are rollback/contingency tests untested?",risk:"There is a risk recovery procedures are untested.",consequence:"If untested, recovery from failed releases will be slow/error‑prone.",mitigation:"Run rollback drills; document runbooks; chaos‑style game days." },
+  { id:"Q-100",category:"Testing & Quality Assurance",question:"Are phase exit/quality gates absent?",risk:"There is a risk poor quality is promoted to next phase.",consequence:"If gates are absent, problems accumulate and get costlier.",mitigation:"Quality gates; go/no‑go criteria; readiness reviews." }
+];
+
+// For CSV template download
+const defaultRisks = JSON.parse(JSON.stringify(risks));
+/* ===== UI builders ===== */
+function groupByCat(list){
+  const m=new Map();
+  list.forEach(x=>{ if(!m.has(x.category)) m.set(x.category,[]); m.get(x.category).push(x); });
+  return m;
+}
+function populateCategoryFilter(){
+  const sel = $('#categoryFilter');
+  sel.innerHTML = '<option value="">All categories</option>';
+  [...new Set(risks.map(r=>r.category))].sort().forEach(c=>{
+    const o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o);
+  });
+}
+function renderQuestions(){
+  const qtxt = normaliseHeader($('#searchBox').value||'');
+  const catf = $('#categoryFilter').value||'';
+  const container = $('#accordion');
+  container.innerHTML='';
+
+  const filtered = risks.filter(r=>{
+    const hit = !qtxt || normaliseHeader(r.question).includes(qtxt);
+    const catOk = !catf || r.category===catf;
+    return hit && catOk;
+  });
+  const grouped = groupByCat(filtered);
+
+  [...grouped.keys()].sort().forEach(cat=>{
+    const items = grouped.get(cat);
+    const det = document.createElement('details'); det.open = true;
+    const sum = document.createElement('summary'); sum.textContent = `${cat} — ${items.length} questions`; det.appendChild(sum);
+    const grid = document.createElement('div'); grid.className='qs';
+
+    items.forEach(r=>{
+      const card = document.createElement('div'); card.className='q'; card.dataset.id = r.id;
+      card.tabIndex = 0; // focusable for keyboard
+      const p = document.createElement('p'); p.textContent = r.question; card.appendChild(p);
+      const trig = document.createElement('div'); trig.className='trigger';
+      trig.innerHTML = `<b>This will trigger:</b> ${escapeHtml(r.risk.replace(/^There is a risk that\\s*/i,''))}`;
+      card.appendChild(trig);
+
+      const answers = document.createElement('div'); answers.className='answers';
+      ['Yes','Not sure','No','N/A'].forEach(val=>{
+        const lab=document.createElement('label'); const inp=document.createElement('input');
+        inp.type='radio'; inp.name='ans_'+r.id; inp.value=val; lab.appendChild(inp); lab.append(' '+val); answers.appendChild(lab);
+      });
+      card.appendChild(answers);
+
+      // Hover focus tracking for keyboard
+      card.addEventListener('mouseenter', ()=> card.focus());
+
+      // Keyboard: 1/2/3/4
+      card.addEventListener('keydown', (e)=>{
+        if(['1','2','3','4'].includes(e.key)){
+          const map={'1':'Yes','2':'Not sure','3':'No','4':'N/A'};
+          const v = map[e.key];
+          const radio = card.querySelector(`input[type="radio"][value="${v}"]`);
+          if(radio){ radio.checked = true; e.preventDefault(); }
+        }
+      });
+
+      grid.appendChild(card);
+    });
+
+    det.appendChild(grid); container.appendChild(det);
+  });
+}
+
+/* ===== Results table ===== */
+function selectHtml(options){
+  const opts = options.map(v=>`<option value="${v}">${v}</option>`).join('');
+  return `<select style="width:160px">${opts}</select>`;
+}
+function prioritySelectHtml(current){
+  const opts = ["","Not sure","Low","Medium","High"].map(v=>`<option ${v===current?'selected':''}>${v}</option>`).join('');
+  return `<select class="prio" style="width:140px">${opts}</select>`;
+}
+
+/* ===== Category Heatmap (by rating bands) ===== */
+function buildHeatmap(matched){
+  const heat = $('#heatTable');
+  if(!matched.length){ heat.innerHTML = '<tr><td class="note">No matched risks yet.</td></tr>'; return; }
+
+  // Read ratings directly from the visible results table (not from r._rating)
+  const bands = ["Very Low","Low","Medium","High","Critical"];
+  const bandSet = new Set(bands);
+  const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
+
+  // Build counts by category and rating
+  const cats = [...new Set(matched.map(r=>r.category))].sort();
+  const counts = new Map(); // cat -> {band:count}
+  cats.forEach(c=>counts.set(c, Object.fromEntries(bands.map(b=>[b,0]))));
+
+  rows.forEach(tr=>{
+    const tds = tr.children;
+    const cat = (tds[2]?.textContent || '').trim();
+    const likeVal = tds[7]?.querySelector('select')?.value || '';
+    const impVal  = tds[8]?.querySelector('select')?.value || '';
+    const {label} = scoreRating(likeVal, impVal);
+    if(cat && label && bandSet.has(label) && counts.has(cat)){
+      counts.get(cat)[label] = (counts.get(cat)[label]||0) + 1;
+    }
+  });
+
+  // Determine max for intensity scale (kept as-is for your .h0..h5 CSS)
+  let max = 0;
+  counts.forEach(obj=>bands.forEach(b=>{ if(obj[b]>max) max=obj[b]; }));
+
+  let html = '<thead><tr><th>Category</th>';
+  bands.forEach(b=> html+= `<th>${b}</th>`);
+  html += '<th>Total</th></tr></thead><tbody>';
+
+  counts.forEach((obj,cat)=>{
+    const total = bands.reduce((a,b)=>a+obj[b],0);
+    html += `<tr><th>${cat}</th>`;
+  bands.forEach(b=>{
+    const val = obj[b];
+    // For "Very Low", CSS selector uses an escaped space: .band-Very\ Low
+    // That matches elements with classes "band-Very" and "Low" (two tokens).
+    // So we emit both tokens for that case.
+    const cls = (b === 'Very Low')
+      ? 'band-Very Low'
+      : `band-${b}`;
+    html += `<td class="${cls}" title="${val||0} ${b}">${val||''}</td>`;
+});
+
+    html += `<td><b>${total||''}</b></td></tr>`;
+  });
+  html += '</tbody>';
+  heat.innerHTML = html;
+}
+
+
+/* ===== Matrix plot (colored 5×5 background + rating-colored dots) ===== */
+function renderMatrix(){
+  const host = document.getElementById('matrixHost');
+  if (!host) return;
+  host.innerHTML = '';
+
+  // Allowed ratings from the checkbox filter (VL/L/M/H/C)
+  const allowed = (typeof getActiveRatings === 'function') ? getActiveRatings() : new Set(SCALE5);
+
+  // Collect points from the results table
+  const rows = Array.from(document.querySelectorAll('#resultsTable tbody tr'));
+  const points = rows.map(tr=>{
+    const tds = tr.children;
+    const riskNum = (tds[1]?.textContent || '').trim();
+    const likeVal = tds[7]?.querySelector('select')?.value || tds[7]?.textContent;
+    const impVal  = tds[8]?.querySelector('select')?.value || tds[8]?.textContent;
+    const x = parse5(likeVal);
+    const y = parse5(impVal);
+    const rating = scoreRating(likeVal, impVal).label || '';
+    return (x && y && allowed.has(rating)) ? { id:riskNum, x, y, rating } : null;
+  }).filter(Boolean);
+
+  // SVG layout (extra bottom padding for labels)
+  const W = host.clientWidth || 900;
+  const H = 440;
+  const padL = 64, padR = 20, padT = 28, padB = 64;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const stepX = innerW / 5;
+  const stepY = innerH / 5;
+  const xFor = v => padL + (v-0.5) * stepX; // center of cell
+  const yFor = v => padT + innerH - (v-0.5) * stepY;
+
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+
+  // Title
+  const title = document.createElementNS(svgNS,'text');
+  title.setAttribute('x', padL + 4);
+  title.setAttribute('y', padT - 10);
+  title.setAttribute('text-anchor','start');
+  title.setAttribute('class','matrixTitle');
+  title.textContent = 'Risk Matrix Plot';
+  svg.appendChild(title);
+
+  // Background: standard risk colors by (Likelihood × Impact)
+  const bandFor = (l,i)=>{
+    const s = l*i;
+    if(s <= 4)  return 'Very Low';
+    if(s <= 8)  return 'Low';
+    if(s <= 12) return 'Medium';
+    if(s <= 16) return 'High';
+    return 'Critical';
+  };
+  const bandFill = {
+    'Very Low':  '#e6f4ea',
+    'Low':       '#e8f5e9',
+    'Medium':    '#fff3cd',
+    'High':      '#ffe0b2',
+    'Critical':  '#ffebee'
+  };
+  for (let i=1;i<=5;i++){
+    for (let l=1;l<=5;l++){
+      const rect = document.createElementNS(svgNS,'rect');
+      rect.setAttribute('x', padL + (l-1)*stepX);
+      rect.setAttribute('y', padT + innerH - i*stepY);
+      rect.setAttribute('width', stepX);
+      rect.setAttribute('height', stepY);
+      rect.setAttribute('fill', bandFill[bandFor(l,i)]);
+      rect.setAttribute('stroke', '#ffffff');
+      rect.setAttribute('stroke-width', '0.5');
+      svg.appendChild(rect);
+    }
+  }
+
+  // Grid lines (styled by .tick CSS)
+  for (let i=0;i<=5;i++){
+    const x = padL + i*stepX;
+    const vline = document.createElementNS(svgNS,'line');
+    vline.setAttribute('x1', x); vline.setAttribute('x2', x);
+    vline.setAttribute('y1', padT); vline.setAttribute('y2', padT+innerH);
+    vline.setAttribute('class','tick'); svg.appendChild(vline);
+
+    const y = padT + i*stepY;
+    const hline = document.createElementNS(svgNS,'line');
+    hline.setAttribute('x1', padL); hline.setAttribute('x2', padL+innerW);
+    hline.setAttribute('y1', y);   hline.setAttribute('y2', y);
+    hline.setAttribute('class','tick'); svg.appendChild(hline);
+  }
+
+  // Axis labels + tick labels (smaller + nudged up)
+  const xLbl = document.createElementNS(svgNS,'text');
+  xLbl.setAttribute('x', padL + innerW/2);
+  xLbl.setAttribute('y', H - 14);
+  xLbl.setAttribute('text-anchor','middle');
+  xLbl.setAttribute('class','axisLabel');
+  xLbl.textContent = 'Likelihood →';
+  svg.appendChild(xLbl);
+
+  const yLbl = document.createElementNS(svgNS,'text');
+  // Push further left and rotate around the same (x,y) so it clears the y tick labels
+  yLbl.setAttribute('x', -6);
+  yLbl.setAttribute('y', padT + innerH/2);
+  yLbl.setAttribute('transform', `rotate(-90 -6 ${padT + innerH/2})`);
+  yLbl.setAttribute('text-anchor','middle');
+  yLbl.setAttribute('class','axisLabel');
+  yLbl.textContent = '↑ Impact';
+  svg.appendChild(yLbl);
+
+
+  SCALE5.forEach((name, i)=>{
+    const ix = i+1;
+    const tx = document.createElementNS(svgNS,'text');
+    tx.setAttribute('x', padL + (ix-0.5)*stepX);
+    tx.setAttribute('y', H - 34);
+    tx.setAttribute('text-anchor','middle');
+    tx.setAttribute('class','axisLabel');
+    tx.textContent = name;
+    svg.appendChild(tx);
+
+    const ty = document.createElementNS(svgNS,'text');
+    ty.setAttribute('x', 8);
+    ty.setAttribute('y', padT + innerH - (ix-0.5)*stepY + 4);
+    ty.setAttribute('text-anchor','start');
+    ty.setAttribute('class','axisLabel');
+    ty.textContent = name;
+    svg.appendChild(ty);
+  });
+
+// Dots (rating-colored) + labels in a centered grid per cell
+// Group points by cell (Likelihood x Impact)
+const groups = new Map(); // key "x-y" -> array of points
+points.forEach(p=>{
+  const key = `${p.x}-${p.y}`;
+  if(!groups.has(key)) groups.set(key, []);
+  groups.get(key).push(p);
+});
+
+// Grid layout helper
+function gridLayout(count, cellW, cellH){
+  const u = Math.min(cellW, cellH);
+  const r = 0.22 * u; // base spacing for 1–3
+
+  if (count === 1) return [[0, 0]];
+  if (count === 2) return [[0, -r], [0, r]];                 // vertical pair
+  if (count === 3) return [[0, -r], [0, 0], [0, r]];         // vertical stack
+
+  // 4 — square near centre, ~35% roomier than the 1–3 base radius
+  if (count === 4){
+    const r4 = r * 1.35;
+    return [[-r4, -r4], [r4, -r4], [-r4, r4], [r4, r4]];
+  }
+
+  // 5 — quincunx (die‑five) for clearer separation
+  if (count === 5){
+    const r5 = 0.34 * u;
+    return [[-r5, -r5],[ r5, -r5],[0,0],[-r5, r5],[ r5, r5]];
+  }
+
+  // 6 — hexagon around centre
+  if (count === 6){
+    const r6 = 0.34 * u;
+    const a = r6, b = 0.58 * r6; // approx vertical spacing
+    return [[-a, 0], [-b, -r6], [ b, -r6], [ a, 0], [ b, r6], [ -b, r6]];
+  }
+
+  // 7+ — roomier grid (~30% larger footprint vs your original)
+  const baseUsable = 0.82;                                // was 0.70
+  const scale = Math.min(1, 0.60 + 0.12 * (count - 6));   // start wider, grow faster
+  const usableW = cellW * baseUsable * scale;
+  const usableH = cellH * baseUsable * scale;
+
+  const cols = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+
+  const dx = cols > 1 ? (usableW / (cols - 1)) : 0;
+  const dy = rows > 1 ? (usableH / (rows - 1)) : 0;
+
+  const x0 = -usableW / 2;
+  const y0 = -usableH / 2;
+
+  const coords = [];
+  for (let i = 0; i < count; i++) {
+    const rIdx = Math.floor(i / cols);
+    const cIdx = i % cols;
+    coords.push([x0 + cIdx * dx, y0 + rIdx * dy]);
+  }
+  return coords;
+}
+
+
+const cellW = stepX;
+const cellH = stepY;
+
+groups.forEach(list=>{
+  // deterministic order (stable across re-renders)
+  list.sort((a,b)=> (a.id||'').localeCompare(b.id||''));
+
+  const offsets = gridLayout(list.length, cellW, cellH);
+
+  list.forEach((p, idx)=>{
+    const cx0 = xFor(p.x);
+    const cy0 = yFor(p.y);
+
+    const [ox, oy] = offsets[idx];
+    const cx = cx0 + ox;
+    const cy = cy0 + oy;
+
+    const cls = (p.rating && {
+      'Very Low':'vlow','Low':'low','Medium':'med','High':'high','Critical':'crit'
+    }[p.rating]) || 'med';
+
+    const dot = document.createElementNS(svgNS,'circle');
+    dot.setAttribute('cx', cx);
+    dot.setAttribute('cy', cy);
+    dot.setAttribute('r', 7);
+    dot.setAttribute('class','dot ' + cls);
+    svg.appendChild(dot);
+
+    // --- Label: always to the RIGHT of the dot, with slight vertical stagger ---
+    const lbl = document.createElementNS(svgNS,'text');
+    const LABEL_DX = 10;                               // pixels to the right of the dot
+    const LABEL_STAGGER = ((idx % 3) - 1) * 5;         // -5, 0, +5 vertical offset pattern
+    lbl.setAttribute('x', cx + LABEL_DX);
+    lbl.setAttribute('y', cy + LABEL_STAGGER);
+    lbl.setAttribute('text-anchor', 'start');
+    lbl.setAttribute('dominant-baseline', 'middle');  // keep vertically aligned to dot center
+    lbl.setAttribute('style', 'pointer-events:none;');
+    lbl.setAttribute('class','dotLabel');
+    // Matrix-only display: drop "R-" and leading zeros, then prefix with "R"
+    const num = String(p.id||'').replace(/^R-0*(\d+)$/, '$1');
+    lbl.textContent = `R${num}`;
+    svg.appendChild(lbl);
+  });
+});
+
+    // Legend (bottom-left, inside plot)
+    const legendItems = [
+      {label:'Very Low', cls:'vlow'},
+      {label:'Low', cls:'low'},
+      {label:'Medium', cls:'med'},
+      {label:'High', cls:'high'},
+      {label:'Critical', cls:'crit'}
+    ];
+// Put the legend just above the bottom axis labels, on the left
+const legendX = padL;
+const legendY = H - 56; // ~just above tick labels (which are around H-34) and axis title (H-14)
+
+legendItems.forEach((item, i)=>{
+  const lx = legendX + i * 120;  // a bit wider spacing to avoid overlap
+  const swatch = document.createElementNS(svgNS,'circle');
+  swatch.setAttribute('cx', lx);
+  swatch.setAttribute('cy', legendY);
+  swatch.setAttribute('r', 7);
+  swatch.setAttribute('class','dot '+item.cls);
+  svg.appendChild(swatch);
+
+  const lbl = document.createElementNS(svgNS,'text');
+  lbl.setAttribute('x', lx + 16);
+  lbl.setAttribute('y', legendY + 1);
+  lbl.setAttribute('dominant-baseline','middle');
+  lbl.setAttribute('class','legendLabel');
+  lbl.textContent = item.label;
+  svg.appendChild(lbl);
+});
+
+
+  host.appendChild(svg);
+}
+  
+function showResults(){
+  const answers = new Map();
+  risks.forEach(r=>{
+    const sel = document.querySelector(`input[name="ans_${r.id}"]:checked`);
+    answers.set(r.id, sel ? sel.value : '');
+  });
+  const matched = risks.filter(r=>['Yes','Not sure'].includes(answers.get(r.id)));
+
+  const tbody = $('#resultsTable tbody'); tbody.innerHTML='';
+
+  matched.forEach((r,idx)=>{
+    const tr=document.createElement('tr'); const answered = answers.get(r.id);
+    if(answered==='Not sure') tr.classList.add('unsure');
+
+    const displayId = `R-${String(idx+1).padStart(3,'0')}`;
+    const add = (html)=>{ const td=document.createElement('td'); td.innerHTML=html; tr.appendChild(td); };
+
+    add(`<input type="checkbox" class="rowSel">`);
+    add(displayId);
+    add(r.category);
+    add(escapeHtml(r.question) + (answered==='Not sure' ? ' <span class="chip unsure">Not sure</span>' : ''));
+    add(escapeHtml(r.risk));
+    add(escapeHtml(r.consequence));
+    add(escapeHtml(r.mitigation||''));
+    add(selectHtml(LIKE_OPTS));
+    add(selectHtml(IMPACT_OPTS));
+    add(`<span class="rating-cell"></span>`);
+    const prioDefault = (answered==='Not sure') ? "Not sure" : "";
+    add(prioritySelectHtml(prioDefault));
+
+    const likeSel = tr.children[7].querySelector('select');
+    const impSel  = tr.children[8].querySelector('select');
+    const ratingSpan = tr.children[9].querySelector('.rating-cell');
+    const prioSel = tr.children[10].querySelector('select');
+
+    let manualPrio = prioDefault !== "";
+    prioSel.addEventListener('change', ()=>{ manualPrio = true; });
+
+    const update = ()=>{
+      const likeVal = likeSel.value, impVal = impSel.value;
+      const {label} = scoreRating(likeVal, impVal);
+      ratingSpan.textContent = label;
+      ratingSpan.className = 'rating-cell badge ' + (label?('rate-'+label.replace(' ','\\ ')):'');
+
+      if(!manualPrio){
+        prioSel.value = priorityFromRating(label);
+      }
+      // store rating for heatmap
+      r._rating = label;
+      buildHeatmap(matched);
+    };
+    likeSel.addEventListener('change', update);
+    impSel.addEventListener('change', update);
+
+    tbody.appendChild(tr);
+  });
+
+  $('#resultsMeta').textContent = `${matched.length} matched risks`;
+  // refresh heatmap (in case none selected yet)
+  buildHeatmap(matched);
+  renderMatrix();
+
+  // Select-all checkbox behavior
+  $('#selAll').checked = false;
+}
+
+/* ===== Bulk edit ===== */
+function fillSelect(sel, options){ sel.innerHTML = options.map(v=>`<option value="${v}">${v}</option>`).join(''); }
+function bulkApply(){
+  const likeVal = $('#bulkLike').value;
+  const impVal  = $('#bulkImp').value;
+  const prioVal = $('#bulkPrio').value;
+
+  const rows = $$('#resultsTable tbody tr');
+  const targets = rows.filter(tr=> tr.querySelector('.rowSel').checked);
+  const toApply = targets.length ? targets : rows;
+
+  toApply.forEach(tr=>{
+    const likeSel = tr.children[7].querySelector('select');
+    const impSel  = tr.children[8].querySelector('select');
+    const prioSel = tr.children[10].querySelector('select');
+    const ratingSpan = tr.children[9].querySelector('.rating-cell');
+
+    if(likeVal) likeSel.value = likeVal;
+    if(impVal)  impSel.value  = impVal;
+
+    // Update rating
+    const {label} = scoreRating(likeSel.value, impSel.value);
+    ratingSpan.textContent = label;
+    ratingSpan.className = 'rating-cell badge ' + (label?('rate-'+label.replace(' ','\\ ')):'');
+
+    if(prioVal || (!prioSel.value && label)){
+      prioSel.value = prioVal || priorityFromRating(label);
+    }
+  });
+
+  // Clear header select-all if we bulked specific rows
+  if(targets.length){ $('#selAll').checked = false; targets.forEach(tr=>tr.querySelector('.rowSel').checked=false); }
+renderMatrix();
+}
+
+/* ===== Jump & Print ===== */
+$('#jumpBtn').addEventListener('click', ()=> document.getElementById('resultsBlock').scrollIntoView({behavior:'smooth',block:'start'}));
+$('#printBtn').addEventListener('click', ()=> doPrint());
+$('#printBtn2').addEventListener('click', ()=> doPrint());
+
+
+function doPrint(){
+  // Ensure results are populated before printing
+  const hasRows = document.querySelector('#resultsTable tbody')?.children.length;
+  if(!hasRows){ showResults(); }
+  window.print();
+}
+/* ===== Export to XLS (SpreadsheetML 2003, 2 sheets) =====
+   v2.2 adds columns: Residual Likelihood, Residual Impact, Residual Rating (blank),
+   Owner (blank), Next review date (blank) */
+function exportXls(){
+  let proj = norm($('#projectName').value);
+  if(!proj){
+    const p = prompt("Please enter a Project Name for the export:", "");
+    if(p===null) { alert("Export cancelled."); return; }
+    proj = (p||"").trim();
+    if(!proj){ alert("Project Name is required to export."); return; }
+    $('#projectName').value = proj;
+  }
+
+  const nameSafe = proj.replace(/[^a-z0-9\- ]/gi,'_').trim().replace(/\s+/g,'_');
+  const stamp = todayStamp();
+  const filename = `ProjectRiskRegister_${nameSafe}_${stamp}.xls`;
+
+  const rows = [];
+  $('#resultsTable').querySelectorAll('tbody tr').forEach(tr=>{
+    const tds = tr.querySelectorAll('td');
+    const likeSel = tds[7]?.querySelector('select');
+    const impSel  = tds[8]?.querySelector('select');
+    const prioSel = tds[10]?.querySelector('select');
+    const likeVal = likeSel ? likeSel.value : '';
+    const impVal  = impSel ? impSel.value : '';
+    const rating  = scoreRating(likeVal, impVal).label || '';
+    let prioVal = prioSel ? prioSel.value : '';
+    if(!likeVal || !impVal){
+      prioVal = "High"; // default High when blanks
+    } else if(!prioVal){
+      prioVal = priorityFromRating(rating);
+    }
+    // Residual cols (blank), Owner/Next review (blank)
+    const residualLike = '';
+    const residualImp  = '';
+    const residualRate = '';
+    const owner = '';
+    const nextReview = '';
+
+    rows.push([
+      tds[1]?.innerText||'', // Risk ID
+      tds[2]?.innerText||'', // Category
+      (tds[3]?.innerText||'').replace(/\s*Not sure\s*$/,''), // Trigger Question
+      tds[4]?.innerText||'', // Risk description
+      tds[5]?.innerText||'', // Impact (If… then…)
+      tds[6]?.innerText||'', // Suggested Mitigation
+      likeVal,               // Inherent Likelihood
+      impVal,                // Inherent Impact
+      rating,                // Risk rating
+      prioVal,               // Risk review priority
+      residualLike,          // Residual Likelihood
+      residualImp,           // Residual Impact
+      residualRate,          // Residual Rating
+      owner,                 // Owner
+      nextReview             // Next review date
+    ]);
+  });
+
+  const allResp = risks.map(r=>{
+    const sel = document.querySelector(`input[name="ans_${r.id}"]:checked`);
+    const ans = sel ? sel.value : 'Blank';
+    return [r.id, r.category, r.question, ans];
+  });
+
+  const xmlEsc = s => (s==null?'':String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  function rowXml(cells, styleIds=[]){
+    let x = '<Row>';
+    cells.forEach((v,i)=>{
+      const style = styleIds[i] ? ` ss:StyleID="${styleIds[i]}"` : '';
+      x += `<Cell${style}><Data ss:Type="String">${xmlEsc(v)}</Data></Cell>`;
+    });
+    x += '</Row>';
+    return x;
+  }
+
+  const workbookTop =
+`<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Styles>
+  <Style ss:ID="hdr"><Font ss:Bold="1"/></Style>
+  <Style ss:ID="wrap"><Alignment ss:Vertical="Top" ss:WrapText="1"/></Style>
+  <Style ss:ID="norm"><Alignment ss:Vertical="Top"/></Style>
+ </Styles>`;
+
+  const header1 = [
+    "Risk ID","Category","Trigger Question","Risk description","Impact","Suggested Mitigation (Guidance)",
+    "Inherent Likelihood","Inherent Impact","Risk rating","Risk review priority",
+    "Residual Likelihood","Residual Impact","Residual Rating","Owner","Next review date"
+  ];
+  const cols1 = [60,160,340,340,340,420,140,140,120,160,140,140,140,160,160];
+  let ws1 =
+`<Worksheet ss:Name="Matched Risks">
+  <Table ss:ExpandedColumnCount="${cols1.length}" ss:DefaultRowHeight="15">
+   ${cols1.map(w=>`<Column ss:AutoFitWidth="0" ss:Width="${w}"/>`).join('')}
+   ${rowXml(["Project Name:", proj],"")}
+   ${rowXml(["Exported:", new Date().toLocaleString()],"")}
+   ${rowXml(header1.map(h=>""+h), header1.map(_=>"hdr"))}
+   ${rows.map(r=>rowXml(r, r.map((_,i)=> ([5,2,3,4].includes(i)?'wrap':'norm')))).join('')}
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+    <FreezePanes/><FrozenNoSplit/><SplitHorizontal>3</SplitHorizontal><TopRowBottomPane>3</TopRowBottomPane>
+    <ProtectObjects>False</ProtectObjects><ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+ </Worksheet>`;
+
+  const header2 = ["Source Risk ID","Category","Trigger Question","Your Answer"];
+  const cols2 = [120,200,520,140];
+  let ws2 =
+`<Worksheet ss:Name="All Responses">
+  <Table ss:ExpandedColumnCount="${cols2.length}" ss:DefaultRowHeight="15">
+   ${cols2.map(w=>`<Column ss:AutoFitWidth="0" ss:Width="${w}"/>`).join('')}
+   ${rowXml(header2.map(h=>""+h), header2.map(_=>"hdr"))}
+   ${allResp.map(r=>rowXml(r, ['norm','norm','wrap','norm'])).join('')}
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+    <FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane>
+    <ProtectObjects>False</ProtectObjects><ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+ </Worksheet>`;
+
+  const workbook = `${workbookTop}${ws1}${ws2}</Workbook>`;
+  const blob = new Blob([workbook], {type:'application/vnd.ms-excel'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+/* ===== CSV Import / Template ===== */
+function csvParse(text){
+  const rows = [];
+  let i=0, field='', row=[], inQ=false;
+  while(i < text.length){
+    const c = text[i];
+    if(inQ){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i+=2; continue; }
+        inQ = false; i++; continue;
+      } else { field += c; i++; continue; }
+    } else {
+      if(c === '"'){ inQ = true; i++; continue; }
+      if(c === ','){ row.push(field); field=''; i++; continue; }
+      if(c === '\r'){ i++; continue; }
+      if(c === '\n'){ row.push(field); rows.push(row); row=[]; field=''; i++; continue; }
+      field += c; i++; continue;
+    }
+  }
+  row.push(field); rows.push(row);
+  if(rows.length && rows[rows.length-1].every(v=>(v||'').trim()==='')) rows.pop();
+  return rows;
+}
+function csvToRisks(rows){
+  if(!rows.length) return [];
+  const header = rows[0].map(h=>normaliseHeader(h));
+  const idx = (label)=> header.findIndex(h=>h.includes(label));
+  const idI = idx('risk id');
+  const catI = idx('category');
+  let qI = idx('revised question'); if(qI<0) qI = idx('question');
+  const riskI = idx('there is a risk that');
+  const ifI = idx('if');
+  const mitI = idx('mitigation');
+  const out=[];
+  for(let r=1;r<rows.length;r++){
+    const row = rows[r]||[];
+    const rec = {
+      id: row[idI]||`U-${String(r).padStart(3,'0')}`,
+      category: row[catI]||'General',
+      question: row[qI]||'',
+      risk: row[riskI]||'',
+      consequence: row[ifI]||'',
+      mitigation: row[mitI]||''
+    };
+    if(rec.question) out.push(rec);
+  }
+  return out;
+}
+function downloadTemplate(){
+  const header = ['Risk ID','Category','Revised Question','There is a risk that…','If… then…','Suggested Mitigation (Guidance)'];
+  const lines = [header.join(',')];
+  defaultRisks.forEach(r=>{
+    const esc = v => `"${String(v||'').replace(/"/g,'""')}"`;
+    lines.push([r.id,r.category,r.question,r.risk,r.consequence,r.mitigation].map(esc).join(','));
+  });
+  const blob = new Blob([lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='RiskQuestions_Template.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),800);
+}
+
+/* ===== Events ===== */
+$('#searchBox').addEventListener('input', renderQuestions);
+$('#categoryFilter').addEventListener('change', renderQuestions);
+$('#resetBtn').addEventListener('click', ()=>{ $$('input[type="radio"]').forEach(i=>i.checked=false); showResults(); });
+$('#showResultsBtnTop').addEventListener('click', showResults);
+$('#showResultsBtnBottom').addEventListener('click', showResults);
+$('#exportBtnTop').addEventListener('click', exportXls);
+$('#exportBtnBottom').addEventListener('click', exportXls);
+$('#jumpBtn').addEventListener('click', ()=>document.getElementById('resultsBlock').scrollIntoView({behavior:'smooth',block:'start'}));
+$('#importBtn').addEventListener('click', ()=>$('#csvFile').click());
+$('#csvFile').addEventListener('change', async (e)=>{
+  const f = e.target.files[0];
+  if(!f){ $('#importStatus').textContent='No file selected.'; return; }
+  try{
+    const text = await f.text();
+    const rows = csvParse(text);
+    const newRisks = csvToRisks(rows);
+    if(!newRisks.length) throw new Error('No valid questions found in CSV.');
+    risks = newRisks;
+    populateCategoryFilter();
+    renderQuestions();
+    showResults();
+    $('#importStatus').textContent = `Imported ${newRisks.length} questions from ${f.name}.`;
+  }catch(err){
+    $('#importStatus').textContent = `Import failed: ${err.message||err}`;
+  }finally{
+    $('#csvFile').value = '';
+  }
+});
+$('#templateBtn').addEventListener('click', downloadTemplate);
+
+// Results table select-all
+$('#resultsTable').addEventListener('change', (e)=>{
+  if(e.target && e.target.id==='selAll'){
+    const on = e.target.checked;
+    $$('#resultsTable tbody .rowSel').forEach(cb=>cb.checked=on);
+  }
+});
+
+// Re-plot when Likelihood/Impact selects change
+$('#resultsTable').addEventListener('change', (e)=>{
+  if (e.target && e.target.tagName === 'SELECT') {
+    renderMatrix();
+  }
+});
+
+  // Rating filter (VL/L/M/H/C) toggles re-render the matrix
+document.getElementById('ratingFilterBar')?.addEventListener('change', ()=>{
+  renderMatrix();
+});
+
+$('#bulkApply').addEventListener('click', bulkApply);
+
+// Fill bulk selects
+(function initBulkOptions(){
+  fillSelect($('#bulkLike'), ["",...LIKE_OPTS.slice(1)]);
+  fillSelect($('#bulkImp'), ["",...IMPACT_OPTS.slice(1)]);
+})();
+
+/* ===== Init ===== */
+populateCategoryFilter();
+renderQuestions();
+showResults();
+</script>
+</body>
+</html>
