@@ -781,56 +781,32 @@ points.forEach(p=>{
 
 // Grid layout helper
 function gridLayout(count, cellW, cellH){
-  const u = Math.min(cellW, cellH);
-  const r = 0.22 * u; // base spacing for 1–3
-
-  if (count === 1) return [[0, 0]];
-  if (count === 2) return [[0, -r], [0, r]];                 // vertical pair
-  if (count === 3) return [[0, -r], [0, 0], [0, r]];         // vertical stack
-
-  // 4 — square near centre, ~35% roomier than the 1–3 base radius
-  if (count === 4){
-    const r4 = r * 1.35;
-    return [[-r4, -r4], [r4, -r4], [-r4, r4], [r4, r4]];
-  }
-
-  // 5 — quincunx (die‑five) for clearer separation
-  if (count === 5){
-    const r5 = 0.34 * u;
-    return [[-r5, -r5],[ r5, -r5],[0,0],[-r5, r5],[ r5, r5]];
-  }
-
-  // 6 — hexagon around centre
-  if (count === 6){
-    const r6 = 0.34 * u;
-    const a = r6, b = 0.58 * r6; // approx vertical spacing
-    return [[-a, 0], [-b, -r6], [ b, -r6], [ a, 0], [ b, r6], [ -b, r6]];
-  }
-
-  // 7+ — roomier grid (~30% larger footprint vs your original)
-  const baseUsable = 0.82;                                // was 0.70
-  const scale = Math.min(1, 0.60 + 0.12 * (count - 6));   // start wider, grow faster
-  const usableW = cellW * baseUsable * scale;
-  const usableH = cellH * baseUsable * scale;
-
+  // choose columns/rows close to a square (2x2, 3x3, ...)
   const cols = Math.ceil(Math.sqrt(count));
   const rows = Math.ceil(count / cols);
 
+  // usable area inside the cell (leave margins to avoid edges)
+  const usableW = cellW * 0.70;
+  const usableH = cellH * 0.70;
+
+  // spacing; if 1 col/row, keep spacing = 0 so we place center
   const dx = cols > 1 ? (usableW / (cols - 1)) : 0;
   const dy = rows > 1 ? (usableH / (rows - 1)) : 0;
 
+  // top-left of the grid relative to cell center
   const x0 = -usableW / 2;
   const y0 = -usableH / 2;
 
   const coords = [];
-  for (let i = 0; i < count; i++) {
-    const rIdx = Math.floor(i / cols);
-    const cIdx = i % cols;
-    coords.push([x0 + cIdx * dx, y0 + rIdx * dy]);
+  for (let i = 0; i < count; i++){
+    const r = Math.floor(i / cols);
+    const c = i % cols;
+    const ox = x0 + c * dx;
+    const oy = y0 + r * dy;
+    coords.push([ox, oy]);
   }
   return coords;
 }
-
 
 const cellW = stepX;
 const cellH = stepY;
@@ -860,22 +836,16 @@ groups.forEach(list=>{
     dot.setAttribute('class','dot ' + cls);
     svg.appendChild(dot);
 
-    // --- Label: always to the RIGHT of the dot, with slight vertical stagger ---
+    // Label follows the offset direction slightly, so labels don't stack
     const lbl = document.createElementNS(svgNS,'text');
-    const LABEL_DX = 10;                               // pixels to the right of the dot
-    const LABEL_STAGGER = ((idx % 3) - 1) * 5;         // -5, 0, +5 vertical offset pattern
-    lbl.setAttribute('x', cx + LABEL_DX);
-    lbl.setAttribute('y', cy + LABEL_STAGGER);
-    lbl.setAttribute('text-anchor', 'start');
-    lbl.setAttribute('dominant-baseline', 'middle');  // keep vertically aligned to dot center
-    lbl.setAttribute('style', 'pointer-events:none;');
+    lbl.setAttribute('x', cx + Math.sign(ox || 1) * 8);
+    lbl.setAttribute('y', cy - Math.sign(oy || -1) * 8);
     lbl.setAttribute('class','dotLabel');
-    // Matrix-only display: drop "R-" and leading zeros, then prefix with "R"
-    const num = String(p.id||'').replace(/^R-0*(\d+)$/, '$1');
-    lbl.textContent = `R${num}`;
+    lbl.textContent = p.id || '';
     svg.appendChild(lbl);
   });
 });
+
 
     // Legend (bottom-left, inside plot)
     const legendItems = [
