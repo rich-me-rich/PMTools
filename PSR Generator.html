@@ -1,4 +1,4 @@
-<!-- PSR generator - V0.26 - part 1 of 4 : filename=PSR Generator.html
+/* -- PSR generator - V0.26 - part 1 of 4 : filename=PSR Generator.html
      CHANGE LOG (v0.26):
      - Added theme toggle button (🌗) and dark theme styles.
      - Print: hide the “Report Preview” heading row.
@@ -9,7 +9,7 @@
      - Budget: ensured dark theme applies correctly to money inputs and pills.
      - Print: Budget Variance pill set to no-wrap.
      NOTE: Only the requested changes were made; no other behaviour altered. 
--->
+*/
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -86,7 +86,6 @@
   .th-a{background:var(--a-tint)}
   .th-r{background:var(--r-tint)}
 
-  <!-- PSR generator - V0.26 - part 2 of 4 : filename=PSR Generator.html -->
   /* ---- PRINT (revised) ---- */
   @media print {
     body * { visibility: hidden !important; }
@@ -194,7 +193,7 @@
         <button class="btn filled" id="printBtn">Print Report</button>
       </div>
     </div>
-    <!-- 1. Base Project Information -->
+    /* -- 1. Base Project Information -- */
     <div class="card">
       <h2>1. Base Project Information</h2>
       <div class="guidance">Enter the key identifiers and reporting dates used to label the report and period covered.</div>
@@ -214,7 +213,7 @@
       </div>
     </div>
 
-    <!-- 2. Budget Summary (000’s) -->
+    /* -- 2. Budget Summary (000’s) -- */
     <div class="card">
       <h2>2. Budget (000’s)</h2>
       <div class="guidance">Enter values in thousands. Budget includes contingency and all <em>approved</em> change requests.</div>
@@ -245,7 +244,7 @@
       <div class="guidance small">EAC = <strong>Spend to Date + Current ETC</strong>. Variance ≥ 0 shows as underrun, &lt; 0 as overrun.</div>
     </div>
 
-    <!-- 3. Narrative -->
+    /* -- 3. Narrative -- */
     <div class="card">
       <h2>3. Narrative</h2>
       <div class="grid cols-2-slim">
@@ -260,7 +259,7 @@
       </div>
     </div>
 
-    <!-- 4. Status Summary -->
+    /* -- 4. Status Summary -- */
     <div class="card">
       <h2>4. Status Summary</h2>
       <div class="field" style="margin:10px 0">
@@ -286,8 +285,8 @@
         <button class="btn filled" id="copyCurrentToPrev">Copy Current → Previous</button>
       </div>
     </div>
-<!-- PSR generator - V0.26 - part 3 of 4 : filename=PSR Generator.html -->
-    <!-- 5. Milestones -->
+
+    /* -- 5. Milestones -- */
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>5. Milestone Status</h2>
@@ -308,7 +307,7 @@
       </table>
     </div>
 
-    <!-- 6–7. Issues & Risks -->
+    /* -- 6–7. Issues & Risks -- */
     <div class="card">
       <h2>6–7. Issues & Risks</h2>
       <div class="grid cols-2">
@@ -353,7 +352,7 @@
       </div>
     </div>
 
-    <!-- 7. Decisions -->
+    /* -- 7. Decisions -- */
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>7. Key Decisions Required</h2>
@@ -367,7 +366,7 @@
       </table>
     </div>
 
-    <!-- 8. Dependencies -->
+    /* -- 8. Dependencies -- */
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h2>8. Dependencies & Constraints</h2>
@@ -390,9 +389,9 @@
       </table>
     </div>
 
-    <!-- Report Preview -->
+    /* -- Report Preview -- */
     <div class="card" id="reportCard">
-      <!-- v0.26: mark heading row as no-print to hide on print -->
+      /*-- v0.26: mark heading row as no-print to hide on print -- */
       <div class="row no-print" style="justify-content:space-between;align-items:center">
         <h2>Report Preview</h2>
         <div class="row">
@@ -490,7 +489,7 @@ function radioTd(key, section, val){
   const aria = `${section} ${key} ${val}`;
   return `<td class="center"><input class="status-radio" type="radio" name="${name}" value="${val}" aria-label="${aria}"></td>`;
 }
-<!-- PSR generator - V0.26 - part 4 of 4 : filename=PSR Generator.html -->
+
 /* ===== Row helpers ===== */
 function rowControlsTD(){
   const td=document.createElement('td'); td.className='no-print';
@@ -1007,6 +1006,3 @@ updateBudgetPills(); refreshPreview();
 </script>
 </body>
 </html>
-<!-- END: PSR generator - V0.26 - part 4 of 4 -->
-
-
