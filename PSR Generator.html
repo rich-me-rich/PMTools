@@ -780,8 +780,7 @@ function buildReportHTML(d){
     const oc = (d.status?.overall?.current||'').toUpperCase();
     const ocName = ({'G':'Green','A':'Amber','R':'Red','B':'Complete'})[oc] || oc || '';
     const chipCls = ({'G':'chip-g','A':'chip-a','R':'chip-r','B':'chip-b'})[oc] || '';
-    h.push(`<div class="report-section"><h2 style="display:flex;align-items:center;gap:10px">Overall Project Status Summary <span class="status-chip ${chipCls}">${statusIcon(oc)} ${ocName}</span></h2><p>${(d.execSummary||'').replace(/\n,g,'<br>')}</p></div>`.replace(',g',',')); // keep original behaviour
-  }
+    h.push(`<div class="report-section"><h2 style="display:flex;align-items:center;gap:10px">Overall Project Status Summary <span class="status-chip ${chipCls}">${statusIcon(oc)} ${ocName}</span></h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p></div>`);  }
 
   // Status + Milestones
   h.push(`<div class="report-section status-milestones">`);
@@ -1004,3 +1003,4 @@ updateBudgetPills(); refreshPreview();
 </body>
 </html>
 <!-- END: PSR generator - V0.26 - part 4 of 4 -->
+
