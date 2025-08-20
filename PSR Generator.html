@@ -3,816 +3,969 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Project Status Report (PSR) Builder — Summary (v0.25)</title>
+<title>Project Status Report — v0.26</title>
 <style>
-/* ===== Base styles (from v0.24, unchanged) ===== */
-:root{
-  --bg:#f8fafc; --card:#fff; --border:#e5e7eb; --text:#0f172a; --text-dim:#475569;
-  --chip:#f1f5f9; --shadow:0 6px 24px rgba(15,23,42,.06),0 2px 8px rgba(15,23,42,.04);
-  --btn:#2563eb; --btn-text:#fff; --btn-hover:#1e40af; --btn-alt:#059669; --btn-alt-hover:#047857
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
-.container{max-width:1200px;margin:0 auto;padding:24px}
-.grid{display:grid;gap:16px}
-.cols-2{grid-template-columns:1fr 1fr}
-.cols-3{grid-template-columns:repeat(3,1fr)}
-.cols-4{grid-template-columns:repeat(4,1fr)}
-.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
-.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.toolbar .spacer{flex:1}
-.field{display:flex;flex-direction:column;gap:6px}
-label{font-size:.85rem;color:var(--text-dim)}
-input[type=text],input[type=date],input[type=number],select,textarea{
-  width:100%;border:1px solid var(--border);background:#fff;color:var(--text);
-  border-radius:12px;padding:10px 12px
-}
-input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
-textarea{min-height:80px}
-.tnum{font-variant-numeric:tabular-nums}
-table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--border);border-radius:14px;overflow:hidden}
-th,td{border-bottom:1px solid var(--border);padding:10px;background:#fff}
-th{background:#f8fafc;font-weight:700;text-align:left}
-tr:last-child td{border-bottom:none}
-.btn{appearance:none;border:1px solid var(--border);background:var(--btn);color:var(--btn-text);padding:9px 12px;border-radius:12px;font-weight:600;cursor:pointer}
-.btn:hover{background:var(--btn-hover)}
-.btn.alt{background:var(--btn-alt)}
-.btn.alt:hover{background:var(--btn-alt-hover)}
-.btn.ghost{background:transparent;color:var(--text);border-color:var(--border)}
-.pill{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--border);border-radius:999px;padding:6px 10px;background:var(--chip)}
-.status-chip{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--border);border-radius:999px;padding:8px 12px}
-.budget-row{display:flex;flex-wrap:wrap;gap:10px}
-.guidance{background:#f1f5f9;padding:10px;border-left:3px solid #cbd5e1;border-radius:10px;color:#334155}
-.report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
-.report-section{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
-.status-milestones,.issues-risks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  :root{
+    --bg:#ffffff; --card:#ffffff; --border:#e5e7eb;
+    --text:#111827; --text-dim:#4b5563;
+    --g:#10b981; --a:#f59e0b; --r:#ef4444; --b:#2563eb;
+    --g-tint: rgba(16,185,129,.14);
+    --a-tint: rgba(245,158,11,.16);
+    --r-tint: rgba(239,68,68,.14);
+    --shadow: 0 6px 24px rgba(0,0,0,.08), 0 2px 8px rgba(0,0,0,.06);
+    --chip:#f8fafc;
+    --btn:#2563eb; --btn-text:#ffffff; --btn-hover:#1d4ed8;
+    --btn-alt:#10b981; --btn-alt-hover:#059669;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#f8fafc;color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.45}
+  h1,h2,h3{margin:0 0 .5rem}
+  h2{font-size:1.1rem;font-weight:700}
+  h3{font-size:1rem;color:var(--text-dim);font-weight:600}
+  .container{max-width:1200px;margin:0 auto;padding:24px}
+  .grid{display:grid;gap:16px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-2-slim{grid-template-columns:1fr 1fr}
+  .cols-4{grid-template-columns:repeat(4,1fr)}
+  .cols-5-tight{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .toolbar .spacer{flex:1}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-size:.85rem;color:var(--text-dim)}
+  input[type="text"],input[type="date"],input[type="number"],select,textarea{
+    width:100%;border:1px solid var(--border);background:#fff;color:var(--text);padding:10px 12px;border-radius:10px;outline:none
+  }
+  textarea{min-height:140px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .center{text-align:center}
+  .hidden{display:none}
 
-/* ===== v0.25 additions only (scoped, minimal) ===== */
-/* Dark theme */
-body.dark{ background:#0b1220; color:#e5e7eb; transition:background .25s,color .25s }
-body.dark .card, body.dark .report, body.dark th, body.dark td{ background:#0f172a }
-body.dark .card, body.dark table, body.dark th, body.dark td, body.dark .report, body.dark .report-section{ border-color:#1e293b !important }
-body.dark input[type="text"], body.dark input[type="date"], body.dark input[type="number"], body.dark select, body.dark textarea{
-  background:#0b1220; color:#e5e7eb; border-color:#243244
-}
-body.dark .guidance{ background:#0f172a; color:#94a3b8; border-left-color:#334155 }
-body.dark .btn{ border-color:#334155 }
+  .btn{border:1px solid transparent;border-radius:12px;cursor:pointer;padding:10px 14px;font-weight:600}
+  .btn.filled{background:var(--btn);color:var(--btn-text)}
+  .btn.filled:hover{background:var(--btn-hover)}
+  .btn.alt{background:var(--btn-alt);color:#fff}
+  .btn.alt:hover{background:var(--btn-alt-hover)}
 
-/* Print: Budget Variance pill never wraps; hide builder cards */
-@media print{
-  .no-print{display:none !important}
-  .budget-row{flex-wrap:nowrap; gap:8px}
-  .budget-row .pill, .budget-row .status-chip{white-space:nowrap}
-  .budget-row strong{margin-right:4px}
-}
+  table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  th,td{padding:10px 12px;background:#fff;border-top:1px solid var(--border);border-bottom:1px solid var(--border);vertical-align:middle}
+  th:first-child,td:first-child{border-left:1px solid var(--border);border-top-left-radius:10px;border-bottom-left-radius:10px}
+  th:last-child,td:last-child{border-right:1px solid var(--border);border-top-right-radius:10px;border-bottom-right-radius:10px}
+  th{font-weight:600;color:#394150}
 
-/* Print: Risks truncation fix (avoid inside breaks; stack columns) */
-.report-section table, .report-section tr, .report-section td, .report-section th{ break-inside: avoid; page-break-inside: avoid }
-@media print{ .issues-risks{ grid-template-columns:1fr !important } }
+  .hint,.guidance{font-size:.9rem;color:#6b7280}
+  .guidance{font-style:italic;background:#fff;border:0;border-left:3px solid #e5e7eb;border-radius:0;padding:8px 12px;margin:6px 0 10px}
+
+  .money{display:flex;align-items:center;border:1px solid var(--border);border-radius:10px;background:#fff}
+  .money > span{display:inline-block;padding:10px 10px;border-right:1px solid var(--border);color:#6b7280}
+  .money > input{border:0;flex:1;padding-left:10px}
+
+  /* NUMBER ALIGNMENT (General) */
+  input[type=number]{ -moz-appearance:textfield; text-align:right; font-variant-numeric: tabular-nums; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .tnum{ font-variant-numeric: tabular-nums; }
+
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:999px;padding:8px 12px;background:var(--chip)}
+  .pill.ok{border-color:#166534;background:rgba(22,101,52,.08);color:#166534;font-weight:700}
+  .pill.bad{border-color:#7f1d1d;background:rgba(127,29,29,.08);color:#7f1d1d;font-weight:700}
+
+  .th-g{background:var(--g-tint)}
+  .th-a{background:var(--a-tint)}
+  .th-r{background:var(--r-tint)}
+
+  /* ---- PRINT (existing) ---- */
+  @media print{
+    .no-print{display:none !important}
+    .card{display:none !important}
+    #reportCard{display:block !important}
+    #reportCard .report{box-shadow:none;border:none}
+    .container{padding:0}
+    th,td{background:#fff;border-color:#ddd}
+    .budget-row{flex-wrap:nowrap} /* keep in one row on print */
+  }
+
+  .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
+  .report-section{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
+  .split-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .status-milestones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .issues-risks{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .status-chip{display:inline-flex;align-items:center;gap:10px;border:1px solid #e5e7eb;border-radius:999px;padding:10px 14px;font-weight:700;font-size:1.05rem}
+  .chip-g{background:rgba(16,185,129,.12);border-color:#10b981;color:#065f46}
+  .chip-a{background:rgba(245,158,11,.12);border-color:#f59e0b;color:#7c2d12}
+  .chip-r{background:rgba(239,68,68,.12);border-color:#ef4444;color:#7f1d1d}
+  .chip-b{background:rgba(37,99,235,.12);border-color:#2563eb;color:#1e3a8a}
+  .strike{text-decoration:line-through;color:#6b7280}
+  .small{font-size:.9rem}
+
+  .ico{display:inline-block;vertical-align:middle;line-height:0}
+  .ico svg{width:24px;height:24px} /* 2x icons */
+
+  .meta-row{display:flex;gap:18px;flex-wrap:wrap;color:#6b7280;margin-top:4px}
+  .meta-row span{display:inline-block;margin-right:10px;white-space:nowrap}
+
+  .tight-table table{border-collapse:collapse;margin:8px 0}
+  .tight-table th,.tight-table td{border:1px solid #e5e7eb;background:#fff}
+
+  .budget-row .status-chip, .budget-row .pill{white-space:nowrap}
+
+  /* ===== v0.26 ADDITIONS ONLY (minimal) ===== */
+
+  /* A) Dark theme (toggle) */
+  body.dark{ background:#0b1220; color:#e5e7eb }
+  body.dark .card,
+  body.dark .report,
+  body.dark th, body.dark td{ background:#0f172a; color:#e5e7eb }
+  body.dark input[type="text"], body.dark input[type="date"],
+  body.dark input[type="number"], body.dark select, body.dark textarea{
+    background:#0b1220; color:#e5e7eb; border-color:#1e293b
+  }
+  body.dark .guidance{ background:#0f172a; color:#94a3b8; border-left-color:#334155 }
+
+  /* B) Print tables: avoid page breaks inside rows/cells */
+  .report-section table, .report-section tr, .report-section td, .report-section th{
+    break-inside: avoid; page-break-inside: avoid;
+  }
+
+  /* C) Budget Variance pill: never wrap (explicit) */
+  @media print{
+    #variancePill{ white-space:nowrap }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="toolbar no-print" style="margin-top:8px">
-    <button class="btn" id="themeToggle" title="Toggle light/dark theme">🌗 Theme</button>
-    <button class="btn" id="newBtn">New</button>
-    <label class="btn" for="importFile">Import save data (JSON)
-      <input id="importFile" type="file" accept="application/json" style="display:none"/>
-    </label>
-    <button class="btn" id="saveBtn">Save JSON</button>
-    <button class="btn alt" id="exportBtn">Export CSV (Summary)</button>
-    <div class="spacer"></div>
-    <button class="btn ghost" id="jumpReportBtn">Jump to Report</button>
-    <button class="btn" id="printBtn">Print Report</button>
-    <span class="pill">v0.25</span>
-  </div>
+  <div class="container">
+    <div class="card">
+      <div class="toolbar">
+        <h1>Project Status Report — Builder</h1>
+        <div class="spacer"></div>
+        <button class="btn filled" id="themeBtn" title="Toggle light/dark theme">🌗 Theme</button>
+        <small class="hint">v0.26</small>
+      </div>
 
-  <!-- Base Project Information -->
-  <div class="card no-print">
-    <h2>Base Project Information</h2>
-    <div class="grid cols-4">
-      <div class="field"><label>Project Name</label><input id="projectName" type="text" placeholder="e.g., Core Banking Upgrade"/></div>
-      <div class="field"><label>Project ID</label><input id="projectId" type="text" placeholder="e.g., PRJ-042"/></div>
-      <div class="field"><label>Sponsor</label><input id="sponsor" type="text"/></div>
-      <div class="field"><label>Project Manager</label><input id="pm" type="text"/></div>
-      <div class="field"><label>Project Phase</label><input id="phase" type="text" placeholder="e.g., Execution"/></div>
-      <div class="field"><label>Report Date</label><input id="reportDate" type="date"/></div>
-      <div class="field"><label>Reporting Period</label><input id="reportPeriod" type="text" placeholder="e.g., 4–10 Aug 2025"/></div>
-    </div>
-  </div>
+      <div class="guidance small">
+        <strong>How to use:</strong> Fill Base Info → Budget → Narrative → Status → Milestones → Issues/Risks → Decisions → Dependencies.
+        Preview updates automatically; print only outputs the report.
+      </div>
 
-  <!-- Budget -->
-  <div class="card no-print">
-    <h2>Budget (000’s)</h2>
-    <div class="grid cols-4">
-      <div class="field"><label>Approved</label><input type="number" id="budgetApproved" value="0"/></div>
-      <div class="field"><label>Spent</label><input type="number" id="budgetSpent" value="0"/></div>
-      <div class="field"><label>ETC</label><input type="number" id="budgetETC" value="0"/></div>
-      <div class="field"><label>Variance (auto)</label><input type="text" id="budgetVariance" disabled/></div>
-    </div>
-    <div class="budget-row" style="margin-top:8px">
-      <span class="pill"><strong>Approved</strong> <span class="tnum" id="pillApproved">0</span></span>
-      <span class="pill"><strong>Spent</strong> <span class="tnum" id="pillSpent">0</span></span>
-      <span class="pill"><strong>ETC</strong> <span class="tnum" id="pillETC">0</span></span>
-      <span class="pill"><strong>EAC</strong> <span class="tnum" id="pillEAC">0</span></span>
-      <span class="pill"><strong>Variance</strong> <span class="tnum" id="pillVariance">0</span></span>
-    </div>
-  </div>
+      <div class="toolbar no-print" style="margin-top:8px">
+        <button class="btn filled" id="newBtn">New</button>
 
-  <!-- Narrative -->
-  <div class="card no-print">
-    <h2>Narrative</h2>
-    <div class="grid cols-2">
-      <div class="field"><label>Key achievements</label><textarea id="achievements"></textarea></div>
-      <div class="field"><label>Next period activities</label><textarea id="nextActivities"></textarea></div>
-    </div>
-  </div>
+        <label class="btn filled" for="importFile" id="importLabel">Import save data</label>
+        <input class="hidden" type="file" id="importFile" accept="application/json,text/json" />
+        <span id="importName" class="hint"></span>
 
-  <!-- Status Summary -->
-  <div class="card no-print">
-    <h2>Status Summary</h2>
-    <div class="grid cols-2">
+        <button class="btn filled" id="saveJsonBtn">Save JSON</button>
+        <button class="btn alt" id="exportCsvBtn">Export CSV (Summary)</button>
+        <div class="spacer"></div>
+        <button class="btn filled" id="jumpReportBtn" title="Scroll to Report Preview">Jump to Report</button>
+        <button class="btn filled" id="printBtn">Print Report</button>
+      </div>
+    </div>
+    <!-- 1. Base Project Information -->
+    <div class="card">
+      <h2>1. Base Project Information</h2>
+      <div class="guidance">Enter the key identifiers and reporting dates used to label the report and period covered.</div>
+      <div class="grid cols-5-tight" style="align-items:end">
+        <div class="field"><label>Project Name</label><input id="projName" type="text" /></div>
+        <div class="field"><label>Project ID / Code</label><input id="projCode" type="text" /></div>
+        <div class="field"><label>Sponsor Name</label><input id="sponsor" type="text" /></div>
+        <div class="field"><label>Project Manager</label><input id="pm" type="text" /></div>
+        <div class="field"><label>Project Phase</label>
+          <select id="phase"><option>Initiation</option><option>Discovery</option><option>Planning</option><option>Execution</option><option>Closure</option></select>
+        </div>
+      </div>
+      <div class="grid cols-4" style="margin-top:12px">
+        <div class="field"><label>Report Date</label><input id="reportDate" type="date" /></div>
+        <div class="field"><label>Reporting Period (Start)</label><input id="periodStart" type="date" /></div>
+        <div class="field"><label>Reporting Period (End)</label><input id="periodEnd" type="date" /></div>
+      </div>
+    </div>
+
+    <!-- 2. Budget Summary (000’s) -->
+    <div class="card">
+      <h2>2. Budget (000’s)</h2>
+      <div class="guidance">Enter values in thousands. Budget includes contingency and all <em>approved</em> change requests.</div>
+
+      <div class="grid cols-5-tight" style="margin-top:8px">
+        <div class="field">
+          <label>Approved Budget</label>
+          <div class="money"><span>$</span><input id="budgetApproved" type="number" min="0" step="1" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label>Spend to Date</label>
+          <div class="money"><span>$</span><input id="budgetSpent" type="number" min="0" step="1" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label>Current ETC</label>
+          <div class="money"><span>$</span><input id="budgetEtc" type="number" min="0" step="1" placeholder="0" /></div>
+        </div>
+        <div class="field">
+          <label>Estimate at Completion (EAC)</label>
+          <span class="pill" id="eacPill"><strong id="eacText" class="tnum">$0</strong></span>
+        </div>
+        <div class="field">
+          <label>Variance (Approved – EAC)</label>
+          <span class="pill" id="variancePill"><strong id="varianceText" class="tnum">$0</strong></span>
+        </div>
+      </div>
+
+      <div class="guidance small">EAC = <strong>Spend to Date + Current ETC</strong>. Variance ≥ 0 shows as underrun, &lt; 0 as overrun.</div>
+    </div>
+
+    <!-- 3. Narrative -->
+    <div class="card">
+      <h2>3. Narrative</h2>
+      <div class="grid cols-2-slim">
+        <div class="field">
+          <h3>3.1 Key Achievements This Period</h3>
+          <textarea id="achText" style="min-height:180px" placeholder="Free text…"></textarea>
+        </div>
+        <div class="field">
+          <h3>3.2 Key Activities planned for Next Period</h3>
+          <textarea id="nextText" style="min-height:180px" placeholder="Free text…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Status Summary -->
+    <div class="card">
+      <h2>4. Status Summary</h2>
+      <div class="field" style="margin:10px 0">
+        <label>Status summary</label>
+        <textarea id="execSummary" placeholder="2–3 sentences on outcomes, variances, and asks."></textarea>
+      </div>
+      <table id="statusTable">
+        <thead>
+          <tr>
+            <th rowspan="2">Item</th>
+            <th colspan="3">Current</th>
+            <th colspan="3">Previous</th>
+            <th rowspan="2">Path to green / comments</th>
+          </tr>
+          <tr>
+            <th class="th-g">Green</th><th class="th-a">Amber</th><th class="th-r">Red</th>
+            <th class="th-g">Green</th><th class="th-a">Amber</th><th class="th-r">Red</th>
+          </tr>
+        </thead>
+        <tbody id="statusTableBody"></tbody>
+      </table>
+      <div class="row no-print" style="margin-top:8px">
+        <button class="btn filled" id="copyCurrentToPrev">Copy Current → Previous</button>
+      </div>
+    </div>
+
+    <!-- 5. Milestones -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>5. Milestone Status</h2>
+        <button class="btn filled" id="addMilestone">Add Milestone</button>
+      </div>
       <table>
-        <thead><tr><th>Area</th><th>Current</th><th>Previous</th><th>Notes</th></tr></thead>
-        <tbody id="statusBody"></tbody>
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>Original Date</th>
+            <th>Revised Date</th>
+            <th>Status</th>
+            <th class="center">Add to report</th>
+            <th class="no-print">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="milestoneBody"></tbody>
       </table>
-      <div>
-        <div class="guidance">Use <em>Copy Current → Previous</em> to roll last week’s status forward.</div>
-        <button class="btn" id="copyCurrentToPrev">Copy Current → Previous</button>
-      </div>
     </div>
-  </div>
 
-  <!-- Milestones -->
-  <div class="card no-print">
-    <h2>Milestones</h2>
-    <table id="milestonesTable">
-      <thead><tr><th>Milestone</th><th>Date</th><th>Status</th><th>Include</th><th></th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="toolbar" style="margin-top:8px"><button class="btn" id="addMilestone">Add Milestone</button></div>
-  </div>
-
-  <!-- Issues & Risks -->
-  <div class="grid cols-2 no-print">
+    <!-- 6–7. Issues & Risks -->
     <div class="card">
-      <h2>Issues</h2>
-      <table id="issuesTable">
-        <thead><tr><th>ID</th><th>Description</th><th>Impact</th><th>Owner</th><th>Status</th><th>Next Steps</th><th>Include</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <div class="toolbar" style="margin-top:8px"><button class="btn" id="addIssue">Add Issue</button></div>
+      <h2>6–7. Issues & Risks</h2>
+      <div class="grid cols-2">
+        <div>
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>6. Significant Issues</h3>
+            <button class="btn filled" id="addIssue">Add Issue</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Issue ID</th>
+                <th>Issue description</th>
+                <th>Impact</th>
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Next steps</th>
+                <th class="center">Include</th>
+              </tr>
+            </thead>
+            <tbody id="issueBody"></tbody>
+          </table>
+        </div>
+        <div>
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <h3>7. Significant Risks</h3>
+            <button class="btn filled" id="addRisk">Add Risk</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Risk ID</th>
+                <th>Risk description</th>
+                <th>Risk rating</th>
+                <th>Mitigation</th>
+                <th class="center">Include</th>
+              </tr>
+            </thead>
+            <tbody id="riskBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
+
+    <!-- 7. Decisions -->
     <div class="card">
-      <h2>Risks</h2>
-      <table id="risksTable">
-        <thead><tr><th>ID</th><th>Description</th><th>Rating</th><th>Mitigation</th><th>Include</th><th></th></tr></thead>
-        <tbody></tbody>
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>7. Key Decisions Required</h2>
+        <button class="btn filled" id="addDecision">Add Decision</button>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th><th class="center">Include</th><th class="no-print">Actions</th></tr>
+        </thead>
+        <tbody id="decisionBody"></tbody>
       </table>
-      <div class="toolbar" style="margin-top:8px"><button class="btn" id="addRisk">Add Risk</button></div>
-    </div>
-  </div>
-
-  <!-- Decisions -->
-  <div class="card no-print">
-    <h2>Decisions</h2>
-    <table id="decisionsTable">
-      <thead><tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th><th>Include</th><th></th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="toolbar" style="margin-top:8px"><button class="btn" id="addDecision">Add Decision</button></div>
-  </div>
-
-  <!-- Dependencies -->
-  <div class="card no-print">
-    <h2>Dependencies & Constraints</h2>
-    <table id="depsTable">
-      <thead><tr><th>Ref/ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th><th>Include</th><th></th></tr></thead>
-      <tbody></tbody>
-    </table>
-    <div class="toolbar" style="margin-top:8px"><button class="btn" id="addDep">Add Dependency</button></div>
-  </div>
-
-  <!-- REPORT / PRINT VIEW (builder cards are .no-print; this remains visible on print) -->
-  <div id="reportCard" class="report">
-    <h1>Project Status Report – Project <span id="rProjectName"></span></h1>
-    <div><span id="rProjectId"></span> • <span id="rSponsor"></span> • <span id="rPM"></span></div>
-    <div style="margin-top:4px"><span id="rReportDate"></span> • <span id="rReportPeriod"></span> • <span id="rPhase"></span></div>
-
-    <div style="margin-top:10px" class="budget-row">
-      <span class="pill"><strong>Approved</strong> <span class="tnum" id="rApproved"></span></span>
-      <span class="pill"><strong>Spent</strong> <span class="tnum" id="rSpent"></span></span>
-      <span class="pill"><strong>ETC</strong> <span class="tnum" id="rETC"></span></span>
-      <span class="pill"><strong>EAC</strong> <span class="tnum" id="rEAC"></span></span>
-      <span class="pill"><strong>Variance</strong> <span class="tnum" id="rVariance"></span></span>
     </div>
 
-    <h2 style="margin-top:12px">Overall Project Status</h2>
-    <div class="status-chip" id="rOverallChip"><span id="rOverallIcon">🟢</span><span id="rOverallText">Green</span></div>
+    <!-- 8. Dependencies -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>8. Dependencies & Constraints</h2>
+        <button class="btn filled" id="addDep">Add Row</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Reference / ID</th>
+            <th>Dependency</th>
+            <th>Impact if Delayed</th>
+            <th>Owner</th>
+            <th>Actions</th>
+            <th>Status</th>
+            <th class="center">Include</th>
+            <th class="no-print">Controls</th>
+          </tr>
+        </thead>
+        <tbody id="depBody"></tbody>
+      </table>
+    </div>
 
-    <div class="status-milestones" style="margin-top:12px">
-      <div>
-        <h3>Status (detail)</h3>
-        <div class="report-section">
-          <table>
-            <thead><tr><th>Area</th><th>Current</th><th>Previous</th><th>Notes</th></tr></thead>
-            <tbody id="rStatusBody"></tbody>
-          </table>
+    <!-- Report Preview -->
+    <div class="card" id="reportCard">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2>Report Preview</h2>
+        <div class="row no-print">
+          <button class="btn filled" id="jumpTopBtn">Jump to Top</button>
+          <button class="btn filled" id="printBtn2">Print Report</button>
         </div>
       </div>
-      <div>
-        <h3>Milestones</h3>
-        <div class="report-section">
-          <table>
-            <thead><tr><th>Milestone</th><th>Date</th><th>Status</th></tr></thead>
-            <tbody id="rMilestones"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="issues-risks" style="margin-top:12px">
-      <div>
-        <h3>Issues</h3>
-        <div class="report-section">
-          <table>
-            <thead><tr><th>ID</th><th>Description</th><th>Impact</th><th>Owner</th><th>Status</th><th>Next Steps</th></tr></thead>
-            <tbody id="rIssues"></tbody>
-          </table>
-        </div>
-      </div>
-      <div>
-        <h3>Risks</h3>
-        <div class="report-section">
-          <table>
-            <thead><tr><th>ID</th><th>Description</th><th>Rating</th><th>Mitigation</th></tr></thead>
-            <tbody id="rRisks"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div style="margin-top:12px">
-      <h3>Decisions</h3>
-      <div class="report-section">
-        <table>
-          <thead><tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th></tr></thead>
-          <tbody id="rDecisions"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div style="margin-top:12px">
-      <h3>Dependencies & Constraints</h3>
-      <div class="report-section">
-        <table>
-          <thead><tr><th>Ref/ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th></tr></thead>
-          <tbody id="rDeps"></tbody>
-        </table>
-      </div>
+      <div class="guidance no-print">The preview mirrors what will print. Use the include checkboxes to curate items.</div>
+      <div id="reportPreview" class="report"></div>
     </div>
   </div>
-  <!-- End reportCard -->
-</div> <!-- /.container -->
-
 <script>
+/* =========================
+   PSR Generator — v0.24 JS
+   (v0.26 changes are limited to theme toggle + print fix + variance no-wrap CSS)
+   ========================= */
+
 /* ===== Utilities ===== */
-const $  = sel => document.querySelector(sel);
-const $$ = sel => Array.from(document.querySelectorAll(sel));
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => [...document.querySelectorAll(sel)];
+const fmtCurrency0 = (n) => '$' + Math.round(+n||0).toLocaleString();
+const download = (filename, text, mime='text/plain') => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:mime}));
+  a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+};
+const sanitizeFilename = (s) => String(s||'').trim().replace(/[\\\/:*?"<>|]+/g,'').replace(/\s+/g,'_').slice(0,120);
 
-const statusAreas = ["Overall","Scope","Schedule","Budget","Quality","Risk","Stakeholder"];
-const rag = ["Green","Amber","Red","Blue"];
-const statusSelect = (id) => `<select data-id="${id}" class="rag">${rag.map(r=>`<option value="${r}">${r}</option>`).join('')}</select>`;
-
-/* ===== Table helpers ===== */
-function addRow(tbody, cells){
-  const tr = document.createElement('tr');
-  cells.forEach(h=>{
-    const td=document.createElement('td');
-    td.innerHTML=h;
-    tr.appendChild(td);
-  });
-  tbody.appendChild(tr);
+/* ===== Status rows ===== */
+function statusRowDef(){
+  return [
+    {key:'overall', label:'Overall Status'},
+    {key:'scope',   label:'Scope Status'},
+    {key:'schedule',label:'Schedule Status'},
+    {key:'budget',  label:'Budget Status'},
+    {key:'quality', label:'Quality Status'},
+    {key:'risk',    label:'Risk Status'},
+    {key:'stake',   label:'Stakeholder Status'},
+  ];
 }
 
-function initStatus(){
-  const body = $('#statusBody');
+/* ===== Icons (SVG) ===== */
+const SVG = {
+  circle: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="${fill}"/></svg></span>`,
+  triangle: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><polygon points="8,3 14,13 2,13" fill="${fill}"/></svg></span>`,
+  square: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" fill="${fill}"/></svg></span>`,
+  star: (fill)=>`<span class="ico"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l2 4 4.5.6-3.3 3.1.9 4.6L8 11.7 3.9 13.8l.9-4.6L1.5 6.1 6 5.5l2-4z" fill="${fill}"/></svg></span>`
+};
+function statusIcon(code){
+  const c = (code||'').toUpperCase();
+  if(c==='G') return SVG.circle('#10b981');
+  if(c==='A') return SVG.triangle('#f59e0b');
+  if(c==='R') return SVG.square('#ef4444');
+  if(c==='B') return SVG.star('#2563eb');
+  return SVG.square('#9ca3af');
+}
+function completedIcon(){ return SVG.star('#2563eb'); }
+
+/* ===== Section 4 table (builder) ===== */
+function buildStatusTable(){
+  const body = $('#statusTableBody');
   body.innerHTML = '';
-  statusAreas.forEach(a=>{
-    addRow(body, [
-      `<strong>${a}</strong>`,
-      statusSelect(`${a}-current`),
-      statusSelect(`${a}-prev`),
-      `<input type="text" placeholder="Notes"/>`
-    ]);
+  for(const row of statusRowDef()){
+    const isOverall = row.key === 'overall';
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-key', row.key);
+    tr.innerHTML = `
+      <td>${row.label}</td>
+      ${radioTd(row.key,'current','G')}
+      ${radioTd(row.key,'current','A')}
+      ${radioTd(row.key,'current','R')}
+      ${radioTd(row.key,'previous','G')}
+      ${radioTd(row.key,'previous','A')}
+      ${radioTd(row.key,'previous','R')}
+      ${isOverall ? '<td></td>' :
+        '<td><input data-skey="'+row.key+'" data-field="notes" type="text" placeholder="Path to green / comments" /></td>'}
+    `;
+    body.appendChild(tr);
+  }
+  body.addEventListener('change', (e)=>{
+    const el = e.target;
+    if(el.type === 'radio' && el.name.startsWith('current_')){
+      const key = el.name.replace('current_','');
+      const notes = document.querySelector(`input[data-skey="${key}"][data-field="notes"]`);
+      if(!notes) return;
+      if(el.value !== 'G'){ notes.classList.add('needs-comment'); if(!notes.value.trim()) notes.placeholder='Please add path to green'; }
+      else { notes.classList.remove('needs-comment'); }
+    }
+    schedulePreview();
   });
 }
+function radioTd(key, section, val){
+  const name = `${section}_${key}`;
+  const aria = `${section} ${key} ${val}`;
+  return `<td class="center"><input class="status-radio" type="radio" name="${name}" value="${val}" aria-label="${aria}"></td>`;
+}
 
+/* ===== Row helpers ===== */
 function rowControlsTD(){
-  const td=document.createElement('td');
-  td.innerHTML='<button class="btn ghost del">Remove</button>';
-  setTimeout(()=> td.querySelector('.del').addEventListener('click',()=> td.closest('tr').remove()));
-  return td;
+  const td=document.createElement('td'); td.className='no-print';
+  const del=document.createElement('button'); del.className='btn filled'; del.textContent='Delete';
+  del.onclick=(e)=>{ e.target.closest('tr').remove(); schedulePreview(); };
+  td.appendChild(del); return td;
 }
 
-/* ===== Builder tables row adders ===== */
-function addMilestoneRow(v={}){
-  const tr=document.createElement('tr');
-  tr.innerHTML = `
+/* Milestones */
+function milestoneStatusSelect(value){
+  const opts = ['On Track','Delayed','Not started','Completed'];
+  return `<select class="ms-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
+}
+function updateMilestoneStrike(tr){
+  const nameInput = tr.querySelector('td:nth-child(1) input[type="text"]');
+  const statusSel = tr.querySelector('.ms-status');
+  if(!nameInput || !statusSel) return;
+  if(statusSel.value === 'Completed'){ nameInput.classList.add('strike'); }
+  else { nameInput.classList.remove('strike'); }
+}
+function addMilestoneRow(v={}){ const tr=document.createElement('tr');
+  tr.innerHTML=`
     <td><input type="text" value="${v.name||''}" placeholder="Milestone"></td>
-    <td><input type="date" value="${v.date||''}"></td>
-    <td>
-      <select>
-        <option>Not Started</option><option>On Track</option>
-        <option>At Risk</option><option>Complete</option>
-      </select>
-    </td>
-    <td class="center"><input type="checkbox" ${v.include===false?'':'checked'}></td>`;
+    <td><input class="ms-orig" type="date" value="${v.orig||''}"></td>
+    <td><input class="ms-rev" type="date" value="${v.rev||''}"></td>
+    <td>${milestoneStatusSelect(v.status||'')}</td>
+    <td class="center"><label class="checkbox"><input type="checkbox" class="ms-include" ${v.include===false?'':'checked'}> Include</label></td>
+  `;
   tr.appendChild(rowControlsTD());
-  $('#milestonesTable tbody').appendChild(tr);
-  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', refreshPreview));
+  $('#milestoneBody').appendChild(tr);
+
+  const orig = tr.querySelector('.ms-orig');
+  const rev  = tr.querySelector('.ms-rev');
+  orig.addEventListener('change', ()=>{
+    if(!rev.value){ rev.value = orig.value; rev.dataset.autoset = '1'; schedulePreview(); }
+  });
+
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
+  updateMilestoneStrike(tr);
+  tr.querySelector('.ms-status').addEventListener('change', ()=>{ updateMilestoneStrike(tr); schedulePreview(); });
 }
 
-function addIssueRow(v={}){
-  const tr=document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" value="${v.id||''}" placeholder="ID"></td>
-    <td><input type="text" value="${v.desc||''}" placeholder="Description"></td>
-    <td>
-      <select>
-        <option>Schedule</option><option>Budget</option>
-        <option>Scope</option><option>Quality</option>
-      </select>
-    </td>
-    <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
-    <td><select><option>Open</option><option>In Progress</option><option>Closed</option></select></td>
-    <td><input type="text" value="${v.next||''}" placeholder="Next steps"></td>
-    <td class="center"><input type="checkbox" ${v.include===false?'':'checked'}></td>`;
-  tr.appendChild(rowControlsTD());
-  $('#issuesTable tbody').appendChild(tr);
-  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', refreshPreview));
+/* Issues */
+function addIssueRow(v={}){ const tr=document.createElement('tr');
+  const impactSel = (val)=>`<select class="iss-impact">${['Schedule','Budget','Scope','Quality'].map(o=>`<option${o===(val||'')?' selected':''}>${o}</option>`).join('')}</select>`;
+  const statusSel = (val)=>`<select class="iss-status">${[['G','Green'],['A','Amber'],['R','Red'],['B','Complete']].map(([k,l])=>`<option value="${k}"${k===(val||'')?' selected':''}>${l}</option>`).join('')}</select>`;
+  tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
+                <td><input type="text" value="${v.issue||v.desc||''}" placeholder="Issue description"></td>
+                <td>${impactSel(v.impact||'')}</td>
+                <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
+                <td>${statusSel(v.status||'')}</td>
+                <td><input type="text" value="${v.next||v['next steps']||v.notes||''}" placeholder="Next steps"></td>
+                <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
+  $('#issueBody').appendChild(tr);
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 
-function addRiskRow(v={}){
-  const tr=document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" value="${v.id||''}" placeholder="ID"></td>
-    <td><input type="text" value="${v.desc||''}" placeholder="Description"></td>
-    <td>
-      <select>
-        <option>1 (VL)</option><option>2 (L)</option><option>3 (M)</option>
-        <option>4 (H)</option><option>5 (C)</option>
-      </select>
-    </td>
-    <td><input type="text" value="${v.mit||''}" placeholder="Mitigation"></td>
-    <td class="center"><input type="checkbox" ${v.include===false?'':'checked'}></td>`;
-  tr.appendChild(rowControlsTD());
-  $('#risksTable tbody').appendChild(tr);
-  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', refreshPreview));
+/* Risks */
+function addRiskRow(v={}){ const tr=document.createElement('tr');
+  const ratingSel = (val)=>`<select class="risk-rating">${['Critical','High','Medium','Low','Very Low'].map(o=>`<option${o===(val||'')?' selected':''}>${o}</option>`).join('')}</select>`;
+  tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID"></td>
+                <td><input type="text" value="${v.risk||v.desc||''}" placeholder="Risk description"></td>
+                <td>${ratingSel(v.rating||'')}</td>
+                <td><input type="text" value="${v.mit||''}" placeholder="Mitigation"></td>
+                <td class="center"><input type="checkbox" class="inc" ${v.include===false?'':'checked'}></td>`;
+  $('#riskBody').appendChild(tr);
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
 }
 
-function addDecisionRow(v={}){
-  const tr=document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" value="${v.decision||''}" placeholder="Decision"></td>
-    <td><input type="date" value="${v.required||''}"></td>
-    <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
-    <td><select><option>Open</option><option>In Progress</option><option>Closed</option></select></td>
-    <td class="center"><input type="checkbox" ${v.include===false?'':'checked'}></td>`;
+/* Decisions */
+function decisionStatusSelect(value){
+  const opts = ['Not started','In progress','Blocked','Deferred','Completed'];
+  return `<select class="dc-status">${opts.map(o=>`<option${o===value?' selected':''}>${o}</option>`).join('')}</select>`;
+}
+function updateDecisionStrike(tr){
+  const desc = tr.querySelector('td:nth-child(1) input[type="text"]');
+  const sel  = tr.querySelector('.dc-status');
+  if(!desc || !sel) return;
+  if(sel.value === 'Completed'){ desc.classList.add('strike'); }
+  else { desc.classList.remove('strike'); }
+}
+function addDecisionRow(v={}){ const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="text" value="${v.desc||''}"></td>
+                <td><input type="date" value="${v.req||''}"></td>
+                <td><input type="text" value="${v.owner||''}"></td>
+                <td>${decisionStatusSelect(v.status||'')}</td>
+                <td class="center"><input type="checkbox" class="dc-include" ${v.include===false?'':'checked'}></td>`;
   tr.appendChild(rowControlsTD());
-  $('#decisionsTable tbody').appendChild(tr);
-  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', refreshPreview));
+  $('#decisionBody').appendChild(tr);
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
+  updateDecisionStrike(tr);
+  tr.querySelector('.dc-status').addEventListener('change', ()=>{ updateDecisionStrike(tr); schedulePreview(); });
 }
 
 /* Dependencies */
-function depStatusSelect(v){
-  return `<select class="dep-status">
-            <option ${v==='Open'?'selected':''}>Open</option>
-            <option ${v==='In Progress'?'selected':''}>In Progress</option>
-            <option ${v==='Closed'?'selected':''}>Closed</option>
-          </select>`;
+function depStatusSelect(value){
+  const opts = [['G','Green'],['A','Amber'],['R','Red'],['B','Blue/Complete']];
+  return `<select class="dep-status">${opts.map(([k,l])=>`<option value="${k}"${k===(value||'')?' selected':''}>${l}</option>`).join('')}</select>`;
 }
 function updateDepStrike(tr){
-  const sel=tr.querySelector('.dep-status');
-  const depTxt=tr.children[1].querySelector('input');
-  if(sel.value==='Closed'){ depTxt.classList.add('strike'); }
+  const depTxt = tr.querySelector('td:nth-child(2) input[type="text"]');
+  const sel = tr.querySelector('.dep-status');
+  if(!depTxt || !sel) return;
+  if(sel.value === 'B'){ depTxt.classList.add('strike'); }
   else { depTxt.classList.remove('strike'); }
 }
-function addDepRow(v={}){
-  const tr=document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" value="${v.id||''}" placeholder="ID / REF"></td>
-    <td><input type="text" value="${v.dep||''}" placeholder="Dependency"></td>
-    <td><input type="text" value="${v.impact||''}" placeholder="Impact if delayed"></td>
-    <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
-    <td><input type="text" value="${v.actions||''}" placeholder="Actions"></td>
-    <td>${depStatusSelect(v.status||'')}</td>
-    <td class="center"><input type="checkbox" class="dep-include" ${v.include===false?'':'checked'}></td>`;
+function addDepRow(v={}){ const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="text" value="${v.id||''}" placeholder="ID / REF"></td>
+                <td><input type="text" value="${v.dep||''}" placeholder="Dependency"></td>
+                <td><input type="text" value="${v.impact||''}" placeholder="Impact if delayed"></td>
+                <td><input type="text" value="${v.owner||''}" placeholder="Owner"></td>
+                <td><input type="text" value="${v.actions||''}" placeholder="Actions"></td>
+                <td>${depStatusSelect(v.status||'')}</td>
+                <td class="center"><input type="checkbox" class="dep-include" ${v.include===false?'':'checked'}></td>`;
   tr.appendChild(rowControlsTD());
-  $('#depsTable tbody').appendChild(tr);
-  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', refreshPreview));
+  $('#depBody').appendChild(tr);
+  tr.querySelectorAll('input,select').forEach(el=>el.addEventListener('input', schedulePreview));
   updateDepStrike(tr);
-  tr.querySelector('.dep-status').addEventListener('change', ()=>{ updateDepStrike(tr); refreshPreview(); });
+  tr.querySelector('.dep-status').addEventListener('change', ()=>{ updateDepStrike(tr); schedulePreview(); });
 }
 
-/* ===== Budget and preview ===== */
-function tnum(n){ return Number(n||0).toLocaleString() }
-
-function updateBudgetPills(){
-  const a = +$('#budgetApproved').value||0;
-  const s = +$('#budgetSpent').value||0;
-  const e = +$('#budgetETC').value||0;
-  const eac = s + e;
-  const variance = a - eac;
-
-  $('#budgetVariance').value = tnum(variance);
-  $('#pillApproved').textContent = tnum(a);
-  $('#pillSpent').textContent   = tnum(s);
-  $('#pillETC').textContent     = tnum(e);
-  $('#pillEAC').textContent     = tnum(eac);
-  $('#pillVariance').textContent= tnum(variance);
-
-  $('#rApproved').textContent   = tnum(a);
-  $('#rSpent').textContent      = tnum(s);
-  $('#rETC').textContent        = tnum(e);
-  $('#rEAC').textContent        = tnum(eac);
-  $('#rVariance').textContent   = tnum(variance);
+/* ===== Data extraction / injection ===== */
+function getTableRows(tbody){
+  const rows=[];
+  tbody.querySelectorAll('tr').forEach(tr=>{
+    const inputs=[...tr.querySelectorAll('input,select')];
+    rows.push(inputs.map(i=>i.type==='checkbox'?i.checked:i.value));
+  });
+  return rows;
 }
 
-function refreshPreview(){
-  $('#rProjectName').textContent = $('#projectName').value || '[Project Name]';
-  $('#rProjectId').textContent   = $('#projectId').value   || 'ID —';
-  $('#rSponsor').textContent     = $('#sponsor').value     || 'Sponsor —';
-  $('#rPM').textContent          = $('#pm').value          || 'PM —';
-  $('#rPhase').textContent       = $('#phase').value       || 'Phase —';
-  $('#rReportDate').textContent  = $('#reportDate').value  || 'Report Date —';
-  $('#rReportPeriod').textContent= $('#reportPeriod').value|| 'Reporting Period —';
+function collectData(){
+  const status = {};
+  for(const row of statusRowDef()){
+    const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
+    const prev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
+    const notesEl= document.querySelector(`input[data-skey="${row.key}"][data-field="notes"]`);
+    const notes = notesEl ? notesEl.value.trim() : '';
+    status[row.key] = {current: cur?cur.value:'', previous: prev?prev.value:'', notes};
+  }
 
-  /* Status detail */
-  const rBody = $('#rStatusBody'); rBody.innerHTML='';
-  $$('#statusBody tr').forEach(tr=>{
-    const area  = tr.children[0].innerText;
-    const cur   = tr.children[1].querySelector('select').value;
-    const prev  = tr.children[2].querySelector('select').value;
-    const notes = tr.children[3].querySelector('input').value;
-    addRow(rBody, [`<strong>${area}</strong>`, cur, prev, notes]);
-  });
+  const msRows = getTableRows($('#milestoneBody')).map(r=>({
+    name:r[0], orig:r[1], rev:r[2], status:r[3], include:r[4]
+  }));
 
-  /* Milestones */
-  const rM = $('#rMilestones'); rM.innerHTML='';
-  $$('#milestonesTable tbody tr').forEach(tr=>{
-    const inc   = tr.children[3].querySelector('input[type="checkbox"]').checked;
-    if(!inc) return;
-    const name  = tr.children[0].querySelector('input').value;
-    const date  = tr.children[1].querySelector('input').value;
-    const stat  = tr.children[2].querySelector('select').value;
-    addRow(rM, [name, date, stat]);
-  });
+  const issueRows = getTableRows($('#issueBody')).map(r=>({
+    id:r[0], issue:r[1], impact:r[2], owner:r[3], status:r[4], next:r[5], include:r[6]
+  }));
 
-  /* Issues */
-  const rI = $('#rIssues'); rI.innerHTML='';
-  $$('#issuesTable tbody tr').forEach(tr=>{
-    const inc   = tr.children[6].querySelector('input[type="checkbox"]').checked;
-    if(!inc) return;
-    const id    = tr.children[0].querySelector('input').value;
-    const desc  = tr.children[1].querySelector('input').value;
-    const impact= tr.children[2].querySelector('select').value;
-    const owner = tr.children[3].querySelector('input').value;
-    const status= tr.children[4].querySelector('select').value;
-    const next  = tr.children[5].querySelector('input').value;
-    addRow(rI, [id, desc, impact, owner, status, next]);
-  });
+  const riskRows  = getTableRows($('#riskBody')).map(r=>({
+    id:r[0], risk:r[1], rating:r[2], mit:r[3], include:r[4]
+  }));
 
-  /* Risks */
-  const rR = $('#rRisks'); rR.innerHTML='';
-  $$('#risksTable tbody tr').forEach(tr=>{
-    const inc   = tr.children[4].querySelector('input[type="checkbox"]').checked;
-    if(!inc) return;
-    const id    = tr.children[0].querySelector('input').value;
-    const desc  = tr.children[1].querySelector('input').value;
-    const rate  = tr.children[2].querySelector('select').value;
-    const mit   = tr.children[3].querySelector('input').value;
-    addRow(rR, [id, desc, rate, mit]);
-  });
+  const decisionRows = getTableRows($('#decisionBody')).map(r=>({
+    desc:r[0], req:r[1], owner:r[2], status:r[3], include:r[4]
+  }));
 
-  /* Decisions */
-  const rD = $('#rDecisions'); rD.innerHTML='';
-  $$('#decisionsTable tbody tr').forEach(tr=>{
-    const inc   = tr.children[4].querySelector('input[type="checkbox"]').checked;
-    if(!inc) return;
-    const dec   = tr.children[0].querySelector('input').value;
-    const req   = tr.children[1].querySelector('input').value;
-    const owner = tr.children[2].querySelector('input').value;
-    const status= tr.children[3].querySelector('select').value;
-    addRow(rD, [dec, req, owner, status]);
-  });
+  const depRows = getTableRows($('#depBody')).map(r=>({
+    id:r[0], dep:r[1], impact:r[2], owner:r[3], actions:r[4], status:r[5], include:r[6]
+  }));
 
-  /* Dependencies */
-  const rDep = $('#rDeps'); rDep.innerHTML='';
-  $$('#depsTable tbody tr').forEach(tr=>{
-    const inc   = tr.children[6].querySelector('input[type="checkbox"]').checked;
-    if(!inc) return;
-    const ref   = tr.children[0].querySelector('input').value;
-    const dep   = tr.children[1].querySelector('input').value;
-    const impact= tr.children[2].querySelector('input').value;
-    const owner = tr.children[3].querySelector('input').value;
-    const acts  = tr.children[4].querySelector('input').value;
-    const stat  = tr.children[5].querySelector('select').value;
-    addRow(rDep, [ref, dep, impact, owner, acts, stat]);
-  });
-
-  /* Overall status chip (from "Overall" current value) */
-  const currentOverall = $$('#statusBody tr')[0]?.children[1]?.querySelector('select')?.value || 'Green';
-  const icon = {Green:'🟢', Amber:'🟠', Red:'🔴', Blue:'🔵'}[currentOverall] || '⬤';
-  $('#rOverallIcon').textContent = icon;
-  $('#rOverallText').textContent = currentOverall;
-}
-/* ===== Persistence, CSV export ===== */
-function saveJSON(){
-  const data = {
-    projectName: $('#projectName').value, projectId: $('#projectId').value,
-    sponsor: $('#sponsor').value, pm: $('#pm').value, phase: $('#phase').value,
-    reportDate: $('#reportDate').value, reportPeriod: $('#reportPeriod').value,
-    budget:{
-      approved:+$('#budgetApproved').value||0,
-      spent:+$('#budgetSpent').value||0,
-      etc:+$('#budgetETC').value||0
+  return {
+    meta:{
+      projName:$('#projName').value, projCode:$('#projCode').value, sponsor:$('#sponsor').value, pm:$('#pm').value,
+      reportDate:$('#reportDate').value, periodStart:$('#periodStart').value, periodEnd:$('#periodEnd').value, phase:$('#phase').value
     },
-    status: $$('#statusBody tr').map(tr=>({
-      area: tr.children[0].innerText,
-      current: tr.children[1].querySelector('select').value,
-      previous: tr.children[2].querySelector('select').value,
-      notes: tr.children[3].querySelector('input').value
-    })),
-    milestones: $$('#milestonesTable tbody tr').map(tr=>({
-      name: tr.children[0].querySelector('input').value,
-      date: tr.children[1].querySelector('input').value,
-      status: tr.children[2].querySelector('select').value,
-      include: tr.children[3].querySelector('input[type="checkbox"]').checked
-    })),
-    issues: $$('#issuesTable tbody tr').map(tr=>({
-      id: tr.children[0].querySelector('input').value,
-      desc: tr.children[1].querySelector('input').value,
-      impact: tr.children[2].querySelector('select').value,
-      owner: tr.children[3].querySelector('input').value,
-      status: tr.children[4].querySelector('select').value,
-      next: tr.children[5].querySelector('input').value,
-      include: tr.children[6].querySelector('input[type="checkbox"]').checked
-    })),
-    risks: $$('#risksTable tbody tr').map(tr=>({
-      id: tr.children[0].querySelector('input').value,
-      desc: tr.children[1].querySelector('input').value,
-      rating: tr.children[2].querySelector('select').value,
-      mit: tr.children[3].querySelector('input').value,
-      include: tr.children[4].querySelector('input[type="checkbox"]').checked
-    })),
-    decisions: $$('#decisionsTable tbody tr').map(tr=>({
-      decision: tr.children[0].querySelector('input').value,
-      required: tr.children[1].querySelector('input').value,
-      owner: tr.children[2].querySelector('input').value,
-      status: tr.children[3].querySelector('select').value,
-      include: tr.children[4].querySelector('input[type="checkbox"]').checked
-    })),
-    deps: $$('#depsTable tbody tr').map(tr=>({
-      ref: tr.children[0].querySelector('input').value,
-      dep: tr.children[1].querySelector('input').value,
-      impact: tr.children[2].querySelector('input').value,
-      owner: tr.children[3].querySelector('input').value,
-      actions: tr.children[4].querySelector('input').value,
-      status: tr.children[5].querySelector('select').value,
-      include: tr.children[6].querySelector('input[type="checkbox"]').checked
-    }))
+    status,
+    execSummary:$('#execSummary').value,
+    milestones: msRows,
+    achText:$('#achText')?.value||'',
+    nextText:$('#nextText')?.value||'',
+    issues: issueRows,
+    risks: riskRows,
+    decisions: decisionRows,
+    deps: depRows,
+    budget:{approved:+($('#budgetApproved').value||0),spent:+($('#budgetSpent').value||0),etc:+($('#budgetEtc').value||0)}
   };
-
-  const name = $('#projectName').value?.trim() || prompt('Filename (uses Project Name if set):','psr_data');
-  if(!name) return;
-  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${name}.json`;
-  a.click();
 }
 
-function loadJSON(file){
-  const r = new FileReader();
-  r.onload = ()=>{
-    const d = JSON.parse(r.result);
-    $('#projectName').value = d.projectName || '';
-    $('#projectId').value   = d.projectId   || '';
-    $('#sponsor').value     = d.sponsor     || '';
-    $('#pm').value          = d.pm          || '';
-    $('#phase').value       = d.phase       || '';
-    $('#reportDate').value  = d.reportDate  || '';
-    $('#reportPeriod').value= d.reportPeriod|| '';
+function populateData(d){
+  $('#projName').value=d.meta?.projName||''; $('#projCode').value=d.meta?.projCode||'';
+  $('#sponsor').value=d.meta?.sponsor||''; $('#pm').value=d.meta?.pm||'';
+  $('#reportDate').value=d.meta?.reportDate||''; $('#periodStart').value=d.meta?.periodStart||'';
+  $('#periodEnd').value=d.meta?.periodEnd||''; $('#phase').value=d.meta?.phase||'Initiation';
 
-    $('#budgetApproved').value = d.budget?.approved || 0;
-    $('#budgetSpent').value    = d.budget?.spent    || 0;
-    $('#budgetETC').value      = d.budget?.etc      || 0;
-    updateBudgetPills();
+  for(const [k,v] of Object.entries(d.status||{})){
+    const cur=document.querySelector(`input[name="current_${k}"][value="${v.current}"]`);
+    const prev=document.querySelector(`input[name="previous_${k}"][value="${v.previous}"]`);
+    const notes=document.querySelector(`input[data-skey="${k}"][data-field="notes"]`);
+    if(cur) cur.checked=true; if(prev) prev.checked=true; if(notes && typeof v.notes==='string') notes.value=v.notes;
+  }
 
-    /* Status */
-    initStatus();
-    if(Array.isArray(d.status)){
-      d.status.forEach((s,i)=>{
-        const tr=$$('#statusBody tr')[i];
-        if(!tr) return;
-        tr.children[1].querySelector('select').value = s.current  || 'Green';
-        tr.children[2].querySelector('select').value = s.previous || 'Green';
-        tr.children[3].querySelector('input').value  = s.notes    || '';
-      });
-    }
+  $('#execSummary').value=d.execSummary||'';
 
-    /* Milestones */
-    $('#milestonesTable tbody').innerHTML='';
-    (d.milestones||[]).forEach(m=> addMilestoneRow(m));
+  const tb = $('#milestoneBody'); tb.innerHTML='';
+  (d.milestones||[]).forEach(m=>addMilestoneRow(m));
+  if(!d.milestones?.length) addMilestoneRow({});
 
-    /* Issues */
-    $('#issuesTable tbody').innerHTML='';
-    (d.issues||[]).forEach(it=> addIssueRow(it));
+  const clear=(sel)=>{const t=$(sel); t.innerHTML=''; return t;};
+  clear('#issueBody'); (d.issues||[]).forEach(i=>addIssueRow(i)); if(!d.issues?.length){ for(let i=0;i<2;i++) addIssueRow({}); }
+  clear('#riskBody'); (d.risks||[]).forEach(r=>addRiskRow(r)); if(!d.risks?.length){ for(let i=0;i<2;i++) addRiskRow({}); }
+  clear('#decisionBody'); (d.decisions||[]).forEach(dc=>addDecisionRow(dc)); if(!d.decisions?.length) addDecisionRow({});
+  clear('#depBody'); (d.deps||[]).forEach(dp=>addDepRow(dp)); if(!d.deps?.length) addDepRow({});
 
-    /* Risks */
-    $('#risksTable tbody').innerHTML='';
-    (d.risks||[]).forEach(rk=> addRiskRow(rk));
-
-    /* Decisions */
-    $('#decisionsTable tbody').innerHTML='';
-    (d.decisions||[]).forEach(dd=> addDecisionRow(dd));
-
-    /* Deps */
-    $('#depsTable tbody').innerHTML='';
-    (d.deps||[]).forEach(dp=> addDepRow({ id:dp.ref, dep:dp.dep, impact:dp.impact, owner:dp.owner, actions:dp.actions, status:dp.status, include:dp.include }));
-
-    refreshPreview();
-  };
-  r.readAsText(file);
+  $('#budgetApproved').value=d.budget?.approved??0; $('#budgetSpent').value=d.budget?.spent??0; $('#budgetEtc').value=d.budget?.etc??0;
+  updateBudgetPills(); schedulePreview();
 }
 
-function copyCurrentToPrevious(){
-  $$('#statusBody tr').forEach(tr=>{
-    tr.children[2].querySelector('select').value = tr.children[1].querySelector('select').value;
+/* ===== CSV (summary) ===== */
+function csvEscape(v){ return `"${String(v??'').replaceAll('"','""')}"`; }
+function buildSummaryCsv(d){
+  const lines=['Section,Field,Value'], m=d.meta, b=d.budget, push=(s,k,v)=>lines.push(`${s},${csvEscape(k)},${csvEscape(v)}`);
+  push('Meta','Project Name',m.projName); push('Meta','Project Code',m.projCode);
+  push('Meta','Sponsor',m.sponsor); push('Meta','Project Manager',m.pm);
+  push('Meta','Report Date',m.reportDate); push('Meta','Period Start',m.periodStart);
+  push('Meta','Period End',m.periodEnd); push('Meta','Project Phase',m.phase);
+
+  for(const row of statusRowDef()){
+    const s=d.status[row.key]||{};
+    push('Status',`${row.label} (Current)`,s.current||'');
+    push('Status',`${row.label} (Previous)`,s.previous||'');
+  }
+  if(d.execSummary) push('Status','Overall Project Status Summary',d.execSummary);
+
+  (d.milestones||[]).forEach(ms=>{
+    lines.push(`Milestone,${csvEscape(ms.name)},${csvEscape(JSON.stringify({orig:ms.orig,rev:ms.rev,status:ms.status,include:ms.include}))}`);
   });
-  refreshPreview();
+  (d.issues||[]).forEach((i,idx)=>{
+    lines.push(`Issue ${idx+1},${csvEscape(i.issue)},${csvEscape(JSON.stringify({id:i.id,impact:i.impact,owner:i.owner,status:i.status,next:i.next,include:i.include}))}`);
+  });
+  (d.risks||[]).forEach((r,idx)=>{
+    lines.push(`Risk ${idx+1},${csvEscape(r.risk)},${csvEscape(JSON.stringify({id:r.id,rating:r.rating,mitigation:r.mit,include:r.include}))}`);
+  });
+  (d.decisions||[]).forEach((dc,idx)=>{ lines.push(`Decision ${idx+1},${csvEscape(dc.desc)},${csvEscape(JSON.stringify({requiredBy:dc.req,owner:dc.owner,status:dc.status,include:dc.include}))}`); });
+  (d.deps||[]).forEach((dp,idx)=>{ lines.push(`Dependency ${idx+1},${csvEscape(dp.dep)},${csvEscape(JSON.stringify({id:dp.id,impact:dp.impact,owner:dp.owner,actions:dp.actions,status:dp.status,include:dp.include}))}`); });
+
+  const eac = (b.spent||0) + (b.etc||0);
+  push('Budget','Approved (000s)',b.approved);
+  push('Budget','Spend to Date (000s)',b.spent);
+  push('Budget','Current ETC (000s)',b.etc);
+  push('Budget','EAC (000s)', eac);
+  push('Budget','Variance (000s)', (b.approved||0) - eac);
+  return lines.join('\n');
 }
 
-/* ==== CSV Export (fixed to avoid stray literal newlines) ==== */
-function exportCSV(){
-  const esc = s => `"${String(s || '').replace(/"/g, '""')}"`;
-  const lines = [];
+/* ===== Report builder ===== */
+function buildReportHTML(d){
+  const m=d.meta||{};
+  const h=[];
 
-  /* Meta + Budget metrics */
-  lines.push(['Project Name','Project ID','Sponsor','PM','Phase','Report Date','Reporting Period','Approved','Spent','ETC','EAC','Variance'].map(esc).join(','));
-  const approved = +$('#budgetApproved').value || 0,
-        spent    = +$('#budgetSpent').value   || 0,
-        etc      = +$('#budgetETC').value     || 0,
-        eac      = spent + etc,
-        variance = approved - eac;
-  lines.push([
-    $('#projectName').value, $('#projectId').value, $('#sponsor').value, $('#pm').value,
-    $('#phase').value, $('#reportDate').value, $('#reportPeriod').value,
-    approved, spent, etc, eac, variance
-  ].map(esc).join(','));
+  // Title & identity
+  const projName = m.projName || 'Untitled Project';
+  h.push(`<div class="report-section">`);
+  h.push(`<h1>Project Status Report - Project ${projName}</h1>`);
+  // Meta row: ID + Sponsor + PM
+  const metaBits=[]; if(m.projCode) metaBits.push(`Project ID ${m.projCode}`); if(m.sponsor) metaBits.push(`Sponsor: ${m.sponsor}`); if(m.pm) metaBits.push(`Project Manager: ${m.pm}`);
+  if(metaBits.length){ h.push(`<div class="meta-row" style="margin-top:6px"><span>${metaBits.join('</span><span>')}</span></div>`); }
+  // Dates/phase directly under ID row
+  h.push(`<div class="meta-row"><span>Report date: ${m.reportDate || ''}</span><span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span><span>Current project phase: ${m.phase || ''}</span></div>`);
+  const overall = d.status?.overall?.current || '';
+  h.push(`</div>`); // end header section
 
-  /* Status */
-  lines.push('\nStatus');
-  lines.push(['Area','Current','Previous','Notes'].map(esc).join(','));
-  $$('#statusBody tr').forEach(tr=>{
-    lines.push([
-      tr.children[0].innerText,
-      tr.children[1].querySelector('select').value,
-      tr.children[2].querySelector('select').value,
-      tr.children[3].querySelector('input').value
-    ].map(esc).join(','));
-  });
+  // Budget
+  const eac = (d.budget?.spent||0) + (d.budget?.etc||0);
+  const variance = (d.budget?.approved||0) - eac;
+  const varClass = variance >= 0 ? 'ok' : 'bad';
+  h.push(`<div class="report-section tight-table">`);
+  h.push(`<h2>Budget Summary (000’s)</h2>
+    <div class="budget-row" style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+      <span class="status-chip"><strong>Approved:</strong> <span class="tnum">${fmtCurrency0(d.budget?.approved||0)}</span></span>
+      <span class="status-chip"><strong>Spend to Date:</strong> <span class="tnum">${fmtCurrency0(d.budget?.spent||0)}</span></span>
+      <span class="status-chip"><strong>Current ETC:</strong> <span class="tnum">${fmtCurrency0(d.budget?.etc||0)}</span></span>
+      <span class="pill"><strong>EAC:</strong> <span class="tnum">${fmtCurrency0(eac)}</span></span>
+      <span class="pill ${varClass}" id="variancePill"><strong>Variance:</strong> <span class="tnum" id="varianceText">${fmtCurrency0(variance)}</span></span>
+    </div>`);
+  h.push(`</div>`);
 
-  /* Milestones */
-  lines.push('\nMilestones');
-  lines.push(['Milestone','Date','Status','Include'].map(esc).join(','));
-  $$('#milestonesTable tbody tr').forEach(tr=>{
-    lines.push([
-      tr.children[0].querySelector('input').value,
-      tr.children[1].querySelector('input').value,
-      tr.children[2].querySelector('select').value,
-      tr.children[3].querySelector('input[type="checkbox"]').checked
-    ].map(esc).join(','));
-  });
+  // Achievements & Next (side-by-side)
+  if((d.achText||'').trim() || (d.nextText||'').trim()){
+    h.push(`<div class="report-section split-2">`);
+    h.push(`<div><h2>Key Achievements This Period</h2><p>${(d.achText||'').replace(/\n/g,'<br>')}</p></div>`);
+    h.push(`<div><h2>Key Activities Next Period</h2><p>${(d.nextText||'').replace(/\n/g,'<br>')}</p></div>`);
+    h.push(`</div>`);
+  }
 
-  /* Issues */
-  lines.push('\nIssues');
-  lines.push(['ID','Description','Impact','Owner','Status','Next Steps','Include'].map(esc).join(','));
-  $$('#issuesTable tbody tr').forEach(tr=>{
-    lines.push([
-      tr.children[0].querySelector('input').value,
-      tr.children[1].querySelector('input').value,
-      tr.children[2].querySelector('select').value,
-      tr.children[3].querySelector('input').value,
-      tr.children[4].querySelector('select').value,
-      tr.children[5].querySelector('input').value,
-      tr.children[6].querySelector('input[type="checkbox"]').checked
-    ].map(esc).join(','));
-  });
+  // Overall commentary (chip)
+  if((d.execSummary||'').trim()){
+    const oc = (d.status?.overall?.current||'').toUpperCase();
+    const ocName = ({'G':'Green','A':'Amber','R':'Red','B':'Complete'})[oc] || oc || '';
+    const chipCls = ({'G':'chip-g','A':'chip-a','R':'chip-r','B':'chip-b'})[oc] || '';
+    h.push(`<div class="report-section"><h2 style="display:flex;align-items:center;gap:10px">Overall Project Status Summary <span class="status-chip ${chipCls}">${statusIcon(oc)} ${ocName}</span></h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p></div>`);
+  }
 
-  /* Risks */
-  lines.push('\nRisks');
-  lines.push(['ID','Description','Rating','Mitigation','Include'].map(esc).join(','));
-  $$('#risksTable tbody tr').forEach(tr=>{
-    lines.push([
-      tr.children[0].querySelector('input').value,
-      tr.children[1].querySelector('input').value,
-      tr.children[2].querySelector('select').value,
-      tr.children[3].querySelector('input').value,
-      tr.children[4].querySelector('input[type="checkbox"]').checked
-    ].map(esc).join(','));
-  });
+  // Status + Milestones
+  h.push(`<div class="report-section status-milestones">`);
+  h.push(`<div><h2>Status Summary (detail)</h2>
+    <table style="width:100%;border-collapse:collapse;margin:8px 0">
+      <colgroup><col style="width:55%"><col style="width:22.5%"><col style="width:22.5%"></colgroup>
+      <thead><tr><th>Item</th><th>Current</th><th>Previous</th></tr></thead><tbody>`);
+  for(const row of statusRowDef()){
+    const s=d.status?.[row.key]||{};
+    h.push(`<tr><td style="white-space:nowrap">${row.label}</td><td>${statusIcon(s.current)} ${s.current||''}</td><td>${statusIcon(s.previous)} ${s.previous||''}</td></tr>`);
+  }
+  h.push(`</tbody></table></div>`);
 
-  /* Decisions */
-  lines.push('\nDecisions');
-  lines.push(['Decision','Required By','Owner','Status','Include'].map(esc).join(','));
-  $$('#decisionsTable tbody tr').forEach(tr=>{
-    lines.push([
-      tr.children[0].querySelector('input').value,
-      tr.children[1].querySelector('input').value,
-      tr.children[2].querySelector('input').value,
-      tr.children[3].querySelector('select').value,
-      tr.children[4].querySelector('input[type="checkbox"]').checked
-    ].map(esc).join(','));
-  });
-
-  /* Dependencies & Constraints */
-  lines.push('\nDependencies & Constraints');
-  lines.push(['Ref/ID','Dependency','Impact','Owner','Actions','Status','Include'].map(esc).join(','));
-  $$('#depsTable tbody tr').forEach(tr=>{
-    lines.push([
-      tr.children[0].querySelector('input').value,
-      tr.children[1].querySelector('input').value,
-      tr.children[2].querySelector('input').value,
-      tr.children[3].querySelector('input').value,
-      tr.children[4].querySelector('input').value,
-      tr.children[5].querySelector('select').value,
-      tr.children[6].querySelector('input[type="checkbox"]').checked
-    ].map(esc).join(','));
-  });
-
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = ($('#projectName').value || 'psr_summary') + `.csv`;
-  a.click();
-}
-
-/* ===== Wiring, init ===== */
-function wireTables(){
-  $('#addMilestone').onclick = ()=> addMilestoneRow();
-  $('#addIssue').onclick     = ()=> addIssueRow();
-  $('#addRisk').onclick      = ()=> addRiskRow();
-  $('#addDecision').onclick  = ()=> addDecisionRow();
-  $('#addDep').onclick       = ()=> addDepRow();
-}
-
-function init(){
-  initStatus(); wireTables();
-
-  /* Inputs → badges + preview */
-  $('#budgetApproved').addEventListener('input',updateBudgetPills);
-  $('#budgetSpent').addEventListener('input',updateBudgetPills);
-  $('#budgetETC').addEventListener('input',updateBudgetPills);
-  $$('#statusBody, #milestonesTable, #issuesTable, #risksTable, #decisionsTable, #depsTable')
-    .forEach(el=>{
-      el.addEventListener('input',refreshPreview);
-      el.addEventListener('change',refreshPreview);
+  const msShown = (d.milestones||[]).filter(ms => ms.include !== false);
+  h.push(`<div>`);
+  if(msShown.length){
+    h.push(`<h2>Milestone Status</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0">
+        <thead><tr><th>Milestone</th><th>Original</th><th>Revised</th><th>Status</th></tr></thead><tbody>`);
+    msShown.forEach(ms=>{
+      const isDone = String(ms.status||'').toLowerCase()==='completed';
+      const star = isDone ? `${completedIcon()} ` : '';
+      const strikeClass = isDone ? 'class="strike"' : '';
+      h.push(`<tr ${strikeClass}><td>${ms.name||''}</td><td>${ms.orig||''}</td><td>${ms.rev||''}</td><td>${star}${ms.status||''}</td></tr>`);
     });
+    h.push(`</tbody></table>`);
+  }
+  h.push(`</div>`);
+  h.push(`</div>`);
 
-  /* Toolbar */
-  $('#saveBtn').onclick = saveJSON;
-  $('#exportBtn').onclick = exportCSV;
-  $('#importFile').addEventListener('change',e=>{
-    const f=e.target.files[0]; if(f) loadJSON(f);
-  });
-  $('#printBtn').onclick = ()=> window.print();
-  $('#newBtn').onclick = ()=> { if(confirm('Clear current data and start a new report?')) location.reload(); };
-  $('#copyCurrentToPrev').onclick = copyCurrentToPrevious;
-  $('#jumpReportBtn').onclick = ()=> { document.getElementById('reportCard')?.scrollIntoView({behavior:'smooth', block:'start'}); };
+  // Issues & Risks
+  h.push(`<div class="report-section issues-risks">`);
+  const issuesIncluded = (d.issues||[]).filter(i=>i.include!==false);
+  h.push(`<div>`);
+  if(issuesIncluded.length){
+    h.push(`<h2>Top Issues</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Issue ID</th><th>Issue description</th><th>Impact</th><th>Owner</th><th>Next steps</th></tr></thead><tbody>`);
+    issuesIncluded.forEach(i=>h.push(`<tr><td>${i.id||''}</td><td>${i.issue||''}</td><td>${i.impact||''}</td><td>${i.owner||''}</td><td>${i.next||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+  h.push(`</div>`);
 
-  updateBudgetPills(); refreshPreview();
+  const risksIncluded = (d.risks||[]).filter(r=>r.include!==false);
+  h.push(`<div>`);
+  if(risksIncluded.length){
+    h.push(`<h2>Top Risks</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Risk ID</th><th>Risk description</th><th>Risk rating</th><th>Mitigation</th></tr></thead><tbody>`);
+    risksIncluded.forEach(r=>h.push(`<tr><td>${r.id||''}</td><td>${r.risk||''}</td><td>${r.rating||''}</td><td>${r.mit||''}</td></tr>`));
+    h.push(`</tbody></table>`);
+  }
+  h.push(`</div>`);
+  h.push(`</div>`);
+
+  // Decisions
+  const decisionsIncluded = (d.decisions||[]).filter(dc=>dc.include!==false);
+  if(decisionsIncluded.length){
+    h.push(`<div class="report-section"><h2>Key Decisions</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>Decision</th><th>Required By</th><th>Owner</th><th>Status</th></tr></thead><tbody>`);
+    decisionsIncluded.forEach(dc=>{
+      const isDone = String(dc.status||'').toLowerCase()==='completed';
+      const star = isDone ? `${completedIcon()} ` : '';
+      h.push(`<tr><td>${dc.desc||''}</td><td>${dc.req||''}</td><td>${dc.owner||''}</td><td>${star}${dc.status||''}</td></tr>`);
+    });
+    h.push(`</tbody></table></div>`);
+  }
+
+  // Dependencies
+  const depsIncluded = (d.deps||[]).filter(dp=>dp.include!==false);
+  if(depsIncluded.length){
+    h.push(`<div class="report-section"><h2>Dependencies & Constraints</h2>
+      <table style="width:100%;border-collapse:collapse;margin:8px 0"><thead>
+        <tr><th>ID</th><th>Dependency</th><th>Impact</th><th>Owner</th><th>Actions</th><th>Status</th></tr></thead><tbody>`);
+    depsIncluded.forEach(dp=>{
+      const isBlue = String(dp.status||'').toUpperCase()==='B';
+      const star = isBlue ? `${completedIcon()} ` : '';
+      const strike = isBlue ? 'class="strike"' : '';
+      h.push(`<tr ${strike}><td>${dp.id||''}</td><td>${dp.dep||''}</td><td>${dp.impact||''}</td><td>${dp.owner||''}</td><td>${dp.actions||''}</td><td>${star}${dp.status||''}</td></tr>`);
+    });
+    h.push(`</tbody></table></div>`);
+  }
+
+  return h.join('');
 }
-document.addEventListener('DOMContentLoaded', init);
 
-/* ===== v0.25 Theme toggle (persisted) ===== */
+function refreshPreview(){ $('#reportPreview').innerHTML = buildReportHTML(collectData()); }
+
+/* Debounced live preview */
+let previewTimer=null;
+function schedulePreview(){ clearTimeout(previewTimer); previewTimer=setTimeout(refreshPreview, 120); }
+
+/* ===== Budget pills (EAC + Variance) ===== */
+function updateBudgetPills(){
+  const a=+($('#budgetApproved').value||0), s=+($('#budgetSpent').value||0), e=+($('#budgetEtc').value||0);
+  const eac = s+e;
+  const v = a - eac;
+  $('#eacText').textContent = fmtCurrency0(eac);
+  const pill=$('#variancePill'); const txt=$('#varianceText');
+  txt.textContent = fmtCurrency0(v);
+  pill.classList.remove('ok','bad'); pill.classList.add(v>=0?'ok':'bad');
+  schedulePreview();
+}
+
+/* ===== Import / Export ===== */
+function saveJSON(){
+  const data=collectData();
+  const projName = $('#projName').value.trim();
+  if(!projName){
+    alert('Please enter a Project Name before saving.');
+    $('#projName').focus();
+    return;
+  }
+  const safeName = sanitizeFilename(projName);
+  const datePart = data.meta.reportDate || 'undated';
+  const filename = `${safeName}_status_${datePart}.json`;
+  download(filename, JSON.stringify(data,null,2), 'application/json');
+}
+function importJSON(file){
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d?.status){
+        for(const [k,v] of Object.entries(d.status)){
+          d.status[k].previous = v.previous || v.current || '';
+        }
+      }
+      populateData(d);
+    }catch(err){ alert('Failed to parse JSON: '+err.message); }
+  };
+  reader.readAsText(file);
+}
+
+/* ===== Copy Current → Previous ===== */
+function copyCurrentToPrevious(){
+  for(const row of statusRowDef()){
+    const cur = document.querySelector(`input[name="current_${row.key}"]:checked`);
+    const prevVal = cur ? cur.value : '';
+    const prevRadio = prevVal ? document.querySelector(`input[name="previous_${row.key}"][value="${prevVal}"]`) : null;
+    if(prevRadio) prevRadio.checked = true;
+    if(!prevVal){
+      const checkedPrev = document.querySelector(`input[name="previous_${row.key}"]:checked`);
+      if(checkedPrev) checkedPrev.checked = false;
+    }
+  }
+  schedulePreview();
+}
+
+/* ===== Wire up ===== */
+buildStatusTable();
+addMilestoneRow({});
+for(let i=0;i<2;i++){ addIssueRow({}); addRiskRow({}); }
+addDecisionRow({}); addDepRow({});
+
+/* Default dates + sync */
+(function initDates(){
+  const report = $('#reportDate'), start = $('#periodStart'), end = $('#periodEnd');
+  const setTodayIfEmpty = (input)=>{
+    if(!input.value){
+      const t=new Date(); const m=String(t.getMonth()+1).padStart(2,'0'); const d=String(t.getDate()).padStart(2,'0');
+      input.value=`${t.getFullYear()}-${m}-${d}`;
+    }
+  };
+  setTodayIfEmpty(report);
+  if(!start.value) start.value = report.value;
+  if(!end.value) end.value = report.value;
+
+  report.addEventListener('change', ()=>{
+    if(!start.value || start.dataset.synced==='1'){ start.value = report.value; start.dataset.synced='1'; }
+    if(!end.value || end.dataset.synced==='1'){ end.value = report.value; end.dataset.synced='1'; }
+    schedulePreview();
+  });
+  start.addEventListener('change', ()=>{ start.dataset.synced='0'; schedulePreview(); });
+  end.addEventListener('change',   ()=>{ end.dataset.synced='0';   schedulePreview(); });
+})();
+
+/* Global auto-preview */
+document.body.addEventListener('input', (e)=>{ if(e.target.closest('.card')) schedulePreview(); }, {passive:true});
+document.body.addEventListener('change', (e)=>{ if(e.target.closest('.card')) schedulePreview(); }, {passive:true});
+
+/* Buttons */
+$('#addMilestone').onclick=()=>addMilestoneRow({});
+$('#addIssue').onclick=()=>addIssueRow({});
+$('#addRisk').onclick=()=>addRiskRow({});
+$('#addDecision').onclick=()=>addDecisionRow({});
+$('#addDep').onclick=()=>addDepRow({});
+['#budgetApproved','#budgetSpent','#budgetEtc'].forEach(id=>$(id).addEventListener('input', updateBudgetPills));
+$('#printBtn').onclick=()=>{ refreshPreview(); window.print(); };
+$('#printBtn2').onclick=()=>{ refreshPreview(); window.print(); };
+$('#jumpTopBtn').onclick=()=>{ window.scrollTo({top:0, behavior:'smooth'}); };
+$('#saveJsonBtn').onclick=saveJSON;
+$('#exportCsvBtn').onclick=()=>download('summary.csv', buildSummaryCsv(collectData()), 'text/csv');
+$('#importFile').addEventListener('change',(e)=>{ const f=e.target.files[0]; if(f){ $('#importName').textContent = f.name; importJSON(f); } });
+$('#newBtn').onclick=()=>{ if(confirm('Clear all fields and start a new report?')) location.reload(); };
+$('#copyCurrentToPrev').onclick=copyCurrentToPrevious;
+$('#jumpReportBtn').onclick=()=>{ document.getElementById('reportCard')?.scrollIntoView({behavior:'smooth', block:'start'}); };
+
+/* Initial calc + preview */
+updateBudgetPills(); refreshPreview();
+
+/* ===== v0.26 THEME TOGGLE (added) ===== */
 (function(){
   const KEY='psrTheme';
   function apply(theme){ document.body.classList.toggle('dark', theme==='dark'); }
   function current(){ return document.body.classList.contains('dark') ? 'dark' : 'light'; }
 
-  document.addEventListener('DOMContentLoaded', function(){
-    try{ if(localStorage.getItem(KEY)==='dark') apply('dark'); }catch(e){}
-    const btn=document.getElementById('themeToggle');
-    if(btn){
-      btn.addEventListener('click', function(){
-        const next = current()==='dark' ? 'light' : 'dark';
-        apply(next);
-        try{ localStorage.setItem(KEY, next); }catch(e){}
-      });
-    }
-  });
+  try{ if(localStorage.getItem(KEY)==='dark') apply('dark'); }catch(e){}
+  const btn = document.getElementById('themeBtn');
+  if(btn){
+    btn.addEventListener('click', ()=>{
+      const next = current()==='dark' ? 'light' : 'dark';
+      apply(next);
+      try{ localStorage.setItem(KEY, next); }catch(e){}
+    });
+  }
 })();
 </script>
 </body>
