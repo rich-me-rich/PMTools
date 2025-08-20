@@ -87,17 +87,22 @@
   .th-r{background:var(--r-tint)}
 
   <!-- PSR generator - V0.26 - part 2 of 4 : filename=PSR Generator.html -->
-  /* ---- PRINT (existing + tweaks) ---- */
-  @media print{
-    .no-print{display:none !important}
-    .card{display:none !important}
-    #reportCard{display:block !important}
-    #reportCard .report{box-shadow:none;border:none}
-    .container{padding:0}
+  /* ---- PRINT (revised) ---- */
+  @media print {
+    body * { visibility: hidden !important; }
+    #reportPreview, #reportPreview * {
+      visibility: visible !important;
+    }
+    #reportPreview {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+    }
     th,td{background:#fff;border-color:#ddd}
     .budget-row{flex-wrap:nowrap} /* keep in one row on print */
   }
 
+     
   /* Report container (outer box removed per v0.26) */
   .report{
     background:transparent; /* was #fff */
@@ -1003,4 +1008,5 @@ updateBudgetPills(); refreshPreview();
 </body>
 </html>
 <!-- END: PSR generator - V0.26 - part 4 of 4 -->
+
 
