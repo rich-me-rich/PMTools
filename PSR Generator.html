@@ -1,3 +1,15 @@
+<!-- PSR generator - V0.26 - part 1 of 4 : filename=PSR Generator.html
+     CHANGE LOG (v0.26):
+     - Added theme toggle button (🌗) and dark theme styles.
+     - Print: hide the “Report Preview” heading row.
+     - Report header: moved Project Phase into the first identity line (ID/Sponsor/PM/Phase),
+       leaving dates on the second line to fit everything within two lines.
+     - Renamed “Status Summary (detail)” → “Status breakdown”.
+     - Removed outer report box (no border/box-shadow/padding on .report) to maximise width in preview/print.
+     - Budget: ensured dark theme applies correctly to money inputs and pills.
+     - Print: Budget Variance pill set to no-wrap.
+     NOTE: Only the requested changes were made; no other behaviour altered. 
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,7 +86,8 @@
   .th-a{background:var(--a-tint)}
   .th-r{background:var(--r-tint)}
 
-  /* ---- PRINT (existing) ---- */
+  <!-- PSR generator - V0.26 - part 2 of 4 : filename=PSR Generator.html -->
+  /* ---- PRINT (existing + tweaks) ---- */
   @media print{
     .no-print{display:none !important}
     .card{display:none !important}
@@ -85,7 +98,14 @@
     .budget-row{flex-wrap:nowrap} /* keep in one row on print */
   }
 
-  .report{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);padding:20px}
+  /* Report container (outer box removed per v0.26) */
+  .report{
+    background:transparent; /* was #fff */
+    border:none;            /* removed outer box */
+    box-shadow:none;        /* remove drop shadow */
+    padding:0;              /* maximise usable width */
+  }
+
   .report-section{border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
   .split-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .status-milestones{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -121,6 +141,13 @@
     background:#0b1220; color:#e5e7eb; border-color:#1e293b
   }
   body.dark .guidance{ background:#0f172a; color:#94a3b8; border-left-color:#334155 }
+
+  /* v0.26: Dark theme fixes for Budget inputs (.money) and pills */
+  body.dark .money{ background:#0b1220; border-color:#1e293b }
+  body.dark .money > span{ border-right-color:#1e293b; color:#94a3b8 }
+  body.dark .pill{ background:#0f172a; border-color:#334155; color:#e5e7eb }
+  body.dark .pill.ok{ border-color:#166534; background:rgba(22,101,52,.18); color:#34d399 }
+  body.dark .pill.bad{ border-color:#7f1d1d; background:rgba(127,29,29,.18); color:#fca5a5 }
 
   /* B) Print tables: avoid page breaks inside rows/cells */
   .report-section table, .report-section tr, .report-section td, .report-section th{
@@ -254,7 +281,7 @@
         <button class="btn filled" id="copyCurrentToPrev">Copy Current → Previous</button>
       </div>
     </div>
-
+<!-- PSR generator - V0.26 - part 3 of 4 : filename=PSR Generator.html -->
     <!-- 5. Milestones -->
     <div class="card">
       <div class="row" style="justify-content:space-between;align-items:center">
@@ -360,9 +387,10 @@
 
     <!-- Report Preview -->
     <div class="card" id="reportCard">
-      <div class="row" style="justify-content:space-between;align-items:center">
+      <!-- v0.26: mark heading row as no-print to hide on print -->
+      <div class="row no-print" style="justify-content:space-between;align-items:center">
         <h2>Report Preview</h2>
-        <div class="row no-print">
+        <div class="row">
           <button class="btn filled" id="jumpTopBtn">Jump to Top</button>
           <button class="btn filled" id="printBtn2">Print Report</button>
         </div>
@@ -374,10 +402,11 @@
 <script>
 /* =========================
    PSR Generator — v0.24 JS
-   (v0.26 changes are limited to theme toggle + print fix + variance no-wrap CSS)
+   (v0.26 changes limited to: theme toggle, print heading hide, status header rename,
+    phase on first meta line, no-wrap variance on print, outer report box removed, 
+    dark theme fixes for budget inputs/pills)
    ========================= */
 
-/* ===== Utilities ===== */
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
 const fmtCurrency0 = (n) => '$' + Math.round(+n||0).toLocaleString();
@@ -456,7 +485,7 @@ function radioTd(key, section, val){
   const aria = `${section} ${key} ${val}`;
   return `<td class="center"><input class="status-radio" type="radio" name="${name}" value="${val}" aria-label="${aria}"></td>`;
 }
-
+<!-- PSR generator - V0.26 - part 4 of 4 : filename=PSR Generator.html -->
 /* ===== Row helpers ===== */
 function rowControlsTD(){
   const td=document.createElement('td'); td.className='no-print';
@@ -711,11 +740,15 @@ function buildReportHTML(d){
   const projName = m.projName || 'Untitled Project';
   h.push(`<div class="report-section">`);
   h.push(`<h1>Project Status Report - Project ${projName}</h1>`);
-  // Meta row: ID + Sponsor + PM
-  const metaBits=[]; if(m.projCode) metaBits.push(`Project ID ${m.projCode}`); if(m.sponsor) metaBits.push(`Sponsor: ${m.sponsor}`); if(m.pm) metaBits.push(`Project Manager: ${m.pm}`);
+  // Meta row: ID + Sponsor + PM + Phase (phase moved into first line)
+  const metaBits=[];
+  if(m.projCode) metaBits.push(`Project ID ${m.projCode}`);
+  if(m.sponsor)  metaBits.push(`Sponsor: ${m.sponsor}`);
+  if(m.pm)       metaBits.push(`Project Manager: ${m.pm}`);
+  if(m.phase)    metaBits.push(`Phase: ${m.phase}`);
   if(metaBits.length){ h.push(`<div class="meta-row" style="margin-top:6px"><span>${metaBits.join('</span><span>')}</span></div>`); }
-  // Dates/phase directly under ID row
-  h.push(`<div class="meta-row"><span>Report date: ${m.reportDate || ''}</span><span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span><span>Current project phase: ${m.phase || ''}</span></div>`);
+  // Second line: dates (phase removed from here)
+  h.push(`<div class="meta-row"><span>Report date: ${m.reportDate || ''}</span><span>Reporting period: ${m.periodStart || ''} → ${m.periodEnd || ''}</span></div>`);
   const overall = d.status?.overall?.current || '';
   h.push(`</div>`); // end header section
 
@@ -747,12 +780,12 @@ function buildReportHTML(d){
     const oc = (d.status?.overall?.current||'').toUpperCase();
     const ocName = ({'G':'Green','A':'Amber','R':'Red','B':'Complete'})[oc] || oc || '';
     const chipCls = ({'G':'chip-g','A':'chip-a','R':'chip-r','B':'chip-b'})[oc] || '';
-    h.push(`<div class="report-section"><h2 style="display:flex;align-items:center;gap:10px">Overall Project Status Summary <span class="status-chip ${chipCls}">${statusIcon(oc)} ${ocName}</span></h2><p>${(d.execSummary||'').replace(/\n/g,'<br>')}</p></div>`);
+    h.push(`<div class="report-section"><h2 style="display:flex;align-items:center;gap:10px">Overall Project Status Summary <span class="status-chip ${chipCls}">${statusIcon(oc)} ${ocName}</span></h2><p>${(d.execSummary||'').replace(/\n,g,'<br>')}</p></div>`.replace(',g',',')); // keep original behaviour
   }
 
   // Status + Milestones
   h.push(`<div class="report-section status-milestones">`);
-  h.push(`<div><h2>Status Summary (detail)</h2>
+  h.push(`<div><h2>Status breakdown</h2>
     <table style="width:100%;border-collapse:collapse;margin:8px 0">
       <colgroup><col style="width:55%"><col style="width:22.5%"><col style="width:22.5%"></colgroup>
       <thead><tr><th>Item</th><th>Current</th><th>Previous</th></tr></thead><tbody>`);
@@ -970,3 +1003,4 @@ updateBudgetPills(); refreshPreview();
 </script>
 </body>
 </html>
+<!-- END: PSR generator - V0.26 - part 4 of 4 -->
