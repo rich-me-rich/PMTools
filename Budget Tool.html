@@ -3,97 +3,126 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>PM Budget Sheet — v0.3 (Budget tab, Baselines & CRs)</title>
+<title>PM Budget Sheet — v0.4</title>
 <style>
-  :root {
-    --bg: #ffffff;
-    --fg: #1e1f23;
-    --muted: #6b7280;
-    --accent: #3b82f6;
-    --ok: #16a34a;
-    --warn: #f59e0b;
-    --err: #dc2626;
-    --card: #f8fafc;
-    --border: #e5e7eb;
-  }
-  [data-theme="dark"] {
-    --bg: #0b0d12;
-    --fg: #e5e7eb;
-    --muted: #9ca3af;
-    --accent: #60a5fa;
-    --ok: #22c55e;
-    --warn: #fbbf24;
-    --err: #ef4444;
-    --card: #0f131a;
-    --border: #1f2937;
-  }
-  html,body{height:100%}
-  body {
-    margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-    background: var(--bg); color: var(--fg);
-    transition: background .2s ease, color .2s ease;
-  }
-  header {
-    position: sticky; top:0; z-index:10;
-    background: var(--bg); border-bottom: 1px solid var(--border);
-    padding: 10px 16px; display:flex; align-items:center; gap:16px; flex-wrap: wrap;
-  }
-  .title { font-weight: 700; }
-  .spacer { flex: 1 1 auto; }
-  .pill { padding:6px 10px; border:1px solid var(--border); border-radius:8px; background: var(--card); font-size: 13px; }
-  .btn { padding:8px 12px; border:1px solid var(--border); border-radius:8px; background: var(--card); cursor:pointer; }
-  .btn.primary { background: var(--accent); color:white; border-color: transparent; }
-  .btn:hover { opacity:.9 }
-  .tabs { display:flex; gap:4px; border-bottom:1px solid var(--border); padding: 0 16px; }
-  .tab { padding:12px 14px; cursor:pointer; border-bottom: 2px solid transparent; }
-  .tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--accent); font-weight: 600; }
-  main { padding: 16px; }
-  .toolbar { display:flex; gap:8px; align-items:center; margin-bottom: 10px; flex-wrap: wrap; }
-  .table { width:100%; border-collapse: collapse; }
-  .table th, .table td { padding:10px; border-bottom:1px solid var(--border); text-align:left; vertical-align: top; }
-  .table th { font-size: 13px; color: var(--muted); font-weight:600; }
-  .kpis { display:grid; grid-template-columns: repeat(6, minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
-  .kpi { padding:12px; border:1px solid var(--border); background: var(--card); border-radius:10px; }
-  .kpi .label { font-size:12px; color: var(--muted); }
-  .kpi .value { font-size:20px; font-weight:700; margin-top:6px; }
-  .muted { color: var(--muted); font-size: 12px; }
-  .row-actions button { margin-right:6px; }
-  .chip { padding:2px 8px; border-radius: 999px; font-size: 12px; border:1px solid var(--border); background: var(--card); }
-  .chip.ok { color: var(--ok); border-color: var(--ok); }
-  .chip.warn { color: var(--warn); border-color: var(--warn); }
-  .chip.err { color: var(--err); border-color: var(--err); }
-  dialog { border:1px solid var(--border); border-radius:12px; background: var(--bg); color: var(--fg); width: min(820px, 96vw); }
-  form .grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-  form label { font-size:12px; color: var(--muted); display:block; margin-bottom:6px; }
-  form input, form select, form textarea {
-    width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background: var(--card); color: var(--fg);
-  }
-  .section { margin-bottom: 20px; }
-  .note { font-size:12px; color: var(--muted); }
-  .footer-totals { margin-top: 8px; font-size: 13px; color: var(--muted); }
-  .psr { white-space: pre-wrap; background: var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; }
-  .subtle { font-size: 12px; color: var(--muted); }
-  .right { text-align:right; }
+/* =========================================================================
+   THEME (v0.4)
+   - Light / Dark palettes
+   - Buttons in dark theme are now brighter with clear borders
+   =========================================================================*/
+:root {
+  --bg: #ffffff;
+  --fg: #1d232a;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --accent-2: #10b981;
+  --warn: #f59e0b;
+  --err: #ef4444;
+  --card: #f8fafc;
+  --border: #e5e7eb;
+  --btn-bg: #eef2ff;        /* brighter default btn bg */
+  --btn-fg: #1d232a;
+  --btn-border: #c7d2fe;
+}
+[data-theme="dark"] {
+  --bg: #0c1118;
+  --fg: #e5e7eb;
+  --muted: #a1a1aa;
+  --accent: #60a5fa;
+  --accent-2: #34d399;
+  --warn: #fbbf24;
+  --err: #f87171;
+  --card: #111827;
+  --border: #253041;
+  --btn-bg: #1a2332;        /* brighter than v0.3 */
+  --btn-fg: #e5e7eb;
+  --btn-border: #3a4a63;
+}
+html,body{height:100%}
+body{
+  margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  background: var(--bg); color: var(--fg);
+  transition: background .2s ease, color .2s ease;
+}
+header{
+  position: sticky; top:0; z-index:10;
+  backdrop-filter: blur(6px);
+  background: color-mix(in oklab, var(--bg) 92%, transparent);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+}
+.title{ font-weight: 800; }
+.spacer{ flex:1 1 auto; }
+.pill{ padding:6px 10px; border:1px solid var(--border); border-radius:8px; background: var(--card); font-size: 13px; }
+.btn{
+  padding:8px 12px; border:1px solid var(--btn-border);
+  border-radius:10px; background: var(--btn-bg); color: var(--btn-fg);
+  cursor:pointer; transition: transform .05s ease, filter .15s ease;
+}
+.btn:hover{ filter: brightness(1.07) }
+.btn:active{ transform: translateY(1px) }
+.btn.primary{ background: var(--accent); color:white; border-color: transparent; }
+.btn.ghost{ background: transparent; color: var(--fg); border-color: var(--border); }
+.tabs{ display:flex; gap:6px; border-bottom:1px solid var(--border); padding:0 16px; }
+.tab{ padding:12px 14px; cursor:pointer; border-bottom: 2px solid transparent; color: var(--muted); }
+.tab[aria-selected="true"]{ color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+main{ padding: 16px; }
+.toolbar{ display:flex; gap:8px; align-items:center; margin-bottom: 10px; flex-wrap: wrap; }
+.table{ width:100%; border-collapse: collapse; }
+.table th, .table td{ padding:10px; border-bottom:1px solid var(--border); text-align:left; vertical-align: top; }
+.table th{ font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing:.04em; }
+.kpis{ display:grid; grid-template-columns: repeat(6, minmax(180px,1fr)); gap:12px; margin-bottom:16px; }
+.kpi{ padding:12px; border:1px solid var(--border); background: var(--card); border-radius:12px; }
+.kpi .label{ font-size:12px; color: var(--muted); }
+.kpi .value{ font-size:20px; font-weight:800; margin-top:6px; }
+.note{ font-size:12px; color: var(--muted); }
+.footer-totals{ margin-top:8px; font-size:13px; color: var(--muted); }
+.psr{ white-space: pre-wrap; background: var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; }
+.right{ text-align:right; }
+.small{ font-size: 12px; }
+.badge{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); background: var(--card); font-size:12px; }
+.badge.warn{ border-color: var(--warn); color: var(--warn); }
+.badge.err{ border-color: var(--err); color: var(--err); }
+dialog{ border:1px solid var(--border); border-radius:14px; background: var(--bg); color: var(--fg); width: min(860px, 96vw); }
+form .grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+form label{ font-size:12px; color: var(--muted); display:block; margin-bottom:6px; }
+form input, form select, form textarea{
+  width:100%; padding:10px; border:1px solid var(--border); border-radius:10px; background: var(--card); color: var(--fg);
+}
+.helper{
+  padding:10px; border:1px dashed var(--border); border-radius:10px; background: color-mix(in oklab, var(--card) 80%, transparent);
+  font-size:12px; color: var(--muted);
+}
+.section{ margin-bottom: 20px; }
+.chip{ padding:2px 8px; border-radius:999px; border:1px solid var(--border); background: var(--card); font-size:12px; }
+.chip.ok{ color: var(--accent-2); border-color: var(--accent-2); }
+.chip.warn{ color: var(--warn); border-color: var(--warn); }
+.chip.err{ color: var(--err); border-color: var(--err); }
 </style>
 </head>
 <body>
-<!--
+<!-- ======================================================================
 PM Budget Sheet — CHANGE LOG
+v0.4 (2025-08-26)
+- THEME: Brightened dark-theme buttons; improved contrast; softened backgrounds.
+- NEW: Roles & Resources tab for managing roles (default rates) and resources (with rate overrides).
+- BUDGET: Baseline rows allocate across working days and aggregate to months -> “Estimated Spend by Month”.
+- BUDGET: Labour Add dialog uses dropdown Role & Resource (ID optional), single row for Start–End, removed Notes, added guidance.
+- BUDGET: Non-labour Add dialog adds CR/PO Ref, guidance text; cost-only; optional period for allocation.
+- SUMMARY: Added Monthly summary table: Month | Planned (Baseline) | Actual | Variance.
+- TIMESHEETS: Resource dropdown from resources; auto role/rate; removed ID/role/rate/notes/start.
+- INVOICES: “Receipt Invoice” flow; first field = PO # (from Non-Labour baseline); pre-fills category/vendor/label; user enters only invoice date + amount; shows PO balance.
+- MISC: Version label bump; persistence schema v0.4.
 v0.3 (2025-08-25)
-- New Budget tab (Baselines & CRs):
-  • Labour baseline rows (resource-level) using Hours × Rate or Lump Sum.
-  • Non‑Labour baseline rows (category-level) as cost-only.
-  • Change Requests: only Approved hit Approved Budget.
-  • Baseline metadata (version/date/reason). Simple re-baseline replaces baseline & bumps version.
-- Summary KPIs now compute Approved = Baseline + Approved CRs.
-- Timesheets/Invoices toolbars include shortcuts to Budget tab.
+- Budget tab (Baselines & CRs). Approved = Baseline + Approved CRs. Shortcuts + KPIs.
 v0.2 (2025-08-18)
-- Timesheets & Invoices add flows; daily ledger allocation; CSV export; summary wiring.
+- Timesheets/Invoices add flows; daily ledger; CSV export; KPIs (spent).
 v0.1 (2025-08-18)
 - Initial scaffold.
--->
+====================================================================== -->
+
 <header>
-  <div class="title">PM Budget Sheet <span class="muted">v0.3</span></div>
+  <div class="title">PM Budget Sheet <span class="small" style="opacity:.7;">v0.4</span></div>
   <div class="pill">As of <input id="asOf" type="date" /></div>
   <div class="pill">Reporting <select id="reportingMode"><option>Weekly</option><option selected>Monthly</option></select></div>
   <label class="pill"><input type="checkbox" id="workingDaysOnly" checked /> Working days only (Mon–Fri)</label>
@@ -102,23 +131,37 @@ v0.1 (2025-08-18)
 </header>
 
 <nav class="tabs" role="tablist" aria-label="Main tabs">
-  <div class="tab" role="tab" aria-selected="true" aria-controls="tab-summary" id="tabbtn-summary">Summary</div>
-  <div class="tab" role="tab" aria-selected="false" aria-controls="tab-budget" id="tabbtn-budget">Budget</div>
+  <div class="tab" role="tab" aria-selected="true"  aria-controls="tab-summary"    id="tabbtn-summary">Summary</div>
+  <div class="tab" role="tab" aria-selected="false" aria-controls="tab-budget"     id="tabbtn-budget">Budget</div>
   <div class="tab" role="tab" aria-selected="false" aria-controls="tab-timesheets" id="tabbtn-timesheets">Timesheets</div>
-  <div class="tab" role="tab" aria-selected="false" aria-controls="tab-invoices" id="tabbtn-invoices">Invoices</div>
+  <div class="tab" role="tab" aria-selected="false" aria-controls="tab-invoices"   id="tabbtn-invoices">Invoices</div>
+  <div class="tab" role="tab" aria-selected="false" aria-controls="tab-rr"         id="tabbtn-rr">Roles & Resources</div>
 </nav>
 
 <main>
   <!-- SUMMARY TAB -->
   <section id="tab-summary" role="tabpanel" aria-labelledby="tabbtn-summary">
     <div class="kpis">
-      <div class="kpi"><div class="label">Approved Budget</div><div class="value" id="kpiApproved">$0</div><div class="muted" id="kpiApprovedSub">Baseline v— + CRs</div></div>
-      <div class="kpi"><div class="label">Spent to Date</div><div class="value" id="kpiSpent">$0</div><div class="muted" id="kpiSpentSub">—</div></div>
-      <div class="kpi"><div class="label">Forecast Remaining</div><div class="value" id="kpiForecast">$0</div><div class="muted">Manual (not set)</div></div>
-      <div class="kpi"><div class="label">EAC</div><div class="value" id="kpiEAC">$0</div><div class="muted">= Spent + Forecast</div></div>
-      <div class="kpi"><div class="label">Variance</div><div class="value" id="kpiVariance">$0</div><div class="muted">= EAC − Approved</div></div>
-      <div class="kpi"><div class="label">RAG</div><div class="value" id="kpiRAG">—</div><div class="muted">±5%/10% thresholds</div></div>
+      <div class="kpi"><div class="label">Approved Budget</div><div class="value" id="kpiApproved">$0</div><div class="small" id="kpiApprovedSub">Baseline v— + CRs</div></div>
+      <div class="kpi"><div class="label">Spent to Date</div><div class="value" id="kpiSpent">$0</div><div class="small" id="kpiSpentSub">—</div></div>
+      <div class="kpi"><div class="label">Forecast Remaining</div><div class="value" id="kpiForecast">$0</div><div class="small">Manual (coming)</div></div>
+      <div class="kpi"><div class="label">EAC</div><div class="value" id="kpiEAC">$0</div><div class="small">= Spent + Forecast</div></div>
+      <div class="kpi"><div class="label">Variance</div><div class="value" id="kpiVariance">$0</div><div class="small">= EAC − Approved</div></div>
+      <div class="kpi"><div class="label">RAG</div><div class="value" id="kpiRAG">—</div><div class="small">±5%/10% thresholds</div></div>
     </div>
+
+    <div class="section">
+      <h3>Estimated Spend by Month (Baseline vs Actuals)</h3>
+      <div class="small note">Baseline allocations are spread across working days within each row’s period, then rolled up to months. Actuals come from timesheets & invoices ledger up to the As-of date.</div>
+      <table class="table" id="monthSummaryTable">
+        <thead>
+          <tr><th>Month</th><th class="right">Planned (Baseline)</th><th class="right">Actual</th><th class="right">Variance</th></tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot><tr><td>Total</td><td class="right" id="msTotPlan">$0</td><td class="right" id="msTotActual">$0</td><td class="right" id="msTotVar">$0</td></tr></tfoot>
+      </table>
+    </div>
+
     <div class="section">
       <h3>PSR Copy</h3>
       <div id="psrCopy" class="psr"></div>
@@ -132,11 +175,11 @@ v0.1 (2025-08-18)
   <section id="tab-budget" role="tabpanel" aria-labelledby="tabbtn-budget" hidden>
     <div class="toolbar">
       <strong>Baseline</strong>
-      <span class="subtle">Version:</span> <span id="baseVersion" class="pill">—</span>
-      <span class="subtle">Dated:</span> <span id="baseDate" class="pill">—</span>
-      <button id="saveBaselineBtn" class="btn primary">Save / Re‑baseline</button>
+      <span class="small">Version:</span> <span id="baseVersion" class="pill">—</span>
+      <span class="small">Dated:</span> <span id="baseDate" class="pill">—</span>
+      <button id="saveBaselineBtn" class="btn primary">Save / Re-baseline</button>
       <span class="spacer"></span>
-      <span class="note">Labour baseline uses resource rows (Hours × Rate). Non‑Labour baseline uses cost-only rows by category.</span>
+      <span class="note">Labour = resource rows (Hours × Rate). Non-Labour = cost-only rows (category).</span>
     </div>
 
     <div class="section">
@@ -147,7 +190,7 @@ v0.1 (2025-08-18)
       <table class="table" id="labourBaseTable">
         <thead>
           <tr>
-            <th>Resource Name</th><th>Resource ID</th><th>Role</th><th>Period</th><th class="right">Hours</th><th class="right">Rate</th><th class="right">Cost</th><th>Notes</th><th>Actions</th>
+            <th>Resource</th><th>Role</th><th>Period</th><th class="right">Hours</th><th class="right">Rate</th><th class="right">Cost</th><th class="small">Res ID</th><th>Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -156,14 +199,14 @@ v0.1 (2025-08-18)
     </div>
 
     <div class="section">
-      <h3>Non‑Labour Baseline (Category rows)</h3>
+      <h3>Non-Labour Baseline (Category rows)</h3>
       <div class="toolbar">
-        <button id="addNonLabourBaseBtn" class="btn">Add Non‑Labour row</button>
+        <button id="addNonLabourBaseBtn" class="btn">Add Non-Labour row</button>
       </div>
       <table class="table" id="nonLabourBaseTable">
         <thead>
           <tr>
-            <th>Category</th><th>Label</th><th>Period</th><th class="right">Cost</th><th>Notes</th><th>Actions</th>
+            <th>PO #</th><th>Category</th><th>Label</th><th>Period</th><th class="right">Cost</th><th class="small">CR/PO Ref</th><th>Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -187,7 +230,6 @@ v0.1 (2025-08-18)
       <div class="footer-totals" id="crTotals">Totals — Approved impact: $0</div>
     </div>
   </section>
-
   <!-- TIMESHEETS TAB -->
   <section id="tab-timesheets" role="tabpanel" aria-labelledby="tabbtn-timesheets" hidden>
     <div class="toolbar">
@@ -195,12 +237,12 @@ v0.1 (2025-08-18)
       <button id="exportTsBtn" class="btn">Export CSV</button>
       <button id="tsToBudget" class="btn">Add Labour baseline…</button>
       <span class="spacer"></span>
-      <span class="note">Raw entries → allocated to daily ledger automatically.</span>
+      <span class="note">Tip: define Resources with rates under <em>Roles & Resources</em> first.</span>
     </div>
     <table class="table" id="tsTable">
       <thead>
         <tr>
-          <th>Period</th><th>Resource</th><th>Role</th><th>Hours</th><th>Rate</th><th>Cost</th><th>Source</th><th>Batch</th><th>Notes</th><th>Actions</th>
+          <th>Period End</th><th>Resource</th><th>Role</th><th>Hours</th><th class="right">Rate</th><th class="right">Cost</th><th>Batch</th><th>Actions</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -211,38 +253,77 @@ v0.1 (2025-08-18)
   <!-- INVOICES TAB -->
   <section id="tab-invoices" role="tabpanel" aria-labelledby="tabbtn-invoices" hidden>
     <div class="toolbar">
-      <button id="addInvBtn" class="btn primary">Add Invoice</button>
+      <button id="addInvBtn" class="btn primary">Receipt Invoice</button>
       <button id="exportInvBtn" class="btn">Export CSV</button>
-      <button id="invToBudget" class="btn">Add Non‑labour baseline…</button>
+      <button id="invToBudget" class="btn">Add Non-labour baseline…</button>
       <span class="spacer"></span>
-      <span class="note">Accrual mode supported: post on received date or split across a service window.</span>
+      <span class="note">Record against a PO created in the Non-Labour baseline. You’ll only enter the invoice date and amount; the rest is pre-filled.</span>
     </div>
     <table class="table" id="invTable">
       <thead>
         <tr>
-          <th>Invoice #</th><th>Vendor</th><th>Category</th><th>Description</th><th>Amount</th><th>Invoice</th><th>Received</th><th>Paid</th><th>Status</th><th>Accrual</th><th>Posted Period(s)</th><th>Actions</th>
+          <th>PO #</th><th>Invoice #</th><th>Vendor</th><th>Category</th><th>Label</th><th class="right">Amount</th><th>Invoice</th><th>Received</th><th>Accrual</th><th>Posted Period(s)</th><th>PO Balance</th><th>Actions</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
     <div class="footer-totals" id="invTotals"></div>
   </section>
+
+  <!-- ROLES & RESOURCES TAB -->
+  <section id="tab-rr" role="tabpanel" aria-labelledby="tabbtn-rr" hidden>
+    <div class="section">
+      <h3>Roles (default rates)</h3>
+      <div class="toolbar">
+        <button id="addRoleBtn" class="btn">Add Role</button>
+      </div>
+      <table class="table" id="roleTable">
+        <thead><tr><th>Role</th><th class="right">Default Rate / hr</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="section">
+      <h3>Resources (people)</h3>
+      <div class="toolbar">
+        <button id="addResBtn" class="btn">Add Resource</button>
+        <span class="note">A resource may override its role’s default rate.</span>
+      </div>
+      <table class="table" id="resTable">
+        <thead><tr><th>Name</th><th>Role</th><th class="right">Rate Override</th><th class="small">Res ID (optional)</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 </main>
 
-<!-- DIALOGS -->
-<!-- Timesheet -->
+<!-- ========================== DIALOGS ========================== -->
+
+<!-- Timesheet (simplified) -->
 <dialog id="tsDialog">
   <form id="tsForm" method="dialog">
     <h3>Add Timesheet Entry</h3>
-    <div class="grid">
-      <div><label>Resource Name</label><input name="resource_name" required placeholder="e.g., Alice Tran" /></div>
-      <div><label>Resource ID</label><input name="resource_id" required placeholder="e.g., R001" /></div>
-      <div><label>Role</label><input name="role" required placeholder="e.g., Senior Dev" /></div>
-      <div><label>Hours</label><input name="hours" type="number" min="0" step="0.1" required /></div>
-      <div><label>Rate per hour (optional override)</label><input name="rate" type="number" min="0" step="0.01" placeholder="leave blank to use default 0" /></div>
-      <div><label>Period start</label><input name="start" type="date" required /></div>
-      <div><label>Period end</label><input name="end" type="date" required /></div>
-      <div><label>Notes</label><input name="notes" placeholder="optional" /></div>
+    <div class="helper">Pick a resource from your directory. The role and rate will populate automatically. Enter hours and the period end (e.g., week ending). Allocation posts to that specific date.</div>
+    <div class="grid" style="margin-top:10px;">
+      <div>
+        <label>Resource</label>
+        <select name="resource_name" id="tsResourceSelect"></select>
+      </div>
+      <div>
+        <label>Or enter a new name (unplanned)</label>
+        <input name="resource_name_free" placeholder="type to override dropdown" />
+      </div>
+      <div>
+        <label>Role (auto from resource)</label>
+        <input name="role" id="tsRoleAuto" readonly />
+      </div>
+      <div>
+        <label>Hours</label>
+        <input name="hours" type="number" min="0" step="0.1" required />
+      </div>
+      <div>
+        <label>Period End (date)</label>
+        <input name="end" type="date" required />
+      </div>
     </div>
     <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
       <button type="button" id="tsCancel" class="btn">Cancel</button>
@@ -251,51 +332,53 @@ v0.1 (2025-08-18)
   </form>
 </dialog>
 
-<!-- Invoice -->
+<!-- Receipt Invoice -->
 <dialog id="invDialog">
   <form id="invForm" method="dialog">
-    <h3>Add Invoice</h3>
+    <h3>Receipt Invoice</h3>
+    <div class="helper">Start with the **PO #** from your Non-Labour baseline. We’ll pre-fill category/vendor/label. You only need to enter the invoice date and amount.</div>
+    <div class="grid" style="margin-top:10px;">
+      <div>
+        <label>PO #</label>
+        <select name="po_number" id="poSelect" required></select>
+      </div>
+      <div>
+        <label>Invoice #</label>
+        <input name="invoice_number" required />
+      </div>
+      <div>
+        <label>Vendor (from PO)</label>
+        <input name="vendor" id="invVendor" readonly />
+      </div>
+      <div>
+        <label>Category (from PO)</label>
+        <input name="category" id="invCategory" readonly />
+      </div>
+      <div>
+        <label>Label (from PO)</label>
+        <input name="label" id="invLabel" readonly />
+      </div>
+      <div>
+        <label>Invoice date</label>
+        <input name="invoice_date" type="date" required />
+      </div>
+      <div>
+        <label>Amount</label>
+        <input name="amount" type="number" min="0.01" step="0.01" required />
+      </div>
+    </div>
     <div class="grid">
-      <div><label>Invoice #</label><input name="invoice_number" required /></div>
-      <div><label>Vendor</label><input name="vendor" required /></div>
-      <div>
-        <label>Category</label>
-        <select name="category" required>
-          <option value="">— select —</option>
-          <option>Labour</option>
-          <option>Software</option>
-          <option>Hardware</option>
-          <option>Travel</option>
-          <option>Other</option>
-          <option>Contingency</option>
-        </select>
-      </div>
-      <div><label>Description</label><input name="description" /></div>
-      <div><label>Amount</label><input name="amount" type="number" min="0.01" step="0.01" required /></div>
-      <div><label>Invoice date</label><input name="invoice_date" type="date" required /></div>
-      <div><label>Received date</label><input name="received_date" type="date" required /></div>
-      <div><label>Paid date (optional)</label><input name="paid_date" type="date" /></div>
-      <div>
-        <label>Status</label>
-        <select name="status" required>
-          <option>Pending</option>
-          <option>Paid</option>
-          <option>Disputed</option>
-        </select>
-      </div>
       <div>
         <label>Accrual mode</label>
         <select name="accrual">
-          <option value="none">None (post on received date)</option>
-          <option value="window">Service window split</option>
+          <option value="none">None (post on received date = invoice date)</option>
+          <option value="window">Service window split (use PO period)</option>
         </select>
       </div>
-      <div><label>Service start (if window)</label><input name="svc_start" type="date" /></div>
-      <div><label>Service end (if window)</label><input name="svc_end" type="date" /></div>
-    </div>
-    <div class="grid">
-      <div><label>CR/PO Ref (optional)</label><input name="ref" /></div>
-      <div><label>Notes</label><input name="notes" /></div>
+      <div>
+        <label>PO Balance (after this)</label>
+        <input id="poBalancePreview" readonly />
+      </div>
     </div>
     <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
       <button type="button" id="invCancel" class="btn">Cancel</button>
@@ -308,15 +391,36 @@ v0.1 (2025-08-18)
 <dialog id="labourBaseDialog">
   <form id="labourBaseForm" method="dialog">
     <h3>Add Labour Baseline Row</h3>
-    <div class="grid">
-      <div><label>Resource Name</label><input name="resource_name" required /></div>
-      <div><label>Resource ID</label><input name="resource_id" required /></div>
-      <div><label>Role</label><input name="role" required /></div>
-      <div><label>Period start</label><input name="start" type="date" required /></div>
-      <div><label>Period end</label><input name="end" type="date" required /></div>
-      <div><label>Budget hours</label><input name="hours" type="number" min="0" step="0.1" required /></div>
-      <div><label>Rate per hour</label><input name="rate" type="number" min="0" step="0.01" required /></div>
-      <div><label>Notes</label><input name="notes" /></div>
+    <div class="helper">Choose a Role (default rate) and optionally a Resource (with rate override). Resource ID is optional. Costs are allocated evenly across working days within the selected period.</div>
+    <div class="grid" style="margin-top:10px;">
+      <div>
+        <label>Role</label>
+        <select name="role" id="lbRoleSelect" required></select>
+      </div>
+      <div>
+        <label>Resource (optional)</label>
+        <select name="resource_name" id="lbResSelect"></select>
+      </div>
+      <div>
+        <label>Resource ID (optional)</label>
+        <input name="resource_id" placeholder="e.g., R001" />
+      </div>
+      <div>
+        <label>Period</label>
+        <div style="display:flex; gap:8px;">
+          <input name="start" type="date" required />
+          <span class="small" style="align-self:center;">to</span>
+          <input name="end" type="date" required />
+        </div>
+      </div>
+      <div>
+        <label>Budget hours</label>
+        <input name="hours" type="number" min="0" step="0.1" required />
+      </div>
+      <div>
+        <label>Rate per hour</label>
+        <input name="rate" id="lbRate" type="number" min="0" step="0.01" required />
+      </div>
     </div>
     <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
       <button type="button" id="labourBaseCancel" class="btn">Cancel</button>
@@ -325,11 +429,16 @@ v0.1 (2025-08-18)
   </form>
 </dialog>
 
-<!-- Budget: Non‑labour baseline row -->
+<!-- Budget: Non-labour baseline row -->
 <dialog id="nonLabourBaseDialog">
   <form id="nonLabourBaseForm" method="dialog">
-    <h3>Add Non‑Labour Baseline Row</h3>
-    <div class="grid">
+    <h3>Add Non-Labour Baseline Row</h3>
+    <div class="helper">Enter a PO # and label. Optional period allows allocation across months. Use CR/PO Ref to link to approvals or change notes.</div>
+    <div class="grid" style="margin-top:10px;">
+      <div>
+        <label>PO #</label>
+        <input name="po_number" required />
+      </div>
       <div>
         <label>Category</label>
         <select name="category" required>
@@ -341,11 +450,30 @@ v0.1 (2025-08-18)
           <option>Contingency</option>
         </select>
       </div>
-      <div><label>Label</label><input name="label" required placeholder="e.g., Vendor X annual sub" /></div>
-      <div><label>Period start (optional)</label><input name="start" type="date" /></div>
-      <div><label>Period end (optional)</label><input name="end" type="date" /></div>
-      <div><label>Budget cost</label><input name="cost" type="number" min="0" step="0.01" required /></div>
-      <div><label>Notes</label><input name="notes" /></div>
+      <div>
+        <label>Label</label>
+        <input name="label" required placeholder="e.g., Vendor X annual sub" />
+      </div>
+      <div>
+        <label>Period (optional)</label>
+        <div style="display:flex; gap:8px;">
+          <input name="start" type="date" />
+          <span class="small" style="align-self:center;">to</span>
+          <input name="end" type="date" />
+        </div>
+      </div>
+      <div>
+        <label>Budget cost</label>
+        <input name="cost" type="number" min="0" step="0.01" required />
+      </div>
+      <div>
+        <label>CR/PO Ref</label>
+        <input name="ref" placeholder="e.g., CR-012 / PO-2025-001" />
+      </div>
+      <div>
+        <label>Vendor (optional)</label>
+        <input name="vendor" placeholder="e.g., Vendor X Pty Ltd" />
+      </div>
     </div>
     <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
       <button type="button" id="nonLabourBaseCancel" class="btn">Cancel</button>
@@ -391,621 +519,641 @@ v0.1 (2025-08-18)
     </div>
   </form>
 </dialog>
-
 <script>
-/* ---------------------------
-   Minimal Data Layer (v0.3)
-----------------------------*/
-const LS_KEY = "pm_budget_v03";
+/* =========================
+   DATA MODEL (v0.4)
+   ========================= */
+const LS_KEY = "pm_budget_v04";
 const state = loadState() || {
-  settings: {
-    currency: "AUD",
-    reportingMode: "Monthly",
-    workingDaysOnly: true,
-    rag: { green: 5, amber: 10 }
-  },
-  resources: {},         // default rates per resource_id
+  settings: { currency:"AUD", reportingMode:"Monthly", workingDaysOnly:true, rag:{green:5, amber:10} },
+  roles: { /* "Senior Dev": {rate:120} */ },
+  resources: { /* "Alice Tran": {role:"Senior Dev", rateOverride:null, id:"R001"} */ },
   baseline: {
     version: 0, date: "", reason: "",
-    labour_rows: [],      // resource rows: hours × rate
-    nonlabour_rows: []    // category cost rows
+    labour_rows: [],      // {id, role, resource_name?, resource_id?, start, end, hours, rate}
+    nonlabour_rows: []    // {id, po_number, category, label, start?, end?, cost, ref?, vendor?}
   },
-  crs: [],               // change requests
-  timesheets: [],        // raw timesheet rows
-  invoices: [],          // raw invoice rows
-  ledger: [],            // daily facts
+  crs: [],
+  timesheets: [],         // {id, resource_name, role, hours, end, batch_id}
+  invoices: [],           // {id, po_number, invoice_number, vendor, category, label, amount, invoice_date, received_date, accrual, svc_start?, svc_end?, batch_id}
+  ledger: [],             // {date, category, cost, source, ref_id, meta}
   batches: []
 };
-
 function persist(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
-function loadState(){
-  try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; }
-  catch(e){ console.warn("Failed to load state", e); return null; }
-}
+function loadState(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s): null; } catch{ return null; } }
 
-/* Utilities */
+/* =========================
+   UTILS
+   ========================= */
 const fmt0 = new Intl.NumberFormat(undefined, { style:'currency', currency: 'AUD', maximumFractionDigits: 0 });
 const fmt2 = new Intl.NumberFormat(undefined, { style:'currency', currency: 'AUD', maximumFractionDigits: 2 });
-function fmt(x){ return fmt0.format(x||0); }
-function toISO(d){ return (new Date(d)).toISOString().slice(0,10); }
+const fmt = (x)=>fmt0.format(x||0);
+const toISO = (d)=> (new Date(d)).toISOString().slice(0,10);
 function daysBetween(start,end, workingOnly=true){
   if(!start || !end) return [];
   const s = new Date(start); const e = new Date(end);
   const out = [];
   for(let d=new Date(s); d<=e; d.setDate(d.getDate()+1)){
-    const day = d.getDay(); // 0 Sun ... 6 Sat
-    if(!workingOnly || (day>=1 && day<=5)){
-      out.push(toISO(d));
-    }
+    const day = d.getDay();
+    if(!workingOnly || (day>=1 && day<=5)) out.push(toISO(d));
   }
   return out;
 }
 function uid(prefix){ return prefix + "-" + Math.random().toString(36).slice(2,9); }
 
-/* ---------------------------
-   Ledger Allocation
-----------------------------*/
+/* =========================
+   LEDGER (Actuals)
+   ========================= */
 function clearLedgerByRef(ref_id){ state.ledger = state.ledger.filter(r => r.ref_id !== ref_id); }
 function addLedgerRow(row){ state.ledger.push(row); }
 
 function allocateTimesheet(ts){
-  const days = daysBetween(ts.start, ts.end, state.settings.workingDaysOnly);
-  const n = Math.max(1, days.length);
-  const defaultRate = (state.resources[ts.resource_id]?.rate) ?? 0;
-  const rate = ts.rate != null && ts.rate !== "" ? Number(ts.rate) : defaultRate;
-  const perDayHours = Number(ts.hours) / n;
-  let remaining = Number(ts.hours);
-  days.forEach((date, idx) => {
-    const hours = (idx === days.length-1) ? remaining : Number((perDayHours).toFixed(2));
-    remaining = Number((remaining - hours).toFixed(2));
-    const cost = hours * rate;
-    addLedgerRow({
-      date, category:"Labour", resource_id: ts.resource_id, hours, rate_applied: rate, cost,
-      source: "Timesheet", ref_id: ts.id, meta: { resource_name: ts.resource_name, role: ts.role }
-    });
-  });
+  // For v0.4: post to the single date = period end (as guided)
+  const date = ts.end;
+  const rate = resolveRate(ts.resource_name, ts.role);
+  addLedgerRow({ date, category:"Labour", cost: Number(ts.hours)*rate, source:"Timesheet", ref_id: ts.id,
+                 meta:{resource_name: ts.resource_name, role: ts.role, hours: ts.hours, rate} });
 }
-
 function allocateInvoice(inv){
   const amount = Number(inv.amount);
   if(inv.accrual === "window"){
-    if(!inv.svc_start || !inv.svc_end){ alert("Service window requires start/end dates."); return; }
+    // Use PO's period (svc_start/svc_end derived at submit time from baseline row)
     const days = daysBetween(inv.svc_start, inv.svc_end, state.settings.workingDaysOnly);
     const n = Math.max(1, days.length);
     const perDay = amount / n;
     let remaining = amount;
-    days.forEach((date, idx) => {
-      const cost = (idx === days.length-1) ? remaining : Number(perDay.toFixed(2));
+    days.forEach((date, idx)=>{
+      const cost = (idx===days.length-1) ? remaining : Number(perDay.toFixed(2));
       remaining = Number((remaining - cost).toFixed(2));
-      addLedgerRow({ date, category: inv.category, cost, source: "Invoice", ref_id: inv.id,
-        meta: { invoice_number: inv.invoice_number, vendor: inv.vendor } });
+      addLedgerRow({ date, category: inv.category, cost, source:"Invoice", ref_id: inv.id,
+                     meta:{invoice_number: inv.invoice_number, vendor: inv.vendor, po:inv.po_number} });
     });
   } else {
     const date = inv.received_date;
-    addLedgerRow({ date, category: inv.category, cost: amount, source: "Invoice", ref_id: inv.id,
-      meta: { invoice_number: inv.invoice_number, vendor: inv.vendor } });
+    addLedgerRow({ date, category: inv.category, cost: amount, source:"Invoice", ref_id: inv.id,
+                   meta:{invoice_number: inv.invoice_number, vendor: inv.vendor, po:inv.po_number} });
   }
 }
 
-/* ---------------------------
-   Budget math
-----------------------------*/
-function labourBaselineTotals(){
-  let hours = 0, cost = 0;
+/* =========================
+   BASELINE ALLOCATION (Planned)
+   - Allocate baseline rows to working days, then roll up monthly
+   ========================= */
+function baselineMonthlyBuckets(){
+  const byMonth = new Map(); // month -> amount
+  // Labour: hours * rate distributed across working days
   for(const r of state.baseline.labour_rows){
-    hours += Number(r.hours)||0;
-    cost += Number(r.hours||0) * Number(r.rate||0);
+    const days = daysBetween(r.start, r.end, state.settings.workingDaysOnly);
+    const n = Math.max(1, days.length);
+    const perDayCost = (Number(r.hours)||0) * (Number(r.rate)||0) / n;
+    let remaining = (Number(r.hours)||0) * (Number(r.rate)||0);
+    days.forEach((date, idx)=>{
+      const cost = (idx===days.length-1)? remaining : Number(perDayCost.toFixed(2));
+      remaining = Number((remaining - cost).toFixed(2));
+      const month = date.slice(0,7);
+      byMonth.set(month, (byMonth.get(month)||0) + cost);
+    });
   }
-  return {hours, cost};
+  // Non-labour: cost distributed across working days if period provided, else at baseline date "start" or immediate month (use start or today)
+  for(const r of state.baseline.nonlabour_rows){
+    const cost = Number(r.cost)||0;
+    if(r.start && r.end){
+      const days = daysBetween(r.start, r.end, state.settings.workingDaysOnly);
+      const n = Math.max(1, days.length);
+      const perDay = cost / n;
+      let remaining = cost;
+      days.forEach((date, idx)=>{
+        const c = (idx===days.length-1)? remaining : Number(perDay.toFixed(2));
+        remaining = Number((remaining - c).toFixed(2));
+        const month = date.slice(0,7);
+        byMonth.set(month, (byMonth.get(month)||0) + c);
+      });
+    } else {
+      const anchor = r.start || toISO(new Date()).slice(0,10);
+      const month = anchor.slice(0,7);
+      byMonth.set(month, (byMonth.get(month)||0) + cost);
+    }
+  }
+  // CRs (Approved) are treated as lump-sum in month of approved_date (or As-of month if missing)
+  for(const c of state.crs){
+    if(c.status !== "Approved") continue;
+    const m = (c.approved_date ? c.approved_date.slice(0,7) : toISO(new Date()).slice(0,7));
+    byMonth.set(m, (byMonth.get(m)||0) + (Number(c.amount)||0));
+  }
+  return byMonth;
 }
-function nonLabourBaselineTotal(){
-  let cost = 0; for(const r of state.baseline.nonlabour_rows){ cost += Number(r.cost)||0; }
-  return cost;
+function actualsMonthlyBuckets(asOf){
+  const byMonth = new Map();
+  for(const row of state.ledger){
+    if(row.date <= asOf){
+      const m = row.date.slice(0,7);
+      byMonth.set(m, (byMonth.get(m)||0) + Number(row.cost));
+    }
+  }
+  return byMonth;
 }
-function crApprovedTotal(){
-  let total = 0;
-  for(const c of state.crs){ if(c.status === "Approved"){ total += Number(c.amount)||0; } }
-  return total;
+
+/* =========================
+   RESOLVE ROLE/RATE
+   ========================= */
+function resolveRate(resourceName, role){
+  const res = state.resources[resourceName];
+  if(res && res.rateOverride!=null){ return Number(res.rateOverride)||0; }
+  const r = role || (res ? res.role : null);
+  return r && state.roles[r] ? Number(state.roles[r].rate)||0 : 0;
 }
+
+/* =========================
+   KPIs & SUMMARY
+   ========================= */
 function approvedBudgetByCategory(){
-  // Labour treated as a category for reporting
   const map = new Map();
-  // Labour baseline
-  const labourCost = labourBaselineTotals().cost;
-  if(labourCost) map.set("Labour", (map.get("Labour")||0) + labourCost);
-  // Non-labour baseline
+  // Labour
+  let labour = 0;
+  for(const r of state.baseline.labour_rows){ labour += (Number(r.hours)||0) * (Number(r.rate)||0); }
+  if(labour) map.set("Labour", labour);
+  // Non-labour
   for(const r of state.baseline.nonlabour_rows){
     map.set(r.category, (map.get(r.category)||0) + (Number(r.cost)||0));
   }
-  // CRs (approved)
+  // CRs
   for(const c of state.crs){
-    if(c.status !== "Approved") continue;
-    map.set(c.category, (map.get(c.category)||0) + (Number(c.amount)||0));
+    if(c.status === "Approved"){
+      map.set(c.category, (map.get(c.category)||0) + (Number(c.amount)||0));
+    }
   }
   return map;
 }
-
-/* ---------------------------
-   KPIs (Summary)
-----------------------------*/
 function computeKPIs(){
   const approvedByCat = approvedBudgetByCategory();
-  let approved = 0; approvedByCat.forEach(v => approved += v);
+  let approved = 0; approvedByCat.forEach(v=>approved+=v);
   const asOf = document.getElementById("asOf").value || toISO(new Date());
-  let spent = 0;
-  for(const row of state.ledger){ if(row.date <= asOf) spent += Number(row.cost); }
-  const forecast = 0; // to be added in Forecast tab
-  const eac = spent + forecast;
-  const variance = eac - approved;
-
-  // RAG
+  let spent = 0; for(const r of state.ledger){ if(r.date<=asOf) spent += Number(r.cost); }
+  const forecast = 0; const eac = spent + forecast; const variance = eac - approved;
   let rag = "—";
   if(approved > 0){
-    const varPct = (variance / approved) * 100;
-    const abs = Math.abs(varPct);
-    rag = abs <= state.settings.rag.green ? "Green" : (abs <= state.settings.rag.amber ? "Amber" : "Red");
+    const varPct = (variance/approved)*100; const abs = Math.abs(varPct);
+    rag = abs<=state.settings.rag.green ? "Green" : (abs<=state.settings.rag.amber ? "Amber" : "Red");
   }
-
   document.getElementById("kpiApproved").textContent = fmt(approved);
-  const vText = state.baseline.version ? "Baseline v"+state.baseline.version : "No baseline";
-  document.getElementById("kpiApprovedSub").textContent = vText + " • CRs (Approved): " + fmt(crApprovedTotal());
+  document.getElementById("kpiApprovedSub").textContent = (state.baseline.version?`Baseline v${state.baseline.version}`:"No baseline") + " • CRs (Approved) included";
   document.getElementById("kpiSpent").textContent = fmt(spent);
   document.getElementById("kpiForecast").textContent = fmt(forecast);
   document.getElementById("kpiEAC").textContent = fmt(eac);
   document.getElementById("kpiVariance").textContent = fmt(variance);
   document.getElementById("kpiRAG").textContent = rag;
-
-  const psr = `Budget: Approved ${fmt(approved)}; Spent to date ${fmt(spent)}; Forecast remaining ${fmt(forecast)}; EAC ${fmt(eac)} (Variance ${fmt(variance)}; RAG: ${rag}). As-of ${asOf}.`;
-  document.getElementById("psrCopy").textContent = psr;
-  // baseline meta
   document.getElementById("baseVersion").textContent = state.baseline.version || "—";
   document.getElementById("baseDate").textContent = state.baseline.date || "—";
+
+  // PSR
+  document.getElementById("psrCopy").textContent =
+    `Budget: Approved ${fmt(approved)}; Spent to date ${fmt(spent)}; Forecast remaining ${fmt(forecast)}; ` +
+    `EAC ${fmt(eac)} (Variance ${fmt(variance)}; RAG: ${rag}). As-of ${asOf}.`;
+
+  // Monthly table
+  renderMonthlySummary(asOf);
+}
+function renderMonthlySummary(asOf){
+  const plan = baselineMonthlyBuckets();
+  const act = actualsMonthlyBuckets(asOf);
+  const months = Array.from(new Set([...plan.keys(), ...act.keys()])).sort();
+  const tbody = document.querySelector("#monthSummaryTable tbody");
+  tbody.innerHTML = "";
+  let totP=0, totA=0, totV=0;
+  for(const m of months){
+    const p = Number(plan.get(m)||0), a = Number(act.get(m)||0), v = a - p;
+    totP+=p; totA+=a; totV+=v;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${m}</td><td class="right">${fmt2.format(p)}</td><td class="right">${fmt2.format(a)}</td><td class="right">${fmt2.format(v)}</td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById("msTotPlan").textContent   = fmt2.format(totP);
+  document.getElementById("msTotActual").textContent = fmt2.format(totA);
+  document.getElementById("msTotVar").textContent    = fmt2.format(totV);
 }
 
-/* ---------------------------
-   Rendering Tables
-----------------------------*/
+/* =========================
+   RENDERERS
+   ========================= */
 function renderLabourBaseline(){
-  const tbody = document.querySelector("#labourBaseTable tbody");
-  tbody.innerHTML = "";
+  const tbody = document.querySelector("#labourBaseTable tbody"); tbody.innerHTML="";
   let totH=0, totC=0;
   for(const r of state.baseline.labour_rows){
-    const cost = Number(r.hours||0) * Number(r.rate||0);
-    totH += Number(r.hours||0); totC += cost;
+    const cost = Number(r.hours||0)*Number(r.rate||0); totH += Number(r.hours||0); totC += cost;
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${r.resource_name}</td>
-      <td>${r.resource_id}</td>
+      <td>${r.resource_name || "—"}</td>
       <td>${r.role}</td>
       <td>${r.start} → ${r.end}</td>
       <td class="right">${(Number(r.hours)||0).toFixed(1)}</td>
       <td class="right">${fmt2.format(Number(r.rate)||0)}</td>
       <td class="right">${fmt2.format(cost)}</td>
-      <td>${r.notes||""}</td>
-      <td>
-        <div class="row-actions">
-          <button class="btn" data-del-lb="${r.id}">Delete</button>
-        </div>
-      </td>
-    `;
+      <td>${r.resource_id || ""}</td>
+      <td><button class="btn ghost" data-del-lb="${r.id}">Delete</button></td>`;
     tbody.appendChild(tr);
   }
   document.getElementById("labourBaseTotals").textContent = `Totals — Hours: ${totH.toFixed(1)} • Cost: ${fmt2.format(totC)}`;
-  tbody.querySelectorAll("[data-del-lb]").forEach(btn => {
-    btn.addEventListener("click",(e)=>{
-      const id = e.currentTarget.getAttribute("data-del-lb");
-      state.baseline.labour_rows = state.baseline.labour_rows.filter(x=>x.id!==id);
-      persist(); renderLabourBaseline(); computeKPIs();
-    });
-  });
+  tbody.querySelectorAll("[data-del-lb]").forEach(b=>b.addEventListener("click",e=>{
+    const id = e.currentTarget.getAttribute("data-del-lb");
+    state.baseline.labour_rows = state.baseline.labour_rows.filter(x=>x.id!==id);
+    persist(); renderLabourBaseline(); computeKPIs();
+  }));
 }
 function renderNonLabourBaseline(){
-  const tbody = document.querySelector("#nonLabourBaseTable tbody");
-  tbody.innerHTML = "";
+  const tbody = document.querySelector("#nonLabourBaseTable tbody"); tbody.innerHTML="";
   let totC=0;
   for(const r of state.baseline.nonlabour_rows){
     const cost = Number(r.cost)||0; totC += cost;
+    const period = (r.start||r.end) ? `${r.start||""} → ${r.end||""}` : "—";
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td>${r.po_number}</td>
       <td>${r.category}</td>
       <td>${r.label}</td>
-      <td>${(r.start||"")} ${(r.start||r.end)? "→": ""} ${(r.end||"")}</td>
+      <td>${period}</td>
       <td class="right">${fmt2.format(cost)}</td>
-      <td>${r.notes||""}</td>
-      <td><div class="row-actions"><button class="btn" data-del-nb="${r.id}">Delete</button></div></td>
-    `;
+      <td>${r.ref||""}</td>
+      <td><button class="btn ghost" data-del-nb="${r.id}">Delete</button></td>`;
     tbody.appendChild(tr);
   }
   document.getElementById("nonLabourBaseTotals").textContent = `Totals — Cost: ${fmt2.format(totC)}`;
-  tbody.querySelectorAll("[data-del-nb]").forEach(btn => {
-    btn.addEventListener("click",(e)=>{
-      const id = e.currentTarget.getAttribute("data-del-nb");
-      state.baseline.nonlabour_rows = state.baseline.nonlabour_rows.filter(x=>x.id!==id);
-      persist(); renderNonLabourBaseline(); computeKPIs();
-    });
-  });
+  tbody.querySelectorAll("[data-del-nb]").forEach(b=>b.addEventListener("click",e=>{
+    const id = e.currentTarget.getAttribute("data-del-nb");
+    state.baseline.nonlabour_rows = state.baseline.nonlabour_rows.filter(x=>x.id!==id);
+    persist(); renderNonLabourBaseline(); computeKPIs();
+  }));
 }
 function renderCRs(){
-  const tbody = document.querySelector("#crTable tbody");
-  tbody.innerHTML = "";
+  const tbody = document.querySelector("#crTable tbody"); tbody.innerHTML="";
   let tot = 0;
-  for(const c of state.crs){
-    if(c.status === "Approved") tot += Number(c.amount)||0;
+  for(const c of state.crs){ if(c.status==="Approved") tot += Number(c.amount)||0;
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${c.cr_id}</td>
-      <td>${c.title}</td>
-      <td>${c.category}</td>
+      <td>${c.cr_id}</td><td>${c.title}</td><td>${c.category}</td>
       <td class="right">${fmt2.format(Number(c.amount)||0)}</td>
-      <td>${c.status}</td>
-      <td>${c.approved_date||""}</td>
-      <td>${c.owner||""}</td>
-      <td>${c.link? `<a href="${c.link}" target="_blank">link</a>`:""}</td>
-      <td><div class="row-actions"><button class="btn" data-del-cr="${c.cr_id}">Delete</button></div></td>
-    `;
+      <td>${c.status}</td><td>${c.approved_date||""}</td><td>${c.owner||""}</td>
+      <td>${c.link?`<a href="${c.link}" target="_blank">link</a>`:""}</td>
+      <td><button class="btn ghost" data-del-cr="${c.cr_id}">Delete</button></td>`;
     tbody.appendChild(tr);
   }
   document.getElementById("crTotals").textContent = `Totals — Approved impact: ${fmt2.format(tot)}`;
-  tbody.querySelectorAll("[data-del-cr]").forEach(btn => {
-    btn.addEventListener("click",(e)=>{
-      const id = e.currentTarget.getAttribute("data-del-cr");
-      state.crs = state.crs.filter(x=>x.cr_id!==id);
-      persist(); renderCRs(); computeKPIs();
-    });
-  });
+  tbody.querySelectorAll("[data-del-cr]").forEach(b=>b.addEventListener("click",e=>{
+    const id = e.currentTarget.getAttribute("data-del-cr");
+    state.crs = state.crs.filter(x=>x.cr_id!==id);
+    persist(); renderCRs(); computeKPIs();
+  }));
 }
-
 function renderTimesheets(){
-  const tbody = document.querySelector("#tsTable tbody");
-  tbody.innerHTML = "";
-  let totH = 0, totC = 0;
+  const tbody = document.querySelector("#tsTable tbody"); tbody.innerHTML="";
+  let totH=0, totC=0;
   for(const ts of state.timesheets){
-    const rate = (ts.rate != null && ts.rate !== "") ? Number(ts.rate) : (state.resources[ts.resource_id]?.rate ?? 0);
-    const cost = Number(ts.hours) * rate;
-    totH += Number(ts.hours);
-    totC += cost;
+    const rate = resolveRate(ts.resource_name, ts.role);
+    const cost = Number(ts.hours)*rate; totH += Number(ts.hours); totC += cost;
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${ts.start} → ${ts.end}</td>
-      <td>${ts.resource_name} <span class="muted">(${ts.resource_id})</span></td>
-      <td>${ts.role}</td>
+      <td>${ts.end}</td><td>${ts.resource_name}</td><td>${ts.role}</td>
       <td>${Number(ts.hours).toFixed(2)}</td>
-      <td>${rate? fmt2.format(rate) : "—"}</td>
-      <td>${fmt2.format(cost)}</td>
-      <td>${ts.source}</td>
+      <td class="right">${fmt2.format(rate)}</td><td class="right">${fmt2.format(cost)}</td>
       <td>${ts.batch_id}</td>
-      <td>${ts.notes || ""}</td>
       <td>
-        <div class="row-actions">
-          <button data-view-ledger="${ts.id}" class="btn">View ledger</button>
-          <button data-delete-ts="${ts.id}" class="btn">Delete</button>
-        </div>
-      </td>
-    `;
+        <button class="btn ghost" data-delete-ts="${ts.id}">Delete</button>
+      </td>`;
     tbody.appendChild(tr);
   }
   document.getElementById("tsTotals").textContent = `Totals — Hours: ${totH.toFixed(2)} • Cost: ${fmt2.format(totC)}`;
-
-  tbody.querySelectorAll("[data-delete-ts]").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const id = e.currentTarget.getAttribute("data-delete-ts");
-      state.timesheets = state.timesheets.filter(r => r.id !== id);
-      clearLedgerByRef(id);
-      persist(); renderTimesheets(); renderInvoices(); computeKPIs();
-    });
-  });
-  tbody.querySelectorAll("[data-view-ledger]").forEach(btn => {
-    btn.addEventListener("click", (e)=>{
-      const id = e.currentTarget.getAttribute("data-view-ledger");
-      const rows = state.ledger.filter(r => r.ref_id === id).sort((a,b)=>a.date.localeCompare(b.date));
-      const details = rows.map(r => `${r.date} — ${fmt2.format(r.cost)} (${r.hours?.toFixed?.(2) ?? "-"}h @ ${r.rate_applied ?? "-"} )`).join("\n");
-      alert(details || "No ledger rows.");
-    });
-  });
+  tbody.querySelectorAll("[data-delete-ts]").forEach(b=>b.addEventListener("click",e=>{
+    const id = e.currentTarget.getAttribute("data-delete-ts");
+    state.timesheets = state.timesheets.filter(r=>r.id!==id);
+    clearLedgerByRef(id);
+    persist(); renderTimesheets(); renderInvoices(); computeKPIs();
+  }));
 }
-
-function renderInvoices(){
-  const tbody = document.querySelector("#invTable tbody");
-  tbody.innerHTML = "";
-  let tot = 0;
-  for(const inv of state.invoices){
-    tot += Number(inv.amount);
-    const postedPeriods = summarizePostedPeriods(inv.id);
-    const accrualLabel = inv.accrual === "window" ? "Service window" : "Received date";
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${inv.invoice_number}</td>
-      <td>${inv.vendor}</td>
-      <td>${inv.category}</td>
-      <td>${inv.description || ""}</td>
-      <td>${fmt2.format(inv.amount)}</td>
-      <td>${inv.invoice_date}</td>
-      <td>${inv.received_date}</td>
-      <td>${inv.paid_date || ""}</td>
-      <td><span class="chip ${inv.status==='Paid'?'ok':(inv.status==='Disputed'?'err':'warn')}">${inv.status}</span></td>
-      <td>${accrualLabel}</td>
-      <td>${postedPeriods}</td>
-      <td>
-        <div class="row-actions">
-          <button data-view-ledger="${inv.id}" class="btn">View ledger</button>
-          <button data-delete-inv="${inv.id}" class="btn">Delete</button>
-        </div>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-  document.getElementById("invTotals").textContent = `Totals — Count: ${state.invoices.length} • Amount: ${fmt2.format(tot)}`;
-
-  tbody.querySelectorAll("[data-delete-inv]").forEach(btn => {
-    btn.addEventListener("click", (e)=>{
-      const id = e.currentTarget.getAttribute("data-delete-inv");
-      state.invoices = state.invoices.filter(r => r.id !== id);
-      clearLedgerByRef(id);
-      persist(); renderInvoices(); renderTimesheets(); computeKPIs();
-    });
-  });
-  tbody.querySelectorAll("[data-view-ledger]").forEach(btn => {
-    btn.addEventListener("click", (e)=>{
-      const id = e.currentTarget.getAttribute("data-view-ledger");
-      const rows = state.ledger.filter(r => r.ref_id === id).sort((a,b)=>a.date.localeCompare(b.date));
-      const details = rows.map(r => `${r.date} — ${fmt2.format(r.cost)}`).join("\n");
-      alert(details || "No ledger rows.");
-    });
-  });
-}
-
 function summarizePostedPeriods(ref_id){
   const byMonth = new Map();
-  const rows = state.ledger.filter(r => r.ref_id === ref_id);
-  rows.forEach(r => {
-    const k = r.date.slice(0,7); // YYYY-MM
-    byMonth.set(k, (byMonth.get(k)||0) + Number(r.cost));
+  const rows = state.ledger.filter(r=>r.ref_id===ref_id);
+  rows.forEach(r=>{
+    const k = r.date.slice(0,7);
+    byMonth.set(k,(byMonth.get(k)||0)+Number(r.cost));
   });
   return [...byMonth.entries()].map(([k,v])=>`${k} (${fmt2.format(v)})`).join(", ");
 }
-
-/* ---------------------------
-   UI Wiring
-----------------------------*/
-function switchTab(id){
-  document.querySelectorAll("main > section").forEach(sec => sec.hidden = true);
-  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected","false"));
-  document.getElementById("tab-"+id).hidden = false;
-  document.getElementById("tabbtn-"+id).setAttribute("aria-selected","true");
+function poBalance(po_number){
+  // PO total = baseline cost for this PO + approved CRs tagged in its ref? (for now only baseline)
+  const po = state.baseline.nonlabour_rows.find(r=>r.po_number===po_number);
+  const total = po ? Number(po.cost)||0 : 0;
+  const spent = state.invoices.filter(i=>i.po_number===po_number).reduce((s,i)=>s+Number(i.amount||0),0);
+  return {total, spent, remaining: total - spent};
+}
+function renderInvoices(){
+  const tbody = document.querySelector("#invTable tbody"); tbody.innerHTML="";
+  let tot = 0;
+  for(const inv of state.invoices){
+    tot += Number(inv.amount)||0;
+    const posted = summarizePostedPeriods(inv.id);
+    const bal = poBalance(inv.po_number);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${inv.po_number}</td>
+      <td>${inv.invoice_number}</td>
+      <td>${inv.vendor||""}</td>
+      <td>${inv.category}</td>
+      <td>${inv.label||""}</td>
+      <td class="right">${fmt2.format(inv.amount)}</td>
+      <td>${inv.invoice_date}</td>
+      <td>${inv.received_date}</td>
+      <td>${inv.accrual==="window"?"Service window":"None"}</td>
+      <td>${posted}</td>
+      <td>${fmt2.format(bal.remaining)}</td>
+      <td><button class="btn ghost" data-delete-inv="${inv.id}">Delete</button></td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById("invTotals").textContent = `Totals — Count: ${state.invoices.length} • Amount: ${fmt2.format(tot)}`;
+  tbody.querySelectorAll("[data-delete-inv]").forEach(b=>b.addEventListener("click",e=>{
+    const id = e.currentTarget.getAttribute("data-delete-inv");
+    state.invoices = state.invoices.filter(r=>r.id!==id);
+    clearLedgerByRef(id);
+    persist(); renderInvoices(); renderTimesheets(); computeKPIs();
+  }));
+}
+function renderRoles(){
+  const tbody = document.querySelector("#roleTable tbody"); tbody.innerHTML="";
+  for(const [role, obj] of Object.entries(state.roles)){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${role}</td><td class="right">${fmt2.format(obj.rate||0)}</td>
+      <td><button class="btn ghost" data-del-role="${role}">Delete</button></td>`;
+    tbody.appendChild(tr);
+  }
+  tbody.querySelectorAll("[data-del-role]").forEach(b=>b.addEventListener("click",e=>{
+    const r = e.currentTarget.getAttribute("data-del-role");
+    delete state.roles[r]; persist(); renderRoles(); refreshRoleSelects();
+  }));
+}
+function renderResources(){
+  const tbody = document.querySelector("#resTable tbody"); tbody.innerHTML="";
+  for(const [name, obj] of Object.entries(state.resources)){
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${name}</td><td>${obj.role||"—"}</td><td class="right">${obj.rateOverride!=null?fmt2.format(obj.rateOverride):"—"}</td><td>${obj.id||""}</td>
+      <td><button class="btn ghost" data-del-res="${name}">Delete</button></td>`;
+    tbody.appendChild(tr);
+  }
+  tbody.querySelectorAll("[data-del-res]").forEach(b=>b.addEventListener("click",e=>{
+    const n = e.currentTarget.getAttribute("data-del-res");
+    delete state.resources[n]; persist(); renderResources(); refreshResourceSelects();
+  }));
 }
 
+/* =========================
+   UI WIRING
+   ========================= */
+function switchTab(id){
+  document.querySelectorAll("main > section").forEach(sec=>sec.hidden=true);
+  document.querySelectorAll(".tab").forEach(t=>t.setAttribute("aria-selected","false"));
+  document.getElementById("tab-"+id).hidden=false;
+  document.getElementById("tabbtn-"+id).setAttribute("aria-selected","true");
+}
 document.getElementById("tabbtn-summary").addEventListener("click", ()=>switchTab("summary"));
-document.getElementById("tabbtn-budget").addEventListener("click", ()=>switchTab("budget"));
-document.getElementById("tabbtn-timesheets").addEventListener("click", ()=>switchTab("timesheets"));
-document.getElementById("tabbtn-invoices").addEventListener("click", ()=>switchTab("invoices"));
-
+document.getElementById("tabbtn-budget").addEventListener("click",  ()=>switchTab("budget"));
+document.getElementById("tabbtn-timesheets").addEventListener("click",()=>switchTab("timesheets"));
+document.getElementById("tabbtn-invoices").addEventListener("click",  ()=>switchTab("invoices"));
+document.getElementById("tabbtn-rr").addEventListener("click",        ()=>switchTab("rr"));
 document.getElementById("tsToBudget").addEventListener("click", ()=>switchTab("budget"));
-document.getElementById("invToBudget").addEventListener("click", ()=>switchTab("budget"));
+document.getElementById("invToBudget").addEventListener("click",()=>switchTab("budget"));
 
 const themeBtn = document.getElementById("themeBtn");
 themeBtn.addEventListener("click", ()=>{
-  const d = document.documentElement;
-  const dark = d.getAttribute("data-theme")==="dark";
-  d.setAttribute("data-theme", dark? "": "dark");
+  const d = document.documentElement; const dark = d.getAttribute("data-theme")==="dark";
+  d.setAttribute("data-theme", dark ? "" : "dark");
 });
 
-// As-of date default = today
 document.getElementById("asOf").value = toISO(new Date());
 document.getElementById("asOf").addEventListener("change", ()=>computeKPIs());
-
-// Reporting mode toggle
 document.getElementById("reportingMode").value = state.settings.reportingMode;
-document.getElementById("reportingMode").addEventListener("change", (e)=>{
-  state.settings.reportingMode = e.target.value; persist();
-  computeKPIs();
+document.getElementById("reportingMode").addEventListener("change", e=>{
+  state.settings.reportingMode = e.target.value; persist(); computeKPIs();
 });
-
-// Working days switch
 const wdo = document.getElementById("workingDaysOnly");
 wdo.checked = state.settings.workingDaysOnly;
 wdo.addEventListener("change", ()=>{
   state.settings.workingDaysOnly = wdo.checked;
-  const tsCopy = [...state.timesheets];
-  const invCopy = [...state.invoices];
-  state.ledger = [];
-  tsCopy.forEach(allocateTimesheet);
-  invCopy.forEach(allocateInvoice);
-  persist(); renderTimesheets(); renderInvoices(); computeKPIs();
+  // Recompute monthly summaries; ledger stays as-entered for v0.4 (only TS posts single day)
+  persist(); computeKPIs();
 });
+
+/* Roles & Resources management */
+document.getElementById("addRoleBtn").addEventListener("click", ()=>{
+  const role = prompt("Role name (e.g., Senior Dev):"); if(!role) return;
+  const rate = Number(prompt("Default hourly rate (e.g., 120):","0"))||0;
+  state.roles[role] = {rate}; persist(); renderRoles(); refreshRoleSelects();
+});
+document.getElementById("addResBtn").addEventListener("click", ()=>{
+  const name = prompt("Resource name (e.g., Alice Tran):"); if(!name) return;
+  const role = prompt("Role (must match a Role name):", "");
+  const rateStr = prompt("Rate override (blank to use role default):", "");
+  const id = prompt("Resource ID (optional):", "");
+  state.resources[name] = {role: role||"", rateOverride: rateStr!==""?Number(rateStr):null, id: id||""};
+  persist(); renderResources(); refreshResourceSelects();
+});
+
+/* Populate selects */
+function refreshRoleSelects(){
+  const roleSel = document.getElementById("lbRoleSelect");
+  roleSel.innerHTML = `<option value="">— select role —</option>` + Object.keys(state.roles).map(r=>`<option>${r}</option>`).join("");
+}
+function refreshResourceSelects(){
+  const lbRes = document.getElementById("lbResSelect");
+  const tsRes = document.getElementById("tsResourceSelect");
+  const poSel = document.getElementById("poSelect");
+  const names = Object.keys(state.resources);
+  lbRes.innerHTML = `<option value="">— none —</option>` + names.map(n=>`<option>${n}</option>`).join("");
+  tsRes.innerHTML = `<option value="">— select —</option>` + names.map(n=>`<option>${n}</option>`).join("");
+  const pos = state.baseline.nonlabour_rows.map(r=>r.po_number);
+  poSel.innerHTML = `<option value="">— select PO —</option>` + pos.map(p=>`<option>${p}</option>`).join("");
+}
 
 /* Timesheet modal */
 const tsDialog = document.getElementById("tsDialog");
-document.getElementById("addTsBtn").addEventListener("click", ()=>tsDialog.showModal());
+document.getElementById("addTsBtn").addEventListener("click", ()=>{
+  populateTsAutoFields();
+  tsDialog.showModal();
+});
 document.getElementById("tsCancel").addEventListener("click", ()=>tsDialog.close());
+function populateTsAutoFields(){
+  const sel = document.getElementById("tsResourceSelect");
+  const roleInput = document.getElementById("tsRoleAuto");
+  sel.onchange = ()=>{
+    const name = sel.value;
+    const role = state.resources[name]?.role || "";
+    roleInput.value = role;
+  };
+  roleInput.value = sel.value ? (state.resources[sel.value]?.role || "") : "";
+}
 document.getElementById("tsForm").addEventListener("submit", (e)=>{
   e.preventDefault();
   const fd = new FormData(e.target);
-  const hours = Number(fd.get("hours"));
-  const start = fd.get("start"); const end = fd.get("end");
-  if(!start || !end){ alert("Please provide a period start and end."); return; }
-  if(new Date(end) < new Date(start)){ alert("End date must be on/after start date."); return; }
-  if(!(hours >= 0)){ alert("Hours must be ≥ 0."); return; }
-  const ts = {
-    id: uid("TS"),
-    resource_name: fd.get("resource_name").trim(),
-    resource_id: fd.get("resource_id").trim(),
-    role: fd.get("role").trim(),
-    hours: hours,
-    rate: fd.get("rate") ? Number(fd.get("rate")) : "",
-    start, end,
-    notes: fd.get("notes")?.trim(),
-    source: "Manual",
-    batch_id: "manual-" + new Date().toISOString().slice(0,19)
-  };
+  const nameSel = fd.get("resource_name");
+  const nameFree = fd.get("resource_name_free")?.trim();
+  const resource_name = nameFree || nameSel;
+  if(!resource_name){ alert("Please select or enter a resource name."); return; }
+  const role = state.resources[resource_name]?.role || fd.get("role") || "";
+  const end = fd.get("end"); if(!end){ alert("Please set period end date."); return; }
+  const hours = Number(fd.get("hours")); if(!(hours>=0)){ alert("Hours must be ≥ 0"); return; }
+  const ts = { id: uid("TS"), resource_name, role, hours, end, batch_id: "manual-"+toISO(new Date()) };
   state.timesheets.push(ts);
-  if(!state.resources[ts.resource_id]){
-    state.resources[ts.resource_id] = { name: ts.resource_name, role: ts.role, rate: ts.rate || 0 };
-  }
   allocateTimesheet(ts);
   persist(); renderTimesheets(); computeKPIs();
   tsDialog.close(); e.target.reset();
 });
 
-/* Invoice modal */
+/* Receipt Invoice modal */
 const invDialog = document.getElementById("invDialog");
-document.getElementById("addInvBtn").addEventListener("click", ()=>invDialog.showModal());
+document.getElementById("addInvBtn").addEventListener("click", ()=>{
+  refreshResourceSelects(); // ensures PO list is fresh
+  setupPOAutofill();
+  invDialog.showModal();
+});
 document.getElementById("invCancel").addEventListener("click", ()=>invDialog.close());
-document.getElementById("invForm").addEventListener("submit", (e)=>{
+function setupPOAutofill(){
+  const poSel = document.getElementById("poSelect");
+  const v = document.getElementById("invVendor");
+  const c = document.getElementById("invCategory");
+  const l = document.getElementById("invLabel");
+  const bal = document.getElementById("poBalancePreview");
+  poSel.onchange = ()=>{
+    const po = state.baseline.nonlabour_rows.find(r=>r.po_number===poSel.value);
+    if(!po){ v.value=c.value=l.value=bal.value=""; return; }
+    v.value = po.vendor||""; c.value = po.category; l.value = po.label;
+    const b = poBalance(po.po_number); bal.value = `${fmt2.format(b.remaining)} remaining`;
+  };
+}
+document.getElementById("invForm").addEventListener("submit",(e)=>{
   e.preventDefault();
   const fd = new FormData(e.target);
+  const po = state.baseline.nonlabour_rows.find(r=>r.po_number===fd.get("po_number"));
+  if(!po){ alert("Please choose a valid PO #"); return; }
   const inv = {
     id: uid("INV"),
+    po_number: po.po_number,
     invoice_number: fd.get("invoice_number").trim(),
-    vendor: fd.get("vendor").trim(),
-    category: fd.get("category"),
-    description: fd.get("description")?.trim(),
+    vendor: po.vendor||"",
+    category: po.category,
+    label: po.label,
     amount: Number(fd.get("amount")),
     invoice_date: fd.get("invoice_date"),
-    received_date: fd.get("received_date"),
-    paid_date: fd.get("paid_date") || "",
-    status: fd.get("status"),
+    received_date: fd.get("invoice_date"),
     accrual: fd.get("accrual"),
-    svc_start: fd.get("svc_start") || "",
-    svc_end: fd.get("svc_end") || "",
-    ref: fd.get("ref")?.trim() || "",
-    notes: fd.get("notes")?.trim() || "",
-    batch_id: "manual-" + new Date().toISOString().slice(0,19)
+    // use PO period for service window accrual
+    svc_start: po.start || "",
+    svc_end: po.end || "",
+    batch_id: "manual-"+toISO(new Date())
   };
-  if(!inv.invoice_number || !inv.vendor || !inv.category || !(inv.amount>0) || !inv.invoice_date || !inv.received_date || !inv.status){
-    alert("Please complete all required fields (Invoice #, Vendor, Category, Amount, Invoice date, Received date, Status).");
-    return;
-  }
-  if(inv.paid_date && (new Date(inv.paid_date) < new Date(inv.received_date))){
-    alert("Paid date must be on/after received date."); return;
-  }
-  if(inv.accrual === "window"){
-    if(!inv.svc_start || !inv.svc_end || new Date(inv.svc_end) < new Date(inv.svc_start)){
-      alert("Service window requires a valid start and end date."); return;
-    }
-  }
+  if(!inv.invoice_number || !(inv.amount>0) || !inv.invoice_date){ alert("Enter Invoice #, date and amount."); return; }
   state.invoices.push(inv);
   allocateInvoice(inv);
   persist(); renderInvoices(); computeKPIs();
   invDialog.close(); e.target.reset();
 });
 
-/* Budget: Labour baseline modal */
+/* Budget modals */
 const labourBaseDialog = document.getElementById("labourBaseDialog");
-document.getElementById("addLabourBaseBtn").addEventListener("click", ()=>labourBaseDialog.showModal());
+document.getElementById("addLabourBaseBtn").addEventListener("click", ()=>{
+  refreshRoleSelects(); refreshResourceSelects();
+  // prefill rate when role changes or resource select has override
+  const roleSel = document.getElementById("lbRoleSelect");
+  const resSel  = document.getElementById("lbResSelect");
+  const rateInp = document.getElementById("lbRate");
+  function applyRate(){
+    const res = resSel.value && state.resources[resSel.value] || null;
+    if(res && res.rateOverride!=null){ rateInp.value = res.rateOverride; return; }
+    const role = roleSel.value; rateInp.value = role && state.roles[role] ? state.roles[role].rate : 0;
+  }
+  roleSel.onchange = applyRate; resSel.onchange = applyRate; applyRate();
+  labourBaseDialog.showModal();
+});
 document.getElementById("labourBaseCancel").addEventListener("click", ()=>labourBaseDialog.close());
 document.getElementById("labourBaseForm").addEventListener("submit",(e)=>{
   e.preventDefault();
   const fd = new FormData(e.target);
-  const start = fd.get("start"); const end = fd.get("end");
-  if(!start || !end || new Date(end) < new Date(start)){ alert("Please provide a valid period."); return; }
+  const start = fd.get("start"), end = fd.get("end");
+  if(!start || !end || new Date(end)<new Date(start)){ alert("Please provide a valid period."); return; }
   const row = {
     id: uid("LB"),
-    resource_name: fd.get("resource_name").trim(),
-    resource_id: fd.get("resource_id").trim(),
-    role: fd.get("role").trim(),
+    role: fd.get("role"),
+    resource_name: fd.get("resource_name") || "",
+    resource_id: fd.get("resource_id") || "",
     start, end,
     hours: Number(fd.get("hours")),
-    rate: Number(fd.get("rate")),
-    notes: fd.get("notes")?.trim()
+    rate: Number(fd.get("rate"))
   };
+  if(!row.role){ alert("Select a role."); return; }
   state.baseline.labour_rows.push(row);
-  // seed resource rate directory
-  if(!state.resources[row.resource_id]){
-    state.resources[row.resource_id] = { name: row.resource_name, role: row.role, rate: row.rate || 0 };
+  // ensure resource exists with role (if provided)
+  if(row.resource_name && !state.resources[row.resource_name]){
+    state.resources[row.resource_name] = {role: row.role, rateOverride: null, id: row.resource_id||""};
   }
   persist(); renderLabourBaseline(); computeKPIs();
   labourBaseDialog.close(); e.target.reset();
 });
 
-/* Budget: Non‑labour baseline modal */
 const nonLabourBaseDialog = document.getElementById("nonLabourBaseDialog");
 document.getElementById("addNonLabourBaseBtn").addEventListener("click", ()=>nonLabourBaseDialog.showModal());
 document.getElementById("nonLabourBaseCancel").addEventListener("click", ()=>nonLabourBaseDialog.close());
 document.getElementById("nonLabourBaseForm").addEventListener("submit",(e)=>{
   e.preventDefault();
   const fd = new FormData(e.target);
+  const start = fd.get("start"), end = fd.get("end");
+  if(start && end && new Date(end)<new Date(start)){ alert("End must be on/after start."); return; }
   const row = {
     id: uid("NB"),
+    po_number: fd.get("po_number").trim(),
     category: fd.get("category"),
     label: fd.get("label").trim(),
-    start: fd.get("start") || "",
-    end: fd.get("end") || "",
+    start: start || "",
+    end: end || "",
     cost: Number(fd.get("cost")),
-    notes: fd.get("notes")?.trim()
+    ref: fd.get("ref") || "",
+    vendor: fd.get("vendor") || ""
   };
-  if(!row.category || !row.label || !(row.cost>=0)){ alert("Please complete Category, Label and Cost."); return; }
-  if(row.start && row.end && new Date(row.end) < new Date(row.start)){ alert("End date must be after start."); return; }
+  if(!row.po_number || !row.category || !row.label || isNaN(row.cost)){ alert("PO #, Category, Label and Cost are required."); return; }
   state.baseline.nonlabour_rows.push(row);
-  persist(); renderNonLabourBaseline(); computeKPIs();
+  persist(); renderNonLabourBaseline(); computeKPIs(); refreshResourceSelects(); // refresh PO list
   nonLabourBaseDialog.close(); e.target.reset();
-});
-
-/* Budget: CR modal */
-const crDialog = document.getElementById("crDialog");
-document.getElementById("addCrBtn").addEventListener("click", ()=>crDialog.showModal());
-document.getElementById("crCancel").addEventListener("click", ()=>crDialog.close());
-document.getElementById("crForm").addEventListener("submit",(e)=>{
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const cr = {
-    cr_id: fd.get("cr_id").trim(),
-    title: fd.get("title").trim(),
-    category: fd.get("category"),
-    amount: Number(fd.get("amount")),
-    status: fd.get("status"),
-    approved_date: fd.get("approved_date") || "",
-    owner: fd.get("owner") || "",
-    link: fd.get("link") || ""
-  };
-  if(!cr.cr_id || !cr.title || !cr.category || isNaN(cr.amount)){ alert("Please complete CR ID, Title, Category and Amount."); return; }
-  state.crs.push(cr);
-  persist(); renderCRs(); computeKPIs();
-  crDialog.close(); e.target.reset();
 });
 
 /* Save / Re-baseline */
 document.getElementById("saveBaselineBtn").addEventListener("click", ()=>{
-  // very simple versioning: bump version, stamp date
-  const v = (state.baseline.version||0) + 1;
-  state.baseline.version = v;
+  state.baseline.version = (state.baseline.version||0)+1;
   state.baseline.date = toISO(new Date());
-  const reason = prompt("Baseline saved. Enter a reason (optional):","Initial baseline");
+  const reason = prompt("Baseline saved. Reason (optional):","Baseline update");
   if(reason!=null) state.baseline.reason = reason;
   persist(); computeKPIs();
-  alert(`Baseline saved as v${v}.`);
+  alert(`Baseline saved as v${state.baseline.version}.`);
 });
 
-/* Export (CSV) basic */
+/* Export */
 document.getElementById("exportTsBtn").addEventListener("click", ()=>{
-  const header = ["resource_id","resource_name","role","period_start","period_end","hours","rate_per_hour","notes","source","batch_id","id"];
-  const rows = state.timesheets.map(r => [r.resource_id,r.resource_name,r.role,r.start,r.end,r.hours,r.rate||"",r.notes||"",r.source,r.batch_id,r.id]);
+  const header = ["resource_name","role","hours","period_end","batch_id","id"];
+  const rows = state.timesheets.map(r=>[r.resource_name,r.role,r.hours,r.end,r.batch_id,r.id]);
   const csv = [header.join(","), ...rows.map(a=>a.map(x=>String(x).replaceAll('"','""')).map(x=>/[,\"\n]/.test(x)?`"${x}"`:x).join(","))].join("\n");
-  const blob = new Blob([csv], {type:"text/csv"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = "timesheets_export.csv"; a.click(); URL.revokeObjectURL(url);
+  const url = URL.createObjectURL(new Blob([csv],{type:"text/csv"})); const a=document.createElement("a"); a.href=url; a.download="timesheets_export.csv"; a.click(); URL.revokeObjectURL(url);
 });
 document.getElementById("exportInvBtn").addEventListener("click", ()=>{
-  const header = ["invoice_number","vendor","category","description","amount","invoice_date","received_date","paid_date","status","accrual_mode","service_start","service_end","ref","notes","batch_id","id"];
-  const rows = state.invoices.map(r => [r.invoice_number,r.vendor,r.category,r.description||"",r.amount,r.invoice_date,r.received_date,r.paid_date||"",r.status,r.accrual,r.svc_start||"",r.svc_end||"",r.ref||"",r.notes||"",r.batch_id,r.id]);
+  const header = ["po_number","invoice_number","vendor","category","label","amount","invoice_date","received_date","accrual","svc_start","svc_end","batch_id","id"];
+  const rows = state.invoices.map(r=>[r.po_number,r.invoice_number,r.vendor||"",r.category,r.label||"",r.amount,r.invoice_date,r.received_date,r.accrual,r.svc_start||"",r.svc_end||"",r.batch_id,r.id]);
   const csv = [header.join(","), ...rows.map(a=>a.map(x=>String(x).replaceAll('"','""')).map(x=>/[,\"\n]/.test(x)?`"${x}"`:x).join(","))].join("\n");
-  const blob = new Blob([csv], {type:"text/csv"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a"); a.href = url; a.download = "invoices_export.csv"; a.click(); URL.revokeObjectURL(url);
+  const url = URL.createObjectURL(new Blob([csv],{type:"text/csv"})); const a=document.createElement("a"); a.href=url; a.download="invoices_export.csv"; a.click(); URL.revokeObjectURL(url);
 });
 
-/* Copy PSR text */
+/* Copy PSR */
 document.getElementById("copyBtn").addEventListener("click", async ()=>{
   const txt = document.getElementById("psrCopy").textContent;
-  try{ await navigator.clipboard.writeText(txt); alert("Copied!"); } catch(e){ alert("Copy failed. Select the text and copy manually."); }
+  try{ await navigator.clipboard.writeText(txt); alert("Copied!"); }catch{ alert("Copy failed—select and copy manually."); }
 });
 
-/* Initial render */
+/* INIT */
 document.getElementById("asOf").value = toISO(new Date());
-renderLabourBaseline();
-renderNonLabourBaseline();
-renderCRs();
-renderTimesheets();
-renderInvoices();
+renderLabourBaseline(); renderNonLabourBaseline(); renderCRs();
+renderTimesheets(); renderInvoices();
+renderRoles(); renderResources(); refreshRoleSelects(); refreshResourceSelects();
 computeKPIs();
 </script>
 </body>
